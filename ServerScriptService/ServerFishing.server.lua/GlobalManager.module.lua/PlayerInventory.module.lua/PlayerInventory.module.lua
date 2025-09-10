@@ -14,6 +14,8 @@ PlayerInventory.__index = PlayerInventory
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local FishingRodItem = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
+
 -- UI FUNCTIONS
 function PlayerInventory:createInventoryUI(player)
     local playerGUI = player:WaitForChild("PlayerGui")
@@ -107,6 +109,28 @@ function PlayerInventory:toggleRod(player)
 end
 
 
+-- INVENTORY FUNCTIONS
+function PlayerInventory:createBackpack(player)
+    if not self.player:FindFirstChild("Custom Backpack") then
+        self.backpack = Instance.new("Folder")
+        self.backpack.Name = "Custom Backpack"
+        self.backpack.Parent = self.player
+
+        self.fishFolder = Instance.new("Folder")
+        self.fishFolder.Name = "Fish"
+        self.fishFolder.Parent = self.backpack
+
+        self.toolFolder = Instance.new("Folder")
+        self.toolFolder.Name = "Tool"
+        self.toolFolder.Parent = self.backpack
+    end
+    if not self.toolFolder:FindFirstChild("FishingRod") then
+        self.fishingRod = FishingRodItem:Clone()
+        self.fishingRod.Parent = self.toolFolder
+    end
+end
+
+
 -- MAIN FUNCTIONS
 function PlayerInventory:setupEventListener(player)
     local inventoryUI
@@ -158,6 +182,8 @@ function PlayerInventory:new(player)
     self:createInventoryUI(player)
     self:createGlobalUI(player)
     self:setupEventListener(player)
+
+    self:createBackpack()
     return self
 end
 
