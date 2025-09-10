@@ -6,28 +6,28 @@ local InventoryManager = {}
 local FishingRodDB = require(script.Parent.Parent.Item.FishingRodDB)
 local FishingRodItem = script.Parent.Parent.Item.FishingRod
 
-function InventoryManager:setupPlayer(player)
-	if not player:FindFirstChild("Custom Backpack") then
-		print("creating custom backpack")
-		local customBackpack = Instance.new("Folder")
-		customBackpack.Name = "Custom Backpack"
-		customBackpack.Parent = player
+-- function InventoryManager:setupPlayer(player)
+-- 	if not player:FindFirstChild("Custom Backpack") then
+-- 		print("creating custom backpack")
+-- 		local customBackpack = Instance.new("Folder")
+-- 		customBackpack.Name = "Custom Backpack"
+-- 		customBackpack.Parent = player
 		
-		local fishFolder = Instance.new("Folder")
-		fishFolder.Name = "Fish"
-		fishFolder.Parent = customBackpack
+-- 		local fishFolder = Instance.new("Folder")
+-- 		fishFolder.Name = "Fish"
+-- 		fishFolder.Parent = customBackpack
 		
-		local rodFolder = Instance.new("Folder")
-		rodFolder.Name = "Tool"
-		rodFolder.Parent = customBackpack
-	end
-	local bp = player:WaitForChild("Custom Backpack")
-	if not bp:FindFirstChild("Tool"):FindFirstChild("FishingRod") then
-		local rod = FishingRodItem:Clone()
-		print("clonning", rod)
-		rod.Parent = bp.Tool
-	end
-end
+-- 		local rodFolder = Instance.new("Folder")
+-- 		rodFolder.Name = "Tool"
+-- 		rodFolder.Parent = customBackpack
+-- 	end
+-- 	local bp = player:WaitForChild("Custom Backpack")
+-- 	if not bp:FindFirstChild("Tool"):FindFirstChild("FishingRod") then
+-- 		local rod = FishingRodItem:Clone()
+-- 		print("clonning", rod)
+-- 		rod.Parent = bp.Tool
+-- 	end
+-- end
 
 function InventoryManager:refreshTools(player)
 	print(player)

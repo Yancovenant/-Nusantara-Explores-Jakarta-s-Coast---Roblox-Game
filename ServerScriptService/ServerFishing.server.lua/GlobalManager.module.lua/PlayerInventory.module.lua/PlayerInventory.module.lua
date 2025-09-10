@@ -110,7 +110,7 @@ end
 
 
 -- INVENTORY FUNCTIONS
-function PlayerInventory:createBackpack(player)
+function PlayerInventory:createBackpack()
     if not self.player:FindFirstChild("Custom Backpack") then
         self.backpack = Instance.new("Folder")
         self.backpack.Name = "Custom Backpack"
@@ -225,6 +225,22 @@ function PlayerInventory:cleanUp()
     if self.powerCategHideTween then
         self.powerCategHideTween:Cancel()
         self.powerCategHideTween = nil
+    end
+    if self.fishingRod then
+        self.fishingRod:Destroy()
+        self.fishingRod = nil
+    end
+    if self.fishFolder then
+        self.fishFolder:Destroy()
+        self.fishFolder = nil
+    end
+    if self.toolFolder then
+        self.toolFolder:Destroy()
+        self.toolFolder = nil
+    end
+    if self.backpack then
+        self.backpack:Destroy()
+        self.backpack = nil
     end
     self.player = nil
 end
