@@ -130,6 +130,21 @@ function PlayerInventory:createBackpack()
     end
 end
 
+function PlayerInventory:refreshTools()
+    if not self.toolFolder then return end
+    for _, tool in pairs(self.player.Backpack:GetChildren()) do
+        tool.Parent = self.toolFolder
+    end
+end
+function PlayerInventory:equipTool(toolName)
+    self:refreshTools()
+    local tool = self.toolFolder:FindFirstChild(toolName)
+    if not tool then return end
+    self.player.Character.Humanoid:UnequipTools()
+    task.wait()
+    self.player.Character.Humanoid:EquipTool(tool)
+end
+
 
 -- MAIN FUNCTIONS
 function PlayerInventory:setupEventListener(player)
