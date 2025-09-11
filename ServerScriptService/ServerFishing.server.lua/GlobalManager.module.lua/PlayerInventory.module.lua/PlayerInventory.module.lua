@@ -14,11 +14,13 @@ PlayerInventory.__index = PlayerInventory
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
+local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+
 local FishingRodItem = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
 
 -- UI FUNCTIONS
-function PlayerInventory:createInventoryUI(player)
-    local playerGUI = player:WaitForChild("PlayerGui")
+function PlayerInventory:createInventoryUI()
+    local playerGUI = self.player:WaitForChild("PlayerGui")
     if not playerGUI then 
         warn("[PlayerInventory]: No playerGUI found")
         return nil
@@ -31,11 +33,11 @@ function PlayerInventory:createInventoryUI(player)
     self.inventoryUI = ui
     return ui
 end
-function PlayerInventory:createGlobalUI(player)
+function PlayerInventory:createGlobalUI()
     local baitUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("FishingBaitUI"):Clone()
-    baitUI.Parent = player.Character.Head
+    baitUI.Parent = self.player.Character.Head
     local powerCategoryUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("PowerCategoryUI"):Clone()
-    powerCategoryUI.Parent = player.Character.Head
+    powerCategoryUI.Parent = self.player.Character.Head
     self.globalUI = {
         baitUI = baitUI,
         powerCategoryUI = powerCategoryUI
@@ -102,10 +104,26 @@ function PlayerInventory:showPowerCategoryUI(power)
         self.powerCategHideTween = nil
 	end)
 end
+function PlayerInventory:updateHotBarSelected(toolName)
+    if not self.inventoryUI then return end
+    local hotbarSlot = self.inventoryUI:FindFirstChild("InventoryFrame"):FindFirstChild(toolName)
+    if not hotbarSlot then return end
+    local selectedFrame = hotbarSlot:FindFirstChild("SelectedFrame")
+    if not selectedFrame then return end
+    selectedFrame.Visible = not selectedFrame.Visible
+    hotbarSlot.BackgroundTransparency = selectedFrame.Visible and 1 or 0.5
+end
 
 -- INTERACTION FUNCTIONS
-function PlayerInventory:toggleRod(player)
-    print("toggleRod", player.Name, "self.player", self.player.Name)
+function PlayerInventory:toggleRod()
+    self:equipTool("FishingRod")
+    self:updateHotBarSelected("FishingRod")
+end
+function PlayerInventory:toggleInventory()
+    self.inventoryUI:WaitForChild("TabContainer").Visible = not self.inventoryUI:WaitForChild("TabContainer").Visible
+end
+function PlayerInventory:setUnequippedReady(bool)
+    self.onUnequippedReady = bool
 end
 
 
@@ -139,15 +157,36 @@ end
 function PlayerInventory:equipTool(toolName)
     self:refreshTools()
     local tool = self.toolFolder:FindFirstChild(toolName)
-    if not tool then return end
+    if self.player.Character:FindFirstChildWhichIsA("Tool") then
+        ToolEvent:FireClient(self.player, "onUnequipped")
+        task.spawn(function()
+            while self.onUnequippedReady ~= true do
+                task.wait()
+            end
+            self.player.Character.Humanoid:UnequipTools()
+            task.wait()
+            self.player.Character.Humanoid:EquipTool(tool)
+            while not self.player.Character:FindFirstChildWhichIsA("Tool") do
+                task.wait()
+            end
+            ToolEvent:FireClient(self.player, "onEquipped")
+            self:setUnequippedReady(false)
+        end)
+        return
+    end
+    task.wait()
     self.player.Character.Humanoid:UnequipTools()
     task.wait()
     self.player.Character.Humanoid:EquipTool(tool)
+    while not self.player.Character:FindFirstChildWhichIsA("Tool") do
+        task.wait()
+    end
+    ToolEvent:FireClient(self.player, "onEquipped")
 end
 
 
 -- MAIN FUNCTIONS
-function PlayerInventory:setupEventListener(player)
+function PlayerInventory:setupEventListener()
     local inventoryUI
     repeat
         inventoryUI = self.inventoryUI
@@ -169,11 +208,11 @@ function PlayerInventory:setupEventListener(player)
 		backpackTooltip.Visible = false
 	end)
 	self.backpackBtnClickConnection = backpackBtn.MouseButton1Click:Connect(function()
-        tabContainer.Visible = not tabContainer.Visible
+        self:toggleInventory()
 	end)
 
     self.fishingRodBtnClickConnection = fishingRodBtn.MouseButton1Click:Connect(function()
-        self:toggleRod(player)
+        self:toggleRod()
     end)
 
     -- INVENTORY TABS
@@ -185,8 +224,6 @@ function PlayerInventory:setupEventListener(player)
     self.rodTabBtnClickConnection = rodTabBtn.MouseButton1Click:Connect(function()
         pageLayout:JumpTo(rodPageFrame)
     end)
-
-    
 end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
@@ -194,9 +231,9 @@ function PlayerInventory:new(player)
     self.inventoryUI = nil
     self.globalUI = nil
 
-    self:createInventoryUI(player)
-    self:createGlobalUI(player)
-    self:setupEventListener(player)
+    self:createInventoryUI()
+    self:createGlobalUI()
+    self:setupEventListener()
 
     self:createBackpack()
     return self

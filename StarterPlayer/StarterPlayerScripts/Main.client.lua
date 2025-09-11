@@ -1,11 +1,11 @@
 -- Main.lua
+game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
-local GlobalManager = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("GlobalManager"))
 local toolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 
 local function setupPlayerAttributes()
@@ -16,7 +16,7 @@ local function main()
 	UserInputService.InputBegan:Connect(function(input, gp)
 		if gp then return end
 		if input.KeyCode == Enum.KeyCode.E then
-			toolEvent:FireServer("toggle")
+			toolEvent:FireServer("toggleInventory")
 		elseif input.KeyCode == Enum.KeyCode.One then
 			toolEvent:FireServer("toggleRod")
 		end

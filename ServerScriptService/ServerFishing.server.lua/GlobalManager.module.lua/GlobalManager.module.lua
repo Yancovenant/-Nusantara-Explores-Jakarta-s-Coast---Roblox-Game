@@ -101,7 +101,6 @@ end
 
 -- GLOBAL INSTANCES
 function GlobalManager:cleanBobber(player)
-    print("[CleanBobber] Called", PlayerData, PlayerData[player])
     if PlayerData[player].bobConn then PlayerData[player].bobConn:Disconnect() PlayerData[player].bobConn = nil end
     if PlayerData[player].bobberTween then PlayerData[player].bobberTween:Cancel() PlayerData[player].bobberTween = nil end
     if PlayerData[player].bobber then PlayerData[player].bobber:Destroy() PlayerData[player].bobber = nil end
@@ -213,7 +212,15 @@ function GlobalManager:catchResultSuccess(player, params)
     self:cleanBobber(player)
     CatchTweenFinishEvent:FireClient(player)
 end
-
+function GlobalManager:toggleRod(player)
+    InventoryModules[player]:toggleRod()
+end
+function GlobalManager:toggleInventory(player)
+    InventoryModules[player]:toggleInventory()
+end
+function GlobalManager:setUnequippedReady(player, bool)
+    InventoryModules[player]:setUnequippedReady(bool)
+end
 
 -- CONNECT EVENTS
 function GlobalManager:playerAdded(player)
@@ -228,7 +235,6 @@ function GlobalManager:playerAdded(player)
     if InventoryModules[player] == nil then
         InventoryModules[player] = InventoryModule:new(player)
     end
-    print("[GlobalManager]: playerAdded", player.Name, InventoryModules[player])
 end
 function GlobalManager:playerRemoved(player)
     if PlayerData[player] then

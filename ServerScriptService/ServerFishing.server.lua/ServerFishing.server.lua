@@ -12,6 +12,7 @@ local BiteEvent = Remotes:WaitForChild("FishingEvents"):WaitForChild("Bite")
 local CatchResult = Remotes:WaitForChild("FishingEvents"):WaitForChild("CatchResult")
 local ReelComplete = Remotes:WaitForChild("FishingEvents"):WaitForChild("ReelComplete")
 local GlobalFishingUI = Remotes:WaitForChild("FishingEvents"):WaitForChild("GlobalFishingUI")
+local ToolEvent = Remotes:WaitForChild("Inventory"):WaitForChild("Tool")
 
 local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
 
@@ -138,6 +139,9 @@ end)
 
 -- GLOBAL MANAGER
 GlobalFishingUI.OnServerEvent:Connect(function(player, method, params)
+    GlobalFishingManager[method](GlobalFishingManager, player, params)
+end)
+ToolEvent.OnServerEvent:Connect(function(player, method, params)
     GlobalFishingManager[method](GlobalFishingManager, player, params)
 end)
 

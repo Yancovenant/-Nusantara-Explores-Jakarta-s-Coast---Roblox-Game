@@ -46,6 +46,8 @@ local CatchResult = FishingRemotes:WaitForChild("CatchResult")
 local GlobalFishingUI = FishingRemotes:WaitForChild("GlobalFishingUI")
 local CatchTweenFinish = FishingRemotes:WaitForChild("CatchTweenFinish")
 
+local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+
 -- config
 local isAFK = false
 local afkConnection
@@ -96,13 +98,9 @@ function fishingManager:cleanupConnections()
         self.fishingInputEndedConnection:Disconnect()
         self.fishingInputEndedConnection = nil
     end
-    if self.equippedConnection then
-        self.equippedConnection:Disconnect()
-        self.equippedConnection = nil
-    end
-    if self.unequippedConnection then
-        self.unequippedConnection:Disconnect()
-        self.unequippedConnection = nil
+	if self.toolConnection then
+        self.toolConnection:Disconnect()
+        self.toolConnection = nil
     end
     if self.castApprovedConnection then
         self.castApprovedConnection:Disconnect()
@@ -301,12 +299,16 @@ function fishingManager:toggleAfk()
 end
 
 function fishingManager:onUnequipped()
+	print("[FishingRod]: Unequipped")
     self:cleanupConnections()
 	self:cleanUp()
 	setAttr("canFish", false)
 	LocalFishingUI.autoFishButton.Visible = false
+	self.ready = false
+	ToolEvent:FireServer("setUnequippedReady", true)
 end
 function fishingManager:onEquipped()
+	print("[FishingRod]: Equipped")
     self:cleanupConnections()
 	self:cleanUp()
 	setAttr("canFish", true)
@@ -329,6 +331,7 @@ function fishingManager:onEquipped()
 			self:releaseCast()
 		end
 	end)
+	self:setupEventListener()
 end
 
 -- EVENTS FUNCTIONS
@@ -386,11 +389,11 @@ end
 
 -- MAIN FUNCTIONS
 function fishingManager:setupEventListener()
-	self.equippedConnection = fishingRod.Equipped:Connect(function()
-		self:onEquipped()
-	end)
-	self.unequippedConnection = fishingRod.Unequipped:Connect(function()
-		self:onUnequipped()
+	self.toolConnection = ToolEvent.OnClientEvent:Connect(function(method, params)
+		while not self.ready do
+			task.wait()
+		end
+		self[method](self, params)
 	end)
 	self.castApprovedConnection = CastApproved.OnClientEvent:Connect(function(success, result)
 		self:onCastApproved(success, result)
@@ -408,7 +411,10 @@ end
 
 function fishingManager:main()
 	print("[FishingRod]: Now running")
+	self:cleanupConnections()
+	-- self:cleanUp()
 	LocalFishingUI:createFishingUI(player)
 	self:setupEventListener()
+	self.ready = true
 end
 fishingManager:main()
