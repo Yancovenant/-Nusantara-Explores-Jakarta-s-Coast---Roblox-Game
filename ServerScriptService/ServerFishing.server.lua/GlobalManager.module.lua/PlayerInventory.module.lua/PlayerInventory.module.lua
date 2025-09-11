@@ -341,6 +341,9 @@ end
 
 
 -- MAIN FUNCTIONS
+function PlayerInventory:catchResultSuccess(info)
+    print("[PlayerInventory]: catch result success", info)
+end
 function PlayerInventory:setupEventListener()
     local inventoryUI
     repeat

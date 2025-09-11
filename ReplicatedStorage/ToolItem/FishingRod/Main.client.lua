@@ -91,6 +91,9 @@ function LocalFishingUI:getRarityColor(rarity, transparency)
 	return colors[rarity] or colors.Common
 end
 
+function LocalFishingUI:showPopup(message)
+	print("[LocalFishingUI]: showing popup", message)
+end
 function LocalFishingUI:showFishPopup(fishInfo)
 	self.popupFish.ImageLabel.Image = fishInfo.icon
 	self.popupFish.FishInfo.TextColor3 = self:getRarityColor(fishInfo.rarity)
@@ -439,6 +442,7 @@ function fishingManager:onCastApproved(success, result)
         setAttr("isFishing", true)
         GlobalFishingUI:FireServer("playSound", "SplashSound")
     else
+		LocalFishingUI:showPopup(result)
         GlobalFishingUI:FireServer("cleanSounds")
         GlobalFishingUI:FireServer("playSound", "ErrorSound")
         self:cleanBobber()

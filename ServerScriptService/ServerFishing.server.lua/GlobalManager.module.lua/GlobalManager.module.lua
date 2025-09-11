@@ -205,9 +205,7 @@ function GlobalManager:catchResultSuccess(player, params)
     fishFollowConnection:Disconnect()
     self:createFishSlungTween(player, fish)
 
-    -- todo add inv here
-
-    --
+    InventoryModules[player]:catchResultSuccess(info)
 
     self:cleanBobber(player)
     CatchTweenFinishEvent:FireClient(player)

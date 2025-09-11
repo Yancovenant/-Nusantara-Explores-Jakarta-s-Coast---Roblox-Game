@@ -118,21 +118,19 @@ ReelComplete.OnServerEvent:Connect(function(player, success)
 
 		CatchResult:FireClient(player, {
 			success = true,
-			-- name = fishData.fishName,
 			rarity = fishData.rarity,
 			chance = fishData.baseChance,
 			icon = fishData.icon,
 			fishName = fishName,
 			fishData = fishData,
 			weight = weight,
-			-- reward = reward
 		})
 
-		if pData.totalCatch ~= nil then
-			pData.totalCatch.Value = pData.totalCatch.Value + 1
-		end
+		-- if pData.totalCatch ~= nil then
+		-- 	pData.totalCatch.Value = pData.totalCatch.Value + 1
+		-- end
 
-		DataStorage:addFish(player, fishData.id, weight)
+		-- DataStorage:addFish(player, fishData.id, weight)
 	else
 		CatchResult:FireClient(player, {success = false})
 	end
