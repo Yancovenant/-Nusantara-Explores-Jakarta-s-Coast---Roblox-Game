@@ -118,9 +118,6 @@ ReelComplete.OnServerEvent:Connect(function(player, success)
 
 		CatchResult:FireClient(player, {
 			success = true,
-			rarity = fishData.rarity,
-			chance = fishData.baseChance,
-			icon = fishData.icon,
 			fishName = fishName,
 			fishData = fishData,
 			weight = weight,

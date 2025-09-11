@@ -94,11 +94,11 @@ end
 function LocalFishingUI:showPopup(message)
 	print("[LocalFishingUI]: showing popup", message)
 end
-function LocalFishingUI:showFishPopup(fishInfo)
-	self.popupFish.ImageLabel.Image = fishInfo.icon
-	self.popupFish.FishInfo.TextColor3 = self:getRarityColor(fishInfo.rarity)
-	self.popupFish.FishInfo.Text = fishInfo.fishName .. " (" .. formatWeight(fishInfo.weight) .. ")"
-	self.popupFish.Chance.Text = formatChance(fishInfo.chance)
+function LocalFishingUI:showFishPopup(info)
+	self.popupFish.ImageLabel.Image = info.fishData.icon
+	self.popupFish.FishInfo.TextColor3 = self:getRarityColor(info.fishData.rarity)
+	self.popupFish.FishInfo.Text = info.fishName .. " (" .. formatWeight(info.weight) .. ")"
+	self.popupFish.Chance.Text = formatChance(info.fishData.chance)
 
 	self.popupFish.Visible = true
 	self.fishPopupTween = TweenService:Create(
@@ -478,7 +478,7 @@ function fishingManager:onCatchResult(info)
             GlobalFishingUI:FireServer("catchResultSuccess", {info, fishingRod})
             LocalFishingUI:showFishPopup(info)
         else
-            LocalFishingUI:showPopup("Fish not caught", 2.5)
+            LocalFishingUI:showPopup("Fish not caught")
         end
     end)
 end
