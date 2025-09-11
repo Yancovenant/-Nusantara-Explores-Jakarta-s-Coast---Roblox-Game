@@ -135,60 +135,37 @@ ReelComplete.OnServerEvent:Connect(function(player, success)
 end)
 
 -- GLOBAL MANAGER
+local GLOBALFISHING_ALLOWED_METHODS = {
+	"showBitUI",
+	"showPowerCategoryUI",
+	"playSound",
+	"cleanSounds",
+	"catchResultSuccess",
+	"cleanBobber",
+	"createBobber",
+	
+	"setUnequippedReady",
+	"setEquippedReady",
+	"toggleInventory",
+	"toggleRod"
+}
 GlobalFishingUI.OnServerEvent:Connect(function(player, method, params)
+	if not table.find(GLOBALFISHING_ALLOWED_METHODS, method) then
+		warn("[GlobalFishingUI] Invalid method: " .. method)
+		return
+	end
     GlobalFishingManager[method](GlobalFishingManager, player, params)
 end)
 ToolEvent.OnServerEvent:Connect(function(player, method, params)
+	if not table.find(GLOBALFISHING_ALLOWED_METHODS, method) then
+		warn("[ToolEvent] Invalid method: " .. method)
+		return
+	end
     GlobalFishingManager[method](GlobalFishingManager, player, params)
 end)
 
+
 Players.PlayerAdded:Connect(function(player)
-	-- if not player:FindFirstChild("leaderstats") then
-	-- 	local folder = Instance.new("Folder")
-	-- 	folder.Name = "leaderstats"
-	-- 	folder.Parent = player
-
-	-- 	local pData = playerData[player]
-	-- 	if pData == nil then
-	-- 		pData = {
-	-- 			money = 0,
-	-- 			totalCatch = 0,
-	-- 			rarestCatch = 0,
-	-- 		}
-	-- 	end
-	-- 	local money, totalCatch, rarestCatch
-
-	-- 	DataStorage:onDataReady(player, function(player, data)
-	-- 		money = Instance.new("IntValue")
-	-- 		money.Name = "Money"
-	-- 		money.Value = data.money
-	-- 		money.Parent = folder
-	-- 		pData.money = money
-
-	-- 		totalCatch = Instance.new("IntValue")
-	-- 		totalCatch.Name = "Caught"
-	-- 		totalCatch.Value = data.totalCatch
-	-- 		totalCatch.Parent = folder
-	-- 		pData.totalCatch = totalCatch
-
-	-- 		rarestCatch = Instance.new("IntValue")
-	-- 		rarestCatch.Name = "Rarest Caught"
-	-- 		rarestCatch.Value = data.rarestCatch
-	-- 		rarestCatch.Parent = folder
-	-- 		pData.rarestCatch = rarestCatch
-
-	-- 		pData.totalCatch:GetPropertyChangedSignal("Value"):Connect(function()
-	-- 			DataStorage:updateTotalCatch(player, pData.totalCatch.Value)
-	-- 		end)
-	-- 		pData.money:GetPropertyChangedSignal("Value"):Connect(function()
-	-- 			DataStorage:updateMoney(player, pData.money.Value)
-	-- 		end)
-	-- 		pData.rarestCatch:GetPropertyChangedSignal("Value"):Connect(function()
-	-- 			DataStorage:updateRarestCatch(player, pData.rarestCatch.Value)
-	-- 		end)
-	-- 	end)
-	-- 	playerData[player] = pData
-	-- end
     GlobalFishingManager:playerAdded(player)
 end)
 
@@ -201,6 +178,7 @@ end)
 game:BindToClose(function()
     state = {}
     playerData = {}
+    GlobalFishingManager:onShutdown()
 end)
 
 

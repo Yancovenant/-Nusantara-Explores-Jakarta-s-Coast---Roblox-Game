@@ -169,8 +169,12 @@ end
 function GlobalManager:cleanSounds(player)
     print("cleanSounds", player.Name)
 end
-function GlobalManager:playSound(player, sound)
-    print("playSound", player.Name, sound)
+function GlobalManager:playSound(player, params)
+    local sound = params[1]
+    local tool = params[2]
+    if tool then
+        tool:WaitForChild("Sounds"):FindFirstChild(sound):Play()
+    end
 end
 
 
@@ -245,5 +249,11 @@ function GlobalManager:playerRemoved(player)
         InventoryModules[player] = nil
     end
 end
+function GlobalManager:onShutdown(player)
+    if InventoryModules[player] then
+        InventoryModules[player]:saveData()
+    end
+end
+
 
 return GlobalManager

@@ -62,50 +62,50 @@ local releaseCastSound = script.Parent.ReleaseCast
 local chimeSound = script.Parent.Chime
 local errorSound = script.Parent.Error
 
-function fishingManager:setFishingWalkSpeed(enabled)
-	local humanoid = player.Character:FindFirstChild("Humanoid")
-	if not humanoid then return end
-	if enabled then
-		humanoid.WalkSpeed = FISHING_WALK_SPEED
-	else
-		humanoid.WalkSpeed = ORIGINAL_WALK_SPEED
-	end
-end
-function fishingManager:loadAnimation(animID)
-	local humanoid = player.Character:FindFirstChild("Humanoid")
-	if not humanoid then return end
-	local animator = humanoid:FindFirstChildOfClass("Animator")
-	if not animator then return end
-	local anim = Instance.new("Animation")
-	anim.AnimationId = animID
-	local success, track = pcall(function()
-		return animator:LoadAnimation(anim)
-	end)
-	if not success or not track then return end
-	track.Priority = Enum.AnimationPriority.Action
-	return track
-end
-function fishingManager:cleanAnimations()
-	local humanoid = player.Character:FindFirstChild("Humanoid")
-	if not humanoid then return end
-	local animator = humanoid:FindFirstChildOfClass("Animator")
-	if not animator then return end
-	local tracks = animator:GetPlayingAnimationTracks()
-	for _, track in tracks do
-		for _, id in {
-			STARTCAST_ANIMATION_ID,
-			RELEASECAST_ANIMATION_ID,
-			IDLE_FISHING_ANIMATION_ID,
-			REELING_ANIMATION_ID,
-			CATCH_ANIMATION_ID
-			} do
-			if track.Animation.AnimationId == id then
-				track:Stop()
-				break
-			end
-		end
-	end
-end
+-- function fishingManager:setFishingWalkSpeed(enabled)
+-- 	local humanoid = player.Character:FindFirstChild("Humanoid")
+-- 	if not humanoid then return end
+-- 	if enabled then
+-- 		humanoid.WalkSpeed = FISHING_WALK_SPEED
+-- 	else
+-- 		humanoid.WalkSpeed = ORIGINAL_WALK_SPEED
+-- 	end
+-- end
+-- function fishingManager:loadAnimation(animID)
+-- 	local humanoid = player.Character:FindFirstChild("Humanoid")
+-- 	if not humanoid then return end
+-- 	local animator = humanoid:FindFirstChildOfClass("Animator")
+-- 	if not animator then return end
+-- 	local anim = Instance.new("Animation")
+-- 	anim.AnimationId = animID
+-- 	local success, track = pcall(function()
+-- 		return animator:LoadAnimation(anim)
+-- 	end)
+-- 	if not success or not track then return end
+-- 	track.Priority = Enum.AnimationPriority.Action
+-- 	return track
+-- end
+-- function fishingManager:cleanAnimations()
+-- 	local humanoid = player.Character:FindFirstChild("Humanoid")
+-- 	if not humanoid then return end
+-- 	local animator = humanoid:FindFirstChildOfClass("Animator")
+-- 	if not animator then return end
+-- 	local tracks = animator:GetPlayingAnimationTracks()
+-- 	for _, track in tracks do
+-- 		for _, id in {
+-- 			STARTCAST_ANIMATION_ID,
+-- 			RELEASECAST_ANIMATION_ID,
+-- 			IDLE_FISHING_ANIMATION_ID,
+-- 			REELING_ANIMATION_ID,
+-- 			CATCH_ANIMATION_ID
+-- 			} do
+-- 			if track.Animation.AnimationId == id then
+-- 				track:Stop()
+-- 				break
+-- 			end
+-- 		end
+-- 	end
+-- end
 function fishingManager:releaseCast()
 	if isFishing() or not canFish() then return end
 	if not isCasting() then return end

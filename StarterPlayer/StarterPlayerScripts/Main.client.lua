@@ -9,7 +9,7 @@ local player = Players.LocalPlayer
 local toolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 
 local function setupPlayerAttributes()
-	player.CameraMaxZoomDistance = 16
+	player.CameraMaxZoomDistance = 24
 end
 
 local function setupEventListener()

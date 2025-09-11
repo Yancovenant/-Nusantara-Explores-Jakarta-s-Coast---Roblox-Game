@@ -47,7 +47,7 @@ local function migrateFishData(data)
         data.fishInventory = {}
         for fishId, weights in pairs(data.fishWeights) do
             if type(weights) == "table" then
-                data.fishInventory[fishId] = weights
+                data.fishInventory[tostring(fishId)] = weights
             end
         end
         data.fishCounts = nil
@@ -83,6 +83,21 @@ local function validateData(data)
 	end
 	return validated
 end
+local function normalizeData(data)
+    local normalized = {}
+    for k, v in pairs(data) do
+        normalized[k] = v
+    end
+    for k, v in pairs(normalized) do
+        if k == "fishInventory" and type(v) == "table" then
+            normalized[k] = {}
+            for fishId, weights in pairs(v) do
+                normalized[k][tostring(fishId)] = weights
+            end
+        end
+    end
+    return normalized
+end
 function loadData(player)
     local success, data
     repeat
@@ -105,10 +120,18 @@ function loadData(player)
 end
 function saveData(player, data)
     local success, ret
+    local normalizedData = normalizeData(data)
+    print("[DataStorage]: Saving data for", player.Name, normalizedData)
     repeat
+        print("[DataStorage]: Waiting for request budget")
         waitForRequestBudget(Enum.DataStoreRequestType.SetIncrementAsync)
         success, ret = pcall(pDB.UpdateAsync, pDB, key(player), function(oldData)
-            return data
+            if oldData then
+                if oldData.totalCatch > normalizedData.totalCatch then
+                    return oldData
+                end
+            end
+            return normalizedData
         end)
     until success
 end
@@ -118,6 +141,9 @@ function DataStorage:loadPlayerData(player)
     local data = loadData(player)
     local validatedData = validateData(data)
     return validatedData
+end
+function DataStorage:savePlayerData(player, data)
+    saveData(player, data)
 end
 
 return DataStorage

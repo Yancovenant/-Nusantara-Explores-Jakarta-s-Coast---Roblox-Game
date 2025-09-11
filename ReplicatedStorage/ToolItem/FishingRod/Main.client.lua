@@ -98,7 +98,7 @@ function LocalFishingUI:showFishPopup(info)
 	self.popupFish.ImageLabel.Image = info.fishData.icon
 	self.popupFish.FishInfo.TextColor3 = self:getRarityColor(info.fishData.rarity)
 	self.popupFish.FishInfo.Text = info.fishName .. " (" .. formatWeight(info.weight) .. ")"
-	self.popupFish.Chance.Text = formatChance(info.fishData.chance)
+	self.popupFish.Chance.Text = formatChance(info.fishData.baseChance)
 
 	self.popupFish.Visible = true
 	self.fishPopupTween = TweenService:Create(
@@ -324,7 +324,7 @@ function fishingManager:releaseCast()
 	local connection
 	connection = releaseCastTrack:GetMarkerReachedSignal("ReleasePoint"):Connect(function(keyframe)
 		connection:Disconnect()
-		GlobalFishingUI:FireServer("playSound", "ReleaseCastSound")
+		GlobalFishingUI:FireServer("playSound", {"ReleaseCast", fishingRod})
 		local char = player.Character
 		local rootPart = char:FindFirstChild("HumanoidRootPart")
 		local charCFrame = rootPart.CFrame
@@ -440,11 +440,11 @@ end
 function fishingManager:onCastApproved(success, result)
     if success then
         setAttr("isFishing", true)
-        GlobalFishingUI:FireServer("playSound", "SplashSound")
+        GlobalFishingUI:FireServer("playSound", {"Splash", fishingRod})
     else
 		LocalFishingUI:showPopup(result)
         GlobalFishingUI:FireServer("cleanSounds")
-        GlobalFishingUI:FireServer("playSound", "ErrorSound")
+        GlobalFishingUI:FireServer("playSound", {"Error", fishingRod})
         self:cleanBobber()
         self:cleanAnimations()
         self:setFishingWalkSpeed(false)
@@ -454,11 +454,11 @@ end
 
 function fishingManager:onBite()
     GlobalFishingUI:FireServer("showBitUI", true)
-    GlobalFishingUI:FireServer("playSound", "ChimeSound")
+    GlobalFishingUI:FireServer("playSound", {"Chime", fishingRod})
     local reelingAnimationTrack = self:loadAnimation(ReelingAnimation)
     reelingAnimationTrack:Play()
     reelingAnimationTrack:AdjustSpeed(1)
-    GlobalFishingUI:FireServer("playSound", "ReelSound")
+    GlobalFishingUI:FireServer("playSound", {"Reel", fishingRod})
     task.wait(0.8)
     GlobalFishingUI:FireServer("showBitUI", false)
     ReelComplete:FireServer(true)
@@ -472,8 +472,8 @@ function fishingManager:onCatchResult(info)
     local connection
     connection = catchAnimationTrack:GetMarkerReachedSignal("CatchPoint"):Connect(function()
         connection:Disconnect()
-        GlobalFishingUI:FireServer("playSound", "SplashSound")
-        GlobalFishingUI:FireServer("playSound", "StartCastSound")
+        GlobalFishingUI:FireServer("playSound", {"Splash", fishingRod})
+        GlobalFishingUI:FireServer("playSound", {"StartCast", fishingRod})
         if info.success then
             GlobalFishingUI:FireServer("catchResultSuccess", {info, fishingRod})
             LocalFishingUI:showFishPopup(info)

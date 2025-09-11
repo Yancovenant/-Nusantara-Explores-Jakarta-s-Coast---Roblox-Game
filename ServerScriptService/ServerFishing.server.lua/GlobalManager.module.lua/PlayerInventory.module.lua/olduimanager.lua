@@ -121,38 +121,38 @@ end
 -- 	}
 -- 	return colors[rarity] or colors.Common
 -- end
-local RARITY_ORDER = {
-	["Classified"] = 7,
-	["Mythical"] = 6,
-	["Legendary"] = 5,
-	["Epic"] = 4,
-	["Rare"] = 3,
-	["Uncommon"] = 2,
-	["Common"] = 1
-}
+-- local RARITY_ORDER = {
+-- 	["Classified"] = 7,
+-- 	["Mythical"] = 6,
+-- 	["Legendary"] = 5,
+-- 	["Epic"] = 4,
+-- 	["Rare"] = 3,
+-- 	["Uncommon"] = 2,
+-- 	["Common"] = 1
+-- }
 function InventoryUIManager:sortFishInventory(fishTab)
-	local fishList = {}
-	for _, fish in pairs(fishTab:GetChildren()) do
-		if fish.Name ~= "TemplateFish" and fish:FindFirstChild("FishData") then
-			table.insert(fishList, fish)
-		end
-	end
-	table.sort(fishList, function(a, b)
-		local aData = a:FindFirstChild("FishData")
-		local bData = b:FindFirstChild("FishData")
-		if not aData or not bData then return end
-		local rarityA = aData.Value:split("|")[2]
-		local rarityB = bData.Value:split("|")[2]
-		if rarityA ~= rarityB then
-			return RARITY_ORDER[rarityA] > RARITY_ORDER[rarityB]
-		end
-		local idA = tonumber(aData.Value:split("|")[4])
-		local idB = tonumber(bData.Value:split("|")[4])
-		return idA > idB
-	end)
-	for i, fish in ipairs(fishList) do
-		fish.LayoutOrder = i
-	end
+	-- local fishList = {}
+	-- for _, fish in pairs(fishTab:GetChildren()) do
+	-- 	if fish.Name ~= "TemplateFish" and fish:FindFirstChild("FishData") then
+	-- 		table.insert(fishList, fish)
+	-- 	end
+	-- end
+	-- table.sort(fishList, function(a, b)
+	-- 	local aData = a:FindFirstChild("FishData")
+	-- 	local bData = b:FindFirstChild("FishData")
+	-- 	if not aData or not bData then return end
+	-- 	local rarityA = aData.Value:split("|")[2]
+	-- 	local rarityB = bData.Value:split("|")[2]
+	-- 	if rarityA ~= rarityB then
+	-- 		return RARITY_ORDER[rarityA] > RARITY_ORDER[rarityB]
+	-- 	end
+	-- 	local idA = tonumber(aData.Value:split("|")[4])
+	-- 	local idB = tonumber(bData.Value:split("|")[4])
+	-- 	return idA > idB
+	-- end)
+	-- for i, fish in ipairs(fishList) do
+	-- 	fish.LayoutOrder = i
+	-- end
 end
 function InventoryUIManager:addFishToInventory(player, fishData)
 	-- local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
@@ -318,44 +318,44 @@ end
 -- 	powerCategoryUI.Parent = player.Character.Head
 -- end
 
-function UIManager:populateFishInventory(player, data)
-	local fishDB = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Item"):WaitForChild("FishingRod"):WaitForChild("FishDB"))
-	task.spawn(function()
-		for id, count in pairs(data.fishCounts) do
-			local fishName, fishData = fishDB:findFish(id)
-			if fishData then
-				for i = 1, count do
-					local data = {
-						id = fishData.id,
-						name = fishName,
-						rarity = fishData.rarity,
-						weight = data.fishWeights[id][i],
-						icon = fishData.icon
-					}
-					InventoryUIManager:addFishToInventory(player, data)
-				end
-			end
-		end
-	end)
-end
-function UIManager:setupPlayer(player)
-	self:createFishingUI(player)
-	self:createFishingEffectUI(player)
-	InventoryUIManager:createInventoryUI(player)
-	InventoryUIManager:setupEventListener(player)
-	if not game:GetService("RunService"):IsServer() then
-		warn("skipping data setup on client")
-		return
-	end
-	local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
-	DataStorage:onDataReady(player, function(player, data)
-		self:populateFishInventory(player, data)
-	end)
-end
+-- function UIManager:populateFishInventory(player, data)
+-- 	local fishDB = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Item"):WaitForChild("FishingRod"):WaitForChild("FishDB"))
+-- 	task.spawn(function()
+-- 		for id, count in pairs(data.fishCounts) do
+-- 			local fishName, fishData = fishDB:findFish(id)
+-- 			if fishData then
+-- 				for i = 1, count do
+-- 					local data = {
+-- 						id = fishData.id,
+-- 						name = fishName,
+-- 						rarity = fishData.rarity,
+-- 						weight = data.fishWeights[id][i],
+-- 						icon = fishData.icon
+-- 					}
+-- 					InventoryUIManager:addFishToInventory(player, data)
+-- 				end
+-- 			end
+-- 		end
+-- 	end)
+-- end
+-- function UIManager:setupPlayer(player)
+-- 	self:createFishingUI(player)
+-- 	self:createFishingEffectUI(player)
+-- 	InventoryUIManager:createInventoryUI(player)
+-- 	InventoryUIManager:setupEventListener(player)
+-- 	if not game:GetService("RunService"):IsServer() then
+-- 		warn("skipping data setup on client")
+-- 		return
+-- 	end
+-- 	local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
+-- 	DataStorage:onDataReady(player, function(player, data)
+-- 		self:populateFishInventory(player, data)
+-- 	end)
+-- end
 
-function UIManager:init()
-	print("init UIManager")
-end
+-- function UIManager:init()
+-- 	print("init UIManager")
+-- end
 
 
 UIManager.Inv = InventoryUIManager

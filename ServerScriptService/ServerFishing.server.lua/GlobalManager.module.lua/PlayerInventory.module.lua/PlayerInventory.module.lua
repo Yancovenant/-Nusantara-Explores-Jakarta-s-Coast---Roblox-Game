@@ -16,6 +16,7 @@ local RARITY_ORDER = {
 	["Uncommon"] = 2,
 	["Common"] = 1
 }
+local AUTOSAVE_INTERVAL = 120 -- 2 minutes
 
 local PlayerInventory = {}
 PlayerInventory.__index = PlayerInventory
@@ -249,7 +250,7 @@ function PlayerInventory:equipTool(toolName)
             self.player.Character.Humanoid:UnequipTools()
             task.wait()
             self.player.Character.Humanoid:EquipTool(tool)
-            while not self.player.Character:FindFirstChildWhichIsA("Tool") do
+            while self.player and self.player.Character and not self.player.Character:FindFirstChildWhichIsA("Tool") do
                 task.wait()
             end
             ToolEvent:FireClient(self.player, "onEquipped")
@@ -337,12 +338,36 @@ function PlayerInventory:populateData()
         end
     end
     self:sortFishInventory()
+    self._autoSaveRunning = true
+    task.spawn(function()
+        while self._autoSaveRunning do
+            task.wait(AUTOSAVE_INTERVAL)
+            if not self._autoSaveRunning then break end
+            self:saveData()
+        end
+    end)
 end
 
 
 -- MAIN FUNCTIONS
 function PlayerInventory:catchResultSuccess(info)
-    print("[PlayerInventory]: catch result success", info)
+    self:addFishToInventory({
+        id = info.fishData.id,
+        weight = info.weight,
+    }, true)
+    if self.data.fishInventory[tostring(info.fishData.id)] == nil then
+        self.data.fishInventory[tostring(info.fishData.id)] = {}
+    end
+    table.insert(
+        self.data.fishInventory[tostring(info.fishData.id)],
+        info.weight
+    )
+    self.totalCatch.Value = self.totalCatch.Value + 1
+    self.data.totalCatch = self.totalCatch.Value
+    if self.rarestCatch.Value < info.fishData.baseChance then
+        self.rarestCatch.Value = info.fishData.baseChance
+        self.data.rarestCatch = self.rarestCatch.Value
+    end
 end
 function PlayerInventory:setupEventListener()
     local inventoryUI
@@ -352,12 +377,6 @@ function PlayerInventory:setupEventListener()
     local backpackBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("Backpack")
     local backpackTooltip = backpackBtn:WaitForChild("Tooltip")
     local fishingRodBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
-    local tabContainer = inventoryUI:WaitForChild("TabContainer")
-    local fishTabBtn = tabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
-    local rodTabBtn = tabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
-    local pageContainer = tabContainer:WaitForChild("ContentArea")
-    local fishPageFrame = pageContainer:WaitForChild("Fish")
-    local rodPageFrame = pageContainer:WaitForChild("Rod")
     
     self.backpackBtnEnterConnection = backpackBtn.MouseEnter:Connect(function()
 		backpackTooltip.Visible = true
@@ -391,7 +410,11 @@ end
 
 
 -- CONNECT EVENTS
+function PlayerInventory:saveData()
+    DataStorage:savePlayerData(self.player, self.data)
+end
 function PlayerInventory:cleanUp()
+    self:saveData()
     if self.inventoryUI then
         self.inventoryUI:Destroy()
         self.inventoryUI = nil
@@ -445,7 +468,7 @@ function PlayerInventory:cleanUp()
         self.backpack:Destroy()
         self.backpack = nil
     end
-    -- should save storage here
+    self._autoSaveRunning = false
     self.player = nil
 end
 
