@@ -181,18 +181,18 @@ function InventoryUIManager:addFishToInventory(player, fishData)
 		template.BackgroundColor3 = self:getRarityColor(fishData.rarity)
 	end)
 
-	-- Store fish data
-	local fishDataValue = Instance.new("StringValue")
-	fishDataValue.Name = "FishData"
-	fishDataValue.Value = string.format("%s|%s|%.1f|%d", 
-		fishData.name or "Fish", 
-		fishData.rarity or "Common", 
-		fishData.weight or 0, 
-		fishData.id or 0)
-	fishDataValue.Parent = template
-	task.spawn(function()
-		self:sortFishInventory(fishTab)
-	end)
+	-- -- Store fish data
+	-- local fishDataValue = Instance.new("StringValue")
+	-- fishDataValue.Name = "FishData"
+	-- fishDataValue.Value = string.format("%s|%s|%.1f|%d", 
+	-- 	fishData.name or "Fish", 
+	-- 	fishData.rarity or "Common", 
+	-- 	fishData.weight or 0, 
+	-- 	fishData.id or 0)
+	-- fishDataValue.Parent = template
+	-- task.spawn(function()
+	-- 	self:sortFishInventory(fishTab)
+	-- end)
 end
 
 -- function InventoryUIManager:toggleTab(name, container)

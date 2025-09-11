@@ -7,6 +7,15 @@ local POWER_CATEGORIES = {
 	{min = 71, max = 90, name = "Regular", color = Color3.fromRGB(100, 255, 100)}, -- Green
 	{min = 91, max = 100, name = "Professional", color = Color3.fromRGB(100, 100, 255)} -- Blue
 }
+local RARITY_ORDER = {
+	["Classified"] = 7,
+	["Mythical"] = 6,
+	["Legendary"] = 5,
+	["Epic"] = 4,
+	["Rare"] = 3,
+	["Uncommon"] = 2,
+	["Common"] = 1
+}
 
 local PlayerInventory = {}
 PlayerInventory.__index = PlayerInventory
@@ -257,7 +266,31 @@ function PlayerInventory:equipTool(toolName)
     end
     ToolEvent:FireClient(self.player, "onEquipped")
 end
-function PlayerInventory:addFishToInventory(fishDataDB)
+function PlayerInventory:sortFishInventory()
+    local fishList = {}
+    for _, fish in pairs(self.fishInventoryTab:GetChildren()) do
+        if fish.Name ~= "TemplateFish" and fish:FindFirstChild("FishData") then
+            table.insert(fishList, fish)
+        end
+    end
+    table.sort(fishList, function(a, b)
+        local aData = a:FindFirstChild("FishData")
+		local bData = b:FindFirstChild("FishData")
+		if not aData or not bData then return end
+		local rarityA = aData.Value:split("|")[2]
+		local rarityB = bData.Value:split("|")[2]
+		if rarityA ~= rarityB then
+			return RARITY_ORDER[rarityA] > RARITY_ORDER[rarityB]
+		end
+		local idA = tonumber(aData.Value:split("|")[4])
+		local idB = tonumber(bData.Value:split("|")[4])
+		return idA > idB
+    end)
+    for i, fish in ipairs(fishList) do
+        fish.LayoutOrder = i
+    end
+end
+function PlayerInventory:addFishToInventory(fishDataDB, sort)
     task.spawn(function()
         local fishName, fishData = FishDB:findFish(fishDataDB.id)
         local template = self.fishTemplate:Clone()
@@ -270,6 +303,20 @@ function PlayerInventory:addFishToInventory(fishDataDB)
         end
         template.Visible = true
         template.Parent = self.fishInventoryTab
+        local fishDataValue = Instance.new("StringValue")
+        fishDataValue.Name = "FishData"
+        fishDataValue.Value = string.format("%s|%s|%.1f|%d", 
+            fishName,
+            fishData.rarity,
+            fishDataDB.weight,
+            fishDataDB.id)
+        fishDataValue.Parent = template
+        if sort == nil then
+            sort = true
+        end
+        if sort then
+            self:sortFishInventory()
+        end
     end)
 end
 
@@ -286,9 +333,10 @@ function PlayerInventory:populateData()
             self:addFishToInventory({
                 id = id,
                 weight = weight
-            })
+            }, false)
         end
     end
+    self:sortFishInventory()
 end
 
 
@@ -321,10 +369,6 @@ function PlayerInventory:setupEventListener()
     self.fishingRodBtnClickConnection = fishingRodBtn.MouseButton1Click:Connect(function()
         self:toggleRod()
     end)
-
-    -- INVENTORY TABS
-    -- TODO : ADD Design on tab buttons when clicked/page change animations
-    
 end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
