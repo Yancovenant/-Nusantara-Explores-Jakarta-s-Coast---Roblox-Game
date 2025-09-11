@@ -222,6 +222,7 @@ function GlobalManager:setUnequippedReady(player, bool)
     InventoryModules[player]:setUnequippedReady(bool)
 end
 
+
 -- CONNECT EVENTS
 function GlobalManager:playerAdded(player)
     if PlayerData[player] == nil then

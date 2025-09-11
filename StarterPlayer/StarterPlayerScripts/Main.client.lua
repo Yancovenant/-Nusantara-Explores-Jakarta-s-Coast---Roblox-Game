@@ -9,7 +9,24 @@ local player = Players.LocalPlayer
 local toolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 
 local function setupPlayerAttributes()
-	player.CameraMaxZoomDistance = 12
+	player.CameraMaxZoomDistance = 16
+end
+
+local function setupEventListener()
+	local inventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
+	if not inventoryUI then return end
+	local tabContainer = inventoryUI:WaitForChild("TabContainer")
+	local fishTabBtn = tabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+	local rodTabBtn = tabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
+	local pageLayout = tabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
+	local fishPageFrame = tabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
+	local rodPageFrame = tabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
+	fishTabBtn.MouseButton1Click:Connect(function()
+		pageLayout:JumpTo(fishPageFrame)
+	end)
+	rodTabBtn.MouseButton1Click:Connect(function()
+		pageLayout:JumpTo(rodPageFrame)
+	end)
 end
 
 local function main()
@@ -22,6 +39,7 @@ local function main()
 		end
 	end)
 	setupPlayerAttributes()
+	setupEventListener()
 end
 
 main()

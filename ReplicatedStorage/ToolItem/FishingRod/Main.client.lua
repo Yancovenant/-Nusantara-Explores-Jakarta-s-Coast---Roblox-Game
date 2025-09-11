@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local fishingRod = script.Parent
@@ -11,6 +12,50 @@ local fishingRod = script.Parent
 
 local fishingConfig = require(ReplicatedStorage:WaitForChild("FishingConfig"))
 
+
+-- HELPER FUNCTIONS
+local function formatWeight(weight)
+	if weight >= 1000 then
+		local tons = weight / 1000
+		if tons >= 1 and tons < 1000 then
+			return string.format("%.1f Ton", tons)
+		else
+			return string.format("%.0f Tons", tons)
+		end
+	else
+		return string.format("%.1f Kg", weight)
+	end
+end
+local function formatChance(chance)
+	-- Convert decimal back to fraction format
+	local function gcd(a, b)
+		while b ~= 0 do
+			a, b = b, a % b
+		end
+		return a
+	end
+
+	local function decimalToFraction(decimal)
+		local tolerance = 1e-6
+		local h1, h2, k1, k2 = 1, 0, 0, 1
+		local x = decimal
+
+		while math.abs(x - math.floor(x + 0.5)) > tolerance do
+			x = 1 / (x - math.floor(x))
+			h1, h2 = h1 * math.floor(x) + h2, h1
+			k1, k2 = k1 * math.floor(x) + k2, k1
+		end
+
+		return math.floor(x + 0.5) * h1 + h2, h1
+	end
+
+	local numerator, denominator = decimalToFraction(chance)
+	local divisor = gcd(numerator, denominator)
+	numerator = numerator / divisor
+	denominator = denominator / divisor
+
+	return string.format("1/%d", denominator)
+end
 
 -- LOCAL FISHING UI
 local LocalFishingUI = {}
@@ -29,7 +74,62 @@ function LocalFishingUI:createFishingUI(player)
 	self.autoFishButton = ui:WaitForChild("AutoFishButton")
 	self.powerBar = ui:WaitForChild("PowerBar")
 	self.popupFrame = ui:WaitForChild("PopupFrame")
+	self.popupFish = ui:WaitForChild("PopupFish")
 	return ui
+end
+function LocalFishingUI:getRarityColor(rarity, transparency)
+	transparency = transparency or 0.3
+	local colors = {
+		Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
+		Uncommon = Color3.fromRGB(100, 255, 100),      -- Bright Green - Fresh, nature
+		Rare = Color3.fromRGB(100, 150, 255),          -- Bright Blue - Sky blue, calming
+		Epic = Color3.fromRGB(200, 100, 255),         -- Purple - Royal, mysterious
+		Legendary = Color3.fromRGB(255, 215, 0),      -- Gold - Classic legendary color
+		Mythical = Color3.fromRGB(255, 100, 255),     -- Magenta - Mystical, otherworldly
+		Classified = Color3.fromRGB(255, 255, 255)    -- White - Pure, secretive
+	}
+	return colors[rarity] or colors.Common
+end
+
+function LocalFishingUI:showFishPopup(fishInfo)
+	self.popupFish.ImageLabel.Image = fishInfo.icon
+	self.popupFish.FishInfo.TextColor3 = self:getRarityColor(fishInfo.rarity)
+	self.popupFish.FishInfo.Text = fishInfo.fishName .. " (" .. formatWeight(fishInfo.weight) .. ")"
+	self.popupFish.Chance.Text = formatChance(fishInfo.chance)
+
+	self.popupFish.Visible = true
+	self.fishPopupTween = TweenService:Create(
+		self.popupFish,
+		TweenInfo.new(.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+		{
+			Position = self.popupFish.Position + UDim2.new(0, 0.1, 0, 0),
+			Size = UDim2.new(0.8, 0, 0.5, 0)
+		}
+	)
+	self.fishPopupTween:Play()
+	self.fishPopupTween.Completed:Wait()
+	task.wait(1.5)
+	self.fishPopupTweenEnd = TweenService:Create(
+		self.popupFish,
+		TweenInfo.new(.3, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
+		{
+			Position = self.popupFish.Position - UDim2.new(0, 0.1, 0, 0),
+			Size = UDim2.new(0, 0, 0, 0)
+		}
+	)
+	self.fishPopupTweenEnd:Play()
+	self.fishPopupTweenEnd.Completed:Wait()
+	self.popupFish.Visible = false
+end
+function LocalFishingUI:cleanUp()
+	if self.fishPopupTween then
+		self.fishPopupTween:Cancel()
+		self.fishPopupTween = nil
+	end
+	if self.fishPopupTweenEnd then
+		self.fishPopupTweenEnd:Cancel()
+		self.fishPopupTweenEnd = nil
+	end
 end
 
 -- MAIN FISHING MANAGER
@@ -122,6 +222,7 @@ function fishingManager:cleanupConnections()
         self.autoFishButtonConnection:Disconnect()
         self.autoFishButtonConnection = nil
     end
+	LocalFishingUI:cleanUp()
 end
 function fishingManager:cleanUp()
 	setAttr("isCasting", false)
@@ -299,7 +400,6 @@ function fishingManager:toggleAfk()
 end
 
 function fishingManager:onUnequipped()
-	print("[FishingRod]: Unequipped")
     self:cleanupConnections()
 	self:cleanUp()
 	setAttr("canFish", false)
@@ -308,7 +408,6 @@ function fishingManager:onUnequipped()
 	ToolEvent:FireServer("setUnequippedReady", true)
 end
 function fishingManager:onEquipped()
-	print("[FishingRod]: Equipped")
     self:cleanupConnections()
 	self:cleanUp()
 	setAttr("canFish", true)

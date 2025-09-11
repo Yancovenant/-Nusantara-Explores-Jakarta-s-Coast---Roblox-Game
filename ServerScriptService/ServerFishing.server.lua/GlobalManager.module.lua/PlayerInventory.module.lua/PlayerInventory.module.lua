@@ -13,10 +13,81 @@ PlayerInventory.__index = PlayerInventory
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
+
 
 local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 
 local FishingRodItem = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
+local FishDB = require(FishingRodItem:WaitForChild("FishDB"))
+
+
+-- HELPER FUNCTIONS
+local function formatWeight(weight)
+	if weight >= 1000 then
+		local tons = weight / 1000
+		if tons >= 1 and tons < 1000 then
+			return string.format("%.1f Ton", tons)
+		else
+			return string.format("%.0f Tons", tons)
+		end
+	else
+		return string.format("%.1f Kg", weight)
+	end
+end
+function PlayerInventory:createLeaderstats()
+    local leaderstats
+    if not self.player:FindFirstChild("leaderstats") then
+        leaderstats = Instance.new("Folder")
+        leaderstats.Name = "leaderstats"
+        leaderstats.Parent = self.player
+    else
+        leaderstats = self.player:WaitForChild("leaderstats")
+    end
+    local money, totalCatch, rarestCatch
+    money = Instance.new("IntValue")
+    money.Name = "Money"
+    money.Value = 0
+    money.Parent = leaderstats
+    self.money = money
+
+    totalCatch = Instance.new("IntValue")
+    totalCatch.Name = "Caught"
+    totalCatch.Value = 0
+    totalCatch.Parent = leaderstats
+    self.totalCatch = totalCatch
+
+    rarestCatch = Instance.new("IntValue")
+    rarestCatch.Name = "Rarest Caught"
+    rarestCatch.Value = 0
+    rarestCatch.Parent = leaderstats
+    self.rarestCatch = rarestCatch
+
+    -- self.totalCatch:GetPropertyChangedSignal("Value"):Connect(function()
+    --     DataStorage:updateTotalCatch(self.player, self.totalCatch.Value)
+    -- end)
+    -- self.money:GetPropertyChangedSignal("Value"):Connect(function()
+    --     DataStorage:updateMoney(self.player, self.money.Value)
+    -- end)
+    -- self.rarestCatch:GetPropertyChangedSignal("Value"):Connect(function()
+    --     DataStorage:updateRarestCatch(self.player, self.rarestCatch.Value)
+    -- end)
+    return leaderstats
+end
+function PlayerInventory:getRarityColor(rarity, transparency)
+	transparency = transparency or 0.3
+	local colors = {
+		Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
+		Uncommon = Color3.fromRGB(100, 255, 100),      -- Bright Green - Fresh, nature
+		Rare = Color3.fromRGB(100, 150, 255),          -- Bright Blue - Sky blue, calming
+		Epic = Color3.fromRGB(200, 100, 255),         -- Purple - Royal, mysterious
+		Legendary = Color3.fromRGB(255, 215, 0),      -- Gold - Classic legendary color
+		Mythical = Color3.fromRGB(255, 100, 255),     -- Magenta - Mystical, otherworldly
+		Classified = Color3.fromRGB(255, 255, 255)    -- White - Pure, secretive
+	}
+	return colors[rarity] or colors.Common
+end
+
 
 -- UI FUNCTIONS
 function PlayerInventory:createInventoryUI()
@@ -31,6 +102,8 @@ function PlayerInventory:createInventoryUI()
         return nil
     end
     self.inventoryUI = ui
+    self.fishInventoryTab = ui:WaitForChild("TabContainer"):WaitForChild("ContentArea"):WaitForChild("Fish")
+    self.fishTemplate = self.fishInventoryTab:WaitForChild("TemplateFish")
     return ui
 end
 function PlayerInventory:createGlobalUI()
@@ -114,6 +187,7 @@ function PlayerInventory:updateHotBarSelected(toolName)
     hotbarSlot.BackgroundTransparency = selectedFrame.Visible and 1 or 0.5
 end
 
+
 -- INTERACTION FUNCTIONS
 function PlayerInventory:toggleRod()
     self:equipTool("FishingRod")
@@ -183,6 +257,39 @@ function PlayerInventory:equipTool(toolName)
     end
     ToolEvent:FireClient(self.player, "onEquipped")
 end
+function PlayerInventory:addFishToInventory(fishDataDB)
+    task.spawn(function()
+        local fishName, fishData = FishDB:findFish(fishDataDB.id)
+        local template = self.fishTemplate:Clone()
+        template.Name = fishName
+        template.FishText.Text = fishName
+        template.FishText.TextColor3 = self:getRarityColor(fishData.rarity)
+        template.FishWeight.Text = formatWeight(fishDataDB.weight)
+        if fishData.icon then
+            template.Icon.Image = fishData.icon
+        end
+        template.Visible = true
+        template.Parent = self.fishInventoryTab
+    end)
+end
+
+
+-- STORAGE FUNCTIONS
+function PlayerInventory:populateData()
+    self.leaderstats = self:createLeaderstats()
+    self.data = DataStorage:loadPlayerData(self.player)
+    self.money.Value = self.data.money
+    self.totalCatch.Value = self.data.totalCatch
+    self.rarestCatch.Value = self.data.rarestCatch
+    for id, fish in pairs(self.data.fishInventory) do
+        for _, weight in pairs(fish) do
+            self:addFishToInventory({
+                id = id,
+                weight = weight
+            })
+        end
+    end
+end
 
 
 -- MAIN FUNCTIONS
@@ -217,13 +324,7 @@ function PlayerInventory:setupEventListener()
 
     -- INVENTORY TABS
     -- TODO : ADD Design on tab buttons when clicked/page change animations
-    local pageLayout = pageContainer:FindFirstChildWhichIsA("UIPageLayout")
-    self.fishTabBtnClickConnection = fishTabBtn.MouseButton1Click:Connect(function()
-        pageLayout:JumpTo(fishPageFrame)
-    end)
-    self.rodTabBtnClickConnection = rodTabBtn.MouseButton1Click:Connect(function()
-        pageLayout:JumpTo(rodPageFrame)
-    end)
+    
 end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
@@ -236,8 +337,11 @@ function PlayerInventory:new(player)
     self:setupEventListener()
 
     self:createBackpack()
+
+    self:populateData()
     return self
 end
+
 
 -- CONNECT EVENTS
 function PlayerInventory:cleanUp()
@@ -294,6 +398,7 @@ function PlayerInventory:cleanUp()
         self.backpack:Destroy()
         self.backpack = nil
     end
+    -- should save storage here
     self.player = nil
 end
 

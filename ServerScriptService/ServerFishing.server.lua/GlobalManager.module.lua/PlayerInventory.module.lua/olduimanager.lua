@@ -71,56 +71,56 @@ end
 
 
 
-function InventoryUIManager:updateSlotAppearance(player, slotName, isEquipped)
-	local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
-	if not InventoryUI then return end
-	local inventoryFrame = InventoryUI:FindFirstChild("InventoryFrame")
-	if not inventoryFrame then return end
-	local slot = inventoryFrame:FindFirstChild(slotName)
-	if not slot then return end
-	local selectedFrame = slot:FindFirstChild("SelectedFrame")
-	if not selectedFrame then return end
+-- function InventoryUIManager:updateSlotAppearance(player, slotName, isEquipped)
+-- 	local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
+-- 	if not InventoryUI then return end
+-- 	local inventoryFrame = InventoryUI:FindFirstChild("InventoryFrame")
+-- 	if not inventoryFrame then return end
+-- 	local slot = inventoryFrame:FindFirstChild(slotName)
+-- 	if not slot then return end
+-- 	local selectedFrame = slot:FindFirstChild("SelectedFrame")
+-- 	if not selectedFrame then return end
 
-	if isEquipped then
-		slot.BackgroundTransparency = 1
-		selectedFrame.Visible = true
-	else
-		selectedFrame.Visible = false
-		slot.BackgroundTransparency = 0.5
-	end
-end
+-- 	if isEquipped then
+-- 		slot.BackgroundTransparency = 1
+-- 		selectedFrame.Visible = true
+-- 	else
+-- 		selectedFrame.Visible = false
+-- 		slot.BackgroundTransparency = 0.5
+-- 	end
+-- end
 
-function InventoryUIManager:setEquippedState(player, toolName, isEquipped)
-	if not EquippedStates[player] then
-		EquippedStates[player] = {}
-	end
+-- function InventoryUIManager:setEquippedState(player, toolName, isEquipped)
+-- 	if not EquippedStates[player] then
+-- 		EquippedStates[player] = {}
+-- 	end
 
-	EquippedStates[player][toolName] = isEquipped
-	self:updateSlotAppearance(player, toolName, isEquipped)
-end
+-- 	EquippedStates[player][toolName] = isEquipped
+-- 	self:updateSlotAppearance(player, toolName, isEquipped)
+-- end
 
-function InventoryUIManager:getEquippedState(player, toolName)
-	if not EquippedStates[player] then
-		EquippedStates[player] = {}
-	end
-	return EquippedStates[player][toolName] or false
-end
+-- function InventoryUIManager:getEquippedState(player, toolName)
+-- 	if not EquippedStates[player] then
+-- 		EquippedStates[player] = {}
+-- 	end
+-- 	return EquippedStates[player][toolName] or false
+-- end
 
 
-function InventoryUIManager:getRarityColor(rarity, transparency)
-	transparency = transparency or 0.3
-	print("getting rarity color", rarity)
-	local colors = {
-		Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
-		Uncommon = Color3.fromRGB(100, 255, 100),      -- Bright Green - Fresh, nature
-		Rare = Color3.fromRGB(100, 150, 255),          -- Bright Blue - Sky blue, calming
-		Epic = Color3.fromRGB(200, 100, 255),         -- Purple - Royal, mysterious
-		Legendary = Color3.fromRGB(255, 215, 0),      -- Gold - Classic legendary color
-		Mythical = Color3.fromRGB(255, 100, 255),     -- Magenta - Mystical, otherworldly
-		Classified = Color3.fromRGB(255, 255, 255)    -- White - Pure, secretive
-	}
-	return colors[rarity] or colors.Common
-end
+-- function InventoryUIManager:getRarityColor(rarity, transparency)
+-- 	transparency = transparency or 0.3
+-- 	print("getting rarity color", rarity)
+-- 	local colors = {
+-- 		Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
+-- 		Uncommon = Color3.fromRGB(100, 255, 100),      -- Bright Green - Fresh, nature
+-- 		Rare = Color3.fromRGB(100, 150, 255),          -- Bright Blue - Sky blue, calming
+-- 		Epic = Color3.fromRGB(200, 100, 255),         -- Purple - Royal, mysterious
+-- 		Legendary = Color3.fromRGB(255, 215, 0),      -- Gold - Classic legendary color
+-- 		Mythical = Color3.fromRGB(255, 100, 255),     -- Magenta - Mystical, otherworldly
+-- 		Classified = Color3.fromRGB(255, 255, 255)    -- White - Pure, secretive
+-- 	}
+-- 	return colors[rarity] or colors.Common
+-- end
 local RARITY_ORDER = {
 	["Classified"] = 7,
 	["Mythical"] = 6,
@@ -155,22 +155,22 @@ function InventoryUIManager:sortFishInventory(fishTab)
 	end
 end
 function InventoryUIManager:addFishToInventory(player, fishData)
-	local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
-	if not InventoryUI then return end
-	local TabFrame = InventoryUI:WaitForChild("TabContainer"):WaitForChild("ContentArea")
-	local fishTab = TabFrame:WaitForChild("Fish")
-	local template = fishTab:WaitForChild("TemplateFish"):Clone()
-	local rarityColor = self:getRarityColor(fishData.rarity)
-	template.Name = fishData.name or "Fish"
-	template.FishText.Text = fishData.name or "Fish"
-	template.FishText.TextColor3 = rarityColor
-	template.FishWeight.Text = string.format("%.1fKg", fishData.weight or 0)
+	-- local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
+	-- if not InventoryUI then return end
+	-- local TabFrame = InventoryUI:WaitForChild("TabContainer"):WaitForChild("ContentArea")
+	-- local fishTab = TabFrame:WaitForChild("Fish")
+	-- local template = fishTab:WaitForChild("TemplateFish"):Clone()
+	-- local rarityColor = self:getRarityColor(fishData.rarity)
+	-- template.Name = fishData.name or "Fish"
+	-- template.FishText.Text = fishData.name or "Fish"
+	-- template.FishText.TextColor3 = rarityColor
+	-- template.FishWeight.Text = string.format("%.1fKg", fishData.weight or 0)
 
-	template.Visible = true
-	template.Parent = fishTab
-	if fishData.icon then
-		template.Icon.Image = fishData.icon
-	end
+	-- template.Visible = true
+	-- template.Parent = fishTab
+	-- if fishData.icon then
+	-- 	template.Icon.Image = fishData.icon
+	-- end
 
 	template.MouseEnter:Connect(function()
 		print("mouse enter")
@@ -211,13 +211,13 @@ end
 -- 	local TabFrame = InventoryUI:WaitForChild("TabContainer")
 -- 	TabFrame.Visible = not TabFrame.Visible
 -- end
-function InventoryUIManager:toggleRod(player)
-	local isCurrentlyEquipped = self:getEquippedState(player, "FishingRod")
-	local newState = not isCurrentlyEquipped
+-- function InventoryUIManager:toggleRod(player)
+-- 	local isCurrentlyEquipped = self:getEquippedState(player, "FishingRod")
+-- 	local newState = not isCurrentlyEquipped
 
-	InventoryManager:equipTool("FishingRod", player)
-	self:setEquippedState(player, "FishingRod", newState)
-end
+-- 	InventoryManager:equipTool("FishingRod", player)
+-- 	self:setEquippedState(player, "FishingRod", newState)
+-- end
 
 function InventoryUIManager:setupEventListener(player)
 	-- local InventoryUI = player:WaitForChild("PlayerGui"):WaitForChild("InventoryUI")
@@ -256,7 +256,7 @@ function InventoryUIManager:setupEventListener(player)
 	-- 	self:toggleTab("Rod", TabFrame)
 	-- end)
 
-	self:setEquippedState(player, "FishingRod", false)
+	-- self:setEquippedState(player, "FishingRod", false)
 end
 
 -- function UIManager:createFishingUI(player)

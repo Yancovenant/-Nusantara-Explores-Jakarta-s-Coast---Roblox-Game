@@ -1,0 +1,167 @@
+local FishDB = {}
+
+--[[
+    Probability System
+    - Fish Base Rarity
+    - Player Skill Level
+    - Equipment Quality
+    - Location Difficulty
+    - Time of Day/Weather
+    -- === secondary Factors ===
+    - Player Luck
+    - Consecutive Catch Bonus
+    - Power Level
+
+    Formula
+    Final Chance = Base Chance * 
+                   Skill Multiplier * 
+                   Equipment Multiplier * 
+                   Environmental Multiplier *
+                   Luck Multiplier *
+                   Power Bonus
+    
+    Example:
+        (1/100) * 1.5 * 2.0 * 0.8 * 1.2 * 1.3 * 1.1 = 0.041184 = 4.1184%
+
+    Features Engagement
+    - Fish Encyclopedia
+    - Rarity Achievemnts
+    - Fish Market
+    - Equipment Upgrades
+    - Fishing Tournaments
+    - Leaderboards
+    - Trading System
+]]--
+
+function FishDB:findFish(id)
+	for fishName, fishInfo in pairs(FishDB.Fish) do
+		if fishInfo.id == tonumber(id) then
+			return fishName, fishInfo
+		end
+	end
+	return nil
+end
+
+FishDB.Fish = {
+	-- ===== COMMON FISH =====
+	["Euthynnus affinis"] = {
+		id = 1,
+		rarity = "Common",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://123625993045895",
+		baseChance = 1/50 -- 0.02%
+	},
+	["Kerapu Legend"] = {
+		id = 2,
+		rarity = "Common",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://124141177788555",
+		baseChance = 1/55 -- 0.01818181818181818%
+	},
+	["Lutjanus campechanus"] = {
+		id = 3,
+		rarity = "Common",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://139389458318053",
+		baseChance = 1/60 -- 0.016666666666666666%
+	},
+	["Milkfish"] = {
+		id = 4,
+		rarity = "Common",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://130683257339205",
+		baseChance = 1/85 -- 0.011764705882352941%
+	},
+	["Mullet"] = {
+		id = 5,
+		rarity = "Common",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://132064291206318",
+		baseChance = 1/100 -- 0.01%
+	},
+	-- ===== UNCOMMON FISH =====
+	["Parrotfish"] = {
+		id = 6,
+		rarity = "Uncommon",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://115225809705688",
+		baseChance = 1/200 -- 0.005%
+	},
+	["Butterfish"] = {
+		id = 7,
+		rarity = "Uncommon",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://99172709912291",
+		baseChance = 1/300 -- 0.0033333%
+	},
+	["Striped Mackerel"] = {
+		id = 8,
+		rarity = "Uncommon",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://84713285230199",
+		baseChance = 1/500 -- 0.002%
+	},
+	-- ===== RARE FISH =====
+	["Remora"] = {
+		id = 9,
+		rarity = "Rare",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://126282853926629",
+		baseChance = 1/1000 -- 0.001%
+	},
+	["Blue Tang"] = {
+		id = 10,
+		rarity = "Rare",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://82932779922755",
+		baseChance = 1/5000 -- 0.0002%
+	},
+	-- ===== EPIC FISH =====
+	["Blue Marlin"] = {
+		id = 11,
+		rarity = "Epic",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://126091718047687",
+		baseChance = 1/8000 -- 0.000125%
+	},
+	-- ===== LEGENDARY FISH =====
+	["Shark"] = {
+		id = 12,
+		rarity = "Legendary",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://99220617200779",
+		baseChance = 1/10000 -- 0.0001%
+	},
+	-- ===== MYTHICAL FISH =====
+	["Grouper"] = {
+		id = 13,
+		rarity = "Mythical",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://74746064929886",
+		baseChance = 1/50000 -- 0.00002%
+	},
+	-- ===== CLASSIFIED FISH =====
+	["SunnyCat"] = {
+		id = 14,
+		rarity = "Classified",
+		minWeight = 10,
+		maxWeight = 1000, -- in kg
+		icon = "rbxassetid://124429493982335",
+		baseChance = 1/100000 -- 0.00001%
+	},
+}
+
+return FishDB
