@@ -7,6 +7,21 @@ local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 
 local toolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+local ClientAnimationEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
+
+local holdingFishAnimation = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("HoldingFish")
+
+-- HELPER FUNCTIONS
+local function loadAnimation(animation)
+	local humanoid = player.Character:FindFirstChild("Humanoid")
+	if not humanoid then return nil end
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator then return nil end
+	local success, track = pcall(animator.LoadAnimation, animator, animation)
+	if not success or not track then return nil end
+	track.Priority = Enum.AnimationPriority.Action
+	return track
+end
 
 local function setupPlayerAttributes()
 	player.CameraMaxZoomDistance = 24
@@ -26,6 +41,14 @@ local function setupEventListener()
 	end)
 	rodTabBtn.MouseButton1Click:Connect(function()
 		pageLayout:JumpTo(rodPageFrame)
+	end)
+
+	ClientAnimationEvent.OnClientEvent:Connect(function(animation)
+		if animation == "holdFishAboveHead" then
+			animation = holdingFishAnimation
+		end
+		local animationTrack = loadAnimation(animation)
+		animationTrack:Play()
 	end)
 end
 

@@ -15,6 +15,11 @@ local InventoryModule = require(script.PlayerInventory)
 local InventoryModules = {}
 
 -- HELPER FUNCTIONS
+local function scaleWeight(weight)
+    local ratio = weight / 50 -- base weight is 50kg
+    local factor = ratio^(1/3)
+    return 1 * factor
+end
 function GlobalManager:createFishAnimation(fishName, weight, position)
     --[[
         TODO: add weight scaling
@@ -24,6 +29,9 @@ function GlobalManager:createFishAnimation(fishName, weight, position)
         fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
     end
     fish = fish:Clone()
+    fish.Body.Anchored = true
+	fish.Body.CanCollide = false
+    fish:ScaleTo(scaleWeight(weight))
     fish.Parent = workspace
     fish:SetPrimaryPartCFrame(CFrame.new(position))
     local struggleTween = TweenService:Create(
@@ -51,9 +59,6 @@ function GlobalManager:createFishSlungTween(player, fish)
 	params.FilterDescendantsInstances = {fish}
 	local raycastResult = workspace:Raycast(origin, direction, params)
 	local groundPosition = raycastResult and raycastResult.Position or behindPlayer
-
-	fish.Body.Anchored = true
-	fish.Body.CanCollide = false
 
 	local slungTween = TweenService:Create(
 		fish.Body,

@@ -25,14 +25,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
 
-
 local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+local ClientAnimationEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
 
 local FishingRodItem = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
 local FishDB = require(FishingRodItem:WaitForChild("FishDB"))
 
 
 -- HELPER FUNCTIONS
+local function scaleWeight(weight)
+    local ratio = weight / 50 -- base weight is 50kg
+    local factor = ratio^(1/3)
+    return 1 * factor
+end
 local function formatWeight(weight)
 	if weight >= 1000 then
 		local tons = weight / 1000
@@ -229,7 +234,51 @@ end
 
 
 -- INTERACTION FUNCTIONS
+function PlayerInventory:holdFishAboveHead(fishName, weight)
+    if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
+    if self.holdingFish then
+        self.holdingFish:Destroy()
+        self.holdingFish = nil
+    end
+    local fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
+    if not fish then
+        fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
+    end
+    fish = fish:Clone()
+    self.holdingFish = fish
+    fish.Body.Anchored = false
+    fish.Body.CanCollide = false
+    fish:ScaleTo(scaleWeight(weight))
+    fish.Parent = self.player.Character.Head
+    fish:SetPrimaryPartCFrame(self.player.Character.Head.CFrame * CFrame.new(0, 2, 0))
+    local head2FishAttachment
+    if not self.player.Character.Head:FindFirstChild("Head2FishAttachment") then
+        head2FishAttachment = Instance.new("Attachment")
+        head2FishAttachment.Name = "Head2FishAttachment"
+        head2FishAttachment.Parent = self.player.Character.Head
+    end
+    local fish2HeadAttachment = Instance.new("Attachment")
+    fish2HeadAttachment.Name = "Fish2HeadAttachment"
+    fish2HeadAttachment.Parent = fish.Body
+    local fish2HeadWeld = Instance.new("WeldConstraint")
+    fish2HeadWeld.Part0 = fish.Body
+    fish2HeadWeld.Part1 = self.player.Character.Head
+    fish2HeadWeld.Parent = fish.Body
+    ClientAnimationEvent:FireClient(self.player, "holdFishAboveHead")
+    -- Fire client event to handle fish holding animation
+    -- FishHoldingEvent:FireClient(self.player, {
+    --     fishId = fishData.id,
+    --     fishName = FishDB:findFish(fishData.id),
+    --     weight = fishData.weight,
+    --     duration = 3 -- Hold for 3 seconds
+    -- })
+end
+
 function PlayerInventory:toggleRod()
+    if self.holdingFish then
+        self.holdingFish:Destroy()
+        self.holdingFish = nil
+    end
     self:equipTool("FishingRod")
     self:updateHotBarSelected("FishingRod")
 end
@@ -326,17 +375,43 @@ function PlayerInventory:addFishToInventory(fishDataDB, sort)
         local fishName, fishData = FishDB:findFish(fishDataDB.id)
         local template = self.fishTemplate:Clone()
         template.Name = fishName
-        template.FishText.Text = fishName
-        template.FishText.TextColor3 = self:getRarityColor(fishData.rarity)
-        template.FishWeight.Text = formatWeight(fishDataDB.weight)
+        template.Container.FishText.Text = fishName
+        template.Container.FishText.TextColor3 = self:getRarityColor(fishData.rarity)
+        template.Container.FishWeight.Text = formatWeight(fishDataDB.weight)
         if fishData.icon then
-            template.Icon.Image = fishData.icon
+            template.Container.Icon.Image = fishData.icon
         end
         template.Visible = true
         template.Parent = self.fishInventoryTab
+
+        if self.inventoryFishTween == nil then self.inventoryFishTween = {} end
+        local isPressed = false
+        template.MouseButton1Click:Connect(function()
+            if isPressed then return end
+            isPressed = true
+            local tween = TweenService:Create(
+                template.Container,
+                TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
+                {Size = UDim2.new(.9, 0, .9, 0)}
+            )
+            tween:Play()
+            table.insert(self.inventoryFishTween, tween)
+            tween.Completed:Connect(function()
+                for i, t in ipairs(self.inventoryFishTween) do
+                    if t == tween then
+                        table.remove(self.inventoryFishTween, i)
+                        break
+                    end
+                end
+                isPressed = false
+                tween:Destroy()
+            end)
+            self:holdFishAboveHead(fishName, fishDataDB.weight)
+        end)
+
         local fishDataValue = Instance.new("StringValue")
         fishDataValue.Name = "FishData"
-        fishDataValue.Value = string.format("%s|%s|%.1f|%d", 
+        fishDataValue.Value = string.format("%s|%s|%.1f|%d",
             fishName,
             fishData.rarity,
             fishDataDB.weight,
@@ -395,11 +470,9 @@ function PlayerInventory:catchResultSuccess(info)
     self.totalCatch.Value = self.totalCatch.Value + 1
     self.data.totalCatch = self.totalCatch.Value
 
-    print("[PlayerInventory]: rarestCatch", self.data.rarestCatch, info.fishData.baseChance)
     if self.data.rarestCatch > info.fishData.baseChance or self.data.rarestCatch == 0 then
         self.rarestCatch.Value = formatChance(info.fishData.baseChance)
         self.data.rarestCatch = info.fishData.baseChance
-        print("[PlayerInventory]: rarestCatch updated", self.data.rarestCatch, self.rarestCatch.Value)
     end
 end
 function PlayerInventory:setupEventListener()
@@ -500,6 +573,14 @@ function PlayerInventory:cleanUp()
     if self.backpack then
         self.backpack:Destroy()
         self.backpack = nil
+    end
+    for _, tween in pairs(self.inventoryFishTween) do
+        tween:Cancel()
+        tween:Destroy()
+    end
+    if self.holdingFish then
+        self.holdingFish:Destroy()
+        self.holdingFish = nil
     end
     self._autoSaveRunning = false
     self.player = nil

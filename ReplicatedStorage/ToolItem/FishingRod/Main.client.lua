@@ -75,6 +75,7 @@ function LocalFishingUI:createFishingUI(player)
 	self.powerBar = ui:WaitForChild("PowerBar")
 	self.popupFrame = ui:WaitForChild("PopupFrame")
 	self.popupFish = ui:WaitForChild("PopupFish")
+	self.messagePopup = {}
 	return ui
 end
 function LocalFishingUI:getRarityColor(rarity, transparency)
@@ -91,8 +92,23 @@ function LocalFishingUI:getRarityColor(rarity, transparency)
 	return colors[rarity] or colors.Common
 end
 
-function LocalFishingUI:showPopup(message)
-	print("[LocalFishingUI]: showing popup", message)
+function LocalFishingUI:showPopup(params)
+	task.spawn(function()
+		local message = self.popupFrame:FindFirstChild("PopupTemplate"):Clone()
+		message.Parent = self.popupFrame
+		table.insert(self.messagePopup, message)
+		for childNames, props in pairs(params) do
+			local child = message:FindFirstChild(childNames)
+			if child then
+				for propName, propValue in pairs(props) do
+					child[propName] = propValue
+				end
+			end
+		end
+		message.Visible = true
+		task.wait(1.5)
+		message:Destroy()
+	end)
 end
 function LocalFishingUI:showFishPopup(info)
 	self.popupFish.ImageLabel.Image = info.fishData.icon
@@ -133,6 +149,12 @@ function LocalFishingUI:cleanUp()
 		self.fishPopupTweenEnd:Cancel()
 		self.fishPopupTweenEnd = nil
 	end
+	if self.messagePopup then
+		for _, message in self.messagePopup do
+			message:Destroy()
+		end
+	end
+	self.messagePopup = {}
 end
 
 -- MAIN FISHING MANAGER
@@ -161,6 +183,8 @@ local ReleaseCastAnimation = fishingRod:WaitForChild("Animations"):WaitForChild(
 local IdleFishingAnimation = fishingRod:WaitForChild("Animations"):WaitForChild("IdleFishing")
 local ReelingAnimation = fishingRod:WaitForChild("Animations"):WaitForChild("Reeling")
 local CatchAnimation = fishingRod:WaitForChild("Animations"):WaitForChild("Catch")
+
+local holdingFishAnimation = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("HoldingFish")
 
 local ORIGINAL_WALK_SPEED = 16
 local FISHING_WALK_SPEED = 8
@@ -252,7 +276,8 @@ function fishingManager:cleanAnimations()
 			ReleaseCastAnimation.AnimationId,
 			IdleFishingAnimation.AnimationId,
 			ReelingAnimation.AnimationId,
-			CatchAnimation.AnimationId
+			CatchAnimation.AnimationId,
+			holdingFishAnimation.AnimationId
 			} do
 			if track.Animation.AnimationId == id then
 				track:Stop()
@@ -392,11 +417,25 @@ function fishingManager:startAfk()
 		end
 	end
 	LocalFishingUI.autoFishButton.BackgroundColor3 = Color3.fromRGB(50, 150, 50)
+	LocalFishingUI:showPopup({
+		Text = {
+			Text = "Auto fishing enabled",
+			TextColor3 = Color3.fromRGB(50, 150, 50),
+			Visible = true,
+		},
+	})
 	afkConnection = task.spawn(afkLoop)
 end
 function fishingManager:toggleAfk()
 	if isAFK then
 		self:stopAfk()
+		LocalFishingUI:showPopup({
+			Text = {
+				Text = "Auto fishing disabled",
+				TextColor3 = Color3.fromRGB(150, 50, 50),
+				Visible = true,
+			},
+		})
 	else
 		self:startAfk()
 	end
@@ -442,7 +481,13 @@ function fishingManager:onCastApproved(success, result)
         setAttr("isFishing", true)
         GlobalFishingUI:FireServer("playSound", {"Splash", fishingRod})
     else
-		LocalFishingUI:showPopup(result)
+		LocalFishingUI:showPopup({
+			Text = {
+				Text = result,
+				TextColor3 = Color3.fromRGB(255, 0, 0),
+				Visible = true,
+			},
+		})
         GlobalFishingUI:FireServer("cleanSounds")
         GlobalFishingUI:FireServer("playSound", {"Error", fishingRod})
         self:cleanBobber()
@@ -477,8 +522,30 @@ function fishingManager:onCatchResult(info)
         if info.success then
             GlobalFishingUI:FireServer("catchResultSuccess", {info, fishingRod})
             LocalFishingUI:showFishPopup(info)
+			LocalFishingUI:showPopup({
+				Text = {
+					Text = "Fish caught: ",
+					TextColor3 = Color3.fromRGB(255, 255, 255),
+					Visible = true,
+				},
+				Text2 = {
+					Text = info.fishName .. " ",
+					TextColor3 = LocalFishingUI:getRarityColor(info.fishData.rarity),
+					Visible = true,
+				},
+				Icon = {
+					Image = info.fishData.icon,
+					Visible = true,
+				},
+			})
         else
-            LocalFishingUI:showPopup("Fish not caught")
+            LocalFishingUI:showPopup({
+                Text = {
+                    Text = "Fish not caught",
+                    TextColor3 = Color3.fromRGB(255, 0, 0),
+                    Visible = true,
+                },
+            })
         end
     end)
 end
