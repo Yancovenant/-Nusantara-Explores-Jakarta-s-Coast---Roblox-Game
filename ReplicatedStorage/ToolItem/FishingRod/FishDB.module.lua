@@ -33,6 +33,27 @@ local FishDB = {}
     - Trading System
 ]]--
 
+--[[
+	HABITAT DEFINITIONS
+		1. Coastal:
+			- Near the coast/ terrain or shoreline.
+			- Depth water check from water surface to bottom < 20studs e.g
+		2. Mangrove:
+			- Mangrove Zone
+		3. Reef:
+			- Reef Zone
+		4. Ocean:
+			- Position from land > 200studs
+			- or Ocean Zone
+		5. DeepSea:
+			- Water depth > 100 studs
+			- cast line should be close to seabed, 10 studs from seabed
+			- or DeepSea Zone
+		6. Events/FantasyZones:
+			- Server-side events
+			- Special Zones e.g. events, fantasy zones, etc.
+]]--
+
 function FishDB:findFish(id)
 	for fishName, fishInfo in pairs(FishDB.Fish) do
 		if fishInfo.id == tonumber(id) then
