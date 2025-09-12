@@ -396,7 +396,7 @@ function PlayerInventory:catchResultSuccess(info)
     self.data.totalCatch = self.totalCatch.Value
 
     print("[PlayerInventory]: rarestCatch", self.data.rarestCatch, info.fishData.baseChance)
-    if self.data.rarestCatch < info.fishData.baseChance or self.data.rarestCatch == 0 then
+    if self.data.rarestCatch > info.fishData.baseChance or self.data.rarestCatch == 0 then
         self.rarestCatch.Value = formatChance(info.fishData.baseChance)
         self.data.rarestCatch = info.fishData.baseChance
         print("[PlayerInventory]: rarestCatch updated", self.data.rarestCatch, self.rarestCatch.Value)
