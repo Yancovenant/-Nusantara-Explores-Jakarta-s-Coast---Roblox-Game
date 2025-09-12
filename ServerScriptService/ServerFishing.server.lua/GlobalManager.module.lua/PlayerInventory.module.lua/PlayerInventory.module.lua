@@ -45,6 +45,36 @@ local function formatWeight(weight)
 		return string.format("%.1f Kg", weight)
 	end
 end
+local function formatChance(chance)
+	-- Convert decimal back to fraction format
+	local function gcd(a, b)
+		while b ~= 0 do
+			a, b = b, a % b
+		end
+		return a
+	end
+
+	local function decimalToFraction(decimal)
+		local tolerance = 1e-6
+		local h1, h2, k1, k2 = 1, 0, 0, 1
+		local x = decimal
+
+		while math.abs(x - math.floor(x + 0.5)) > tolerance do
+			x = 1 / (x - math.floor(x))
+			h1, h2 = h1 * math.floor(x) + h2, h1
+			k1, k2 = k1 * math.floor(x) + k2, k1
+		end
+
+		return math.floor(x + 0.5) * h1 + h2, h1
+	end
+
+	local numerator, denominator = decimalToFraction(chance)
+	local divisor = gcd(numerator, denominator)
+	numerator = numerator / divisor
+	denominator = denominator / divisor
+
+	return string.format("1/%d", denominator)
+end
 function PlayerInventory:createLeaderstats()
     local leaderstats
     if not self.player:FindFirstChild("leaderstats") then
@@ -67,9 +97,9 @@ function PlayerInventory:createLeaderstats()
     totalCatch.Parent = leaderstats
     self.totalCatch = totalCatch
 
-    rarestCatch = Instance.new("IntValue")
+    rarestCatch = Instance.new("StringValue")
     rarestCatch.Name = "Rarest Caught"
-    rarestCatch.Value = 0
+    rarestCatch.Value = "0"
     rarestCatch.Parent = leaderstats
     self.rarestCatch = rarestCatch
 
@@ -328,7 +358,7 @@ function PlayerInventory:populateData()
     self.data = DataStorage:loadPlayerData(self.player)
     self.money.Value = self.data.money
     self.totalCatch.Value = self.data.totalCatch
-    self.rarestCatch.Value = self.data.rarestCatch
+    self.rarestCatch.Value = formatChance(self.data.rarestCatch)
     for id, fish in pairs(self.data.fishInventory) do
         for _, weight in pairs(fish) do
             self:addFishToInventory({
@@ -364,9 +394,12 @@ function PlayerInventory:catchResultSuccess(info)
     )
     self.totalCatch.Value = self.totalCatch.Value + 1
     self.data.totalCatch = self.totalCatch.Value
-    if self.rarestCatch.Value < info.fishData.baseChance then
-        self.rarestCatch.Value = info.fishData.baseChance
-        self.data.rarestCatch = self.rarestCatch.Value
+
+    print("[PlayerInventory]: rarestCatch", self.data.rarestCatch, info.fishData.baseChance)
+    if self.data.rarestCatch < info.fishData.baseChance or self.data.rarestCatch == 0 then
+        self.rarestCatch.Value = formatChance(info.fishData.baseChance)
+        self.data.rarestCatch = info.fishData.baseChance
+        print("[PlayerInventory]: rarestCatch updated", self.data.rarestCatch, self.rarestCatch.Value)
     end
 end
 function PlayerInventory:setupEventListener()
