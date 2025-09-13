@@ -2,6 +2,8 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Lighting: Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
 
 local FishingConfig = require(ReplicatedStorage:WaitForChild("FishingConfig"))
 
@@ -165,6 +167,64 @@ ToolEvent.OnServerEvent:Connect(function(player, method, params)
 end)
 
 
+-- -- MAIN SERVER FUNCTIONS
+local ServerFishing = {}
+
+local timeEvent: RemoteEvent = Remotes:WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
+
+function ServerFishing:setServerTime()
+	local function getJakartaTime()
+		local utc = os.time(os.date("!*t"))
+		local jakartaTime = utc + (7 * 3600)
+		return os.date("!*t", jakartaTime)
+	end
+	local function applyLightningTween(preset)
+		TweenService:Create(Lighting, TweenInfo.new(2), preset):Play()
+	end
+	local function applyLightningByTime(t)
+		if t.hour >= 5 and t.hour < 7 then
+			applyLightningTween({
+				Brightness = 2,
+				ClockTime = t.hour + (t.min / 60),
+				Ambient = Color3.fromRGB(200, 150, 100)
+			})
+		elseif t.hour >= 7 and t.hour < 17 then
+			applyLightningTween({
+				Brightness = 3,
+				ClockTime = t.hour + (t.min / 60),
+				Ambient = Color3.fromRGB(255,255,255)
+			})
+		elseif t.hour >= 17 and t.hour < 19 then
+			applyLightningTween({
+				Brightness = 1.5,
+				ClockTime = t.hour + (t.min / 60),
+				Ambient = Color3.fromRGB(255,120,80)
+			})
+		else
+			applyLightningTween({
+				Brightness = 0.5,
+				ClockTime = t.hour + (t.min / 60),
+				Ambient = Color3.fromRGB(100,100,200)
+			})
+		end
+	end
+	task.spawn(function()
+		while not self.isShutdown do
+			local t = getJakartaTime()
+			applyLightningByTime(t)
+			Lighting:SetAttribute("Hour", t.hour)
+			Lighting:SetAttribute("Minute", t.min)
+			timeEvent:FireAllClients(t)
+			task.wait(60)
+		end
+	end)
+end
+function ServerFishing:main()
+	self.isShutdown = false
+	self:setServerTime()
+end
+ServerFishing:main()
+
 Players.PlayerAdded:Connect(function(player)
     GlobalFishingManager:playerAdded(player)
 end)
@@ -176,6 +236,7 @@ end)
 
 -- CLEANUP
 game:BindToClose(function()
+	ServerFishing.isShutdown = true
     state = {}
     playerData = {}
     GlobalFishingManager:onShutdown()
