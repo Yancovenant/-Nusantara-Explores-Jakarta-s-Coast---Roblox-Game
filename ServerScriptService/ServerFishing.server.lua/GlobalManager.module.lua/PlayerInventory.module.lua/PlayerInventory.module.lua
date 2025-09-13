@@ -354,6 +354,7 @@ function PlayerInventory:holdFishAboveHead(fishName, weight)
     self.holdingFish = fish
     fish.Body.Anchored = false
     fish.Body.CanCollide = false
+    fish.Body.Massless = true
     fish:ScaleTo(scaleWeight(weight))
     fish.Parent = self.player.Character.Head
     fish:SetPrimaryPartCFrame(self.player.Character.Head.CFrame * CFrame.new(0, 2, 0))
