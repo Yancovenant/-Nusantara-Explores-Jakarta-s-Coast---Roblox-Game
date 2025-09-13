@@ -24,6 +24,16 @@ local DEFAULT_PLAYER_DATA = {
 	fishInventory = {},
 	playerLevel = 1,
 	playerXP = 0,
+	equipment = {
+		ownedRods = {1}, -- Start with Basic Rod
+		ownedBobbers = {1}, -- Start with Cork Bobber
+		ownedBait = {1}, -- Start with Worm
+		ownedLines = {1}, -- Start with Cotton Line
+		equippedRod = 1,
+		equippedBobber = 1,
+		equippedBait = 1,
+		equippedLine = 1
+	}
 }
 
 local Players = game:GetService("Players")
