@@ -645,8 +645,9 @@ function PlayerInventory:cleanHoldingFish()
         self.holdingFish:Destroy()
         self.holdingFish = nil
     end
-    ClientAnimationEvent:FireClient(self.player, "holdFishAboveHead")
+    ClientAnimationEvent:FireClient(self.player, "clean")
 end
+
 
 -- CONNECT EVENTS
 function PlayerInventory:saveData()
