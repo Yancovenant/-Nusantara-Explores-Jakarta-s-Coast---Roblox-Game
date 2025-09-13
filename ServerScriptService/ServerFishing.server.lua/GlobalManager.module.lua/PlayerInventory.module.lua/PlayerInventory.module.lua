@@ -147,12 +147,55 @@ function PlayerInventory:createInventoryUI()
         warn("[PlayerInventory]: No InventoryUI found")
         return nil
     end
+    self.FishingUI = playerGUI:WaitForChild("FishingUI")
     self.inventoryUI = ui
-    self.rodHotBar = ui:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
-    self.fishInventoryTab = ui:WaitForChild("TabContainer"):WaitForChild("ContentArea"):WaitForChild("Fish")
+    self.hotBar = ui:WaitForChild("InventoryFrame")
+    self.rodHotBar = self.hotBar:WaitForChild("FishingRod")
+    self.tabContainer = ui:WaitForChild("TabContainer")
+    self.fishInventoryTab = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
     self.fishTemplate = self.fishInventoryTab:WaitForChild("TemplateFish")
-    self.rodInventoryTab = ui:WaitForChild("TabContainer"):WaitForChild("ContentArea"):WaitForChild("Rod")
+    self.rodInventoryTab = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
     self.rodTemplate = self.rodInventoryTab:WaitForChild("TemplateFishingRod")
+    self.fishTabBtn = self.tabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+    
+    self.mockTabContainer = ui:WaitForChild("MockTabContainer")
+
+    self.ShownInventoryTween = TweenService:Create(
+        self.mockTabContainer,
+        TweenInfo.new(
+            0.3,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.InOut
+        ),
+        {Size = UDim2.new(0.8, 0, 0.8, 0)}
+    )
+    self.closedInventoryTween = TweenService:Create(
+        self.mockTabContainer,
+        TweenInfo.new(
+            0.3,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.InOut
+        ),
+        {Size = UDim2.new(0, 0, 0, 0)}
+    )
+    self.ShownHotbarTween = TweenService:Create(
+        self.hotBar,
+        TweenInfo.new(
+            0.3,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.InOut
+        ),
+        {Position = UDim2.new(0.5, 0, 0.875, 0)}
+    )
+    self.closedHotbarTween = TweenService:Create(
+        self.hotBar,
+        TweenInfo.new(
+            0.3,
+            Enum.EasingStyle.Back,
+            Enum.EasingDirection.InOut
+        ),
+        {Position = UDim2.new(0.5, 0, 1.375, 0)}
+    )
     return ui
 end
 function PlayerInventory:createGlobalUI()
@@ -387,7 +430,27 @@ function PlayerInventory:toggleRod()
     self:updateHotBarSelected("FishingRod")
 end
 function PlayerInventory:toggleInventory()
-    self.inventoryUI:WaitForChild("TabContainer").Visible = not self.inventoryUI:WaitForChild("TabContainer").Visible
+    local isShown = self.tabContainer.Visible
+    if isShown then
+        self.tabContainer.Visible = not isShown
+        self.closedInventoryTween:Play()
+        self.ShownHotbarTween:Play()
+        self.closedInventoryTween.Completed:Connect(function()
+            self.mockTabContainer.Visible = not isShown
+        end)
+        self.ShownHotbarTween.Completed:Connect(function()
+            self.FishingUI.Enabled = true
+        end)
+    else
+        self.FishingUI.Enabled = false
+        self.mockTabContainer.Size = UDim2.new(0,0,0,0)
+        self.mockTabContainer.Visible = not isShown
+        self.ShownInventoryTween:Play()
+        self.closedHotbarTween:Play()
+        self.ShownInventoryTween.Completed:Connect(function()
+            self.tabContainer.Visible = not isShown
+        end)
+    end
 end
 function PlayerInventory:setUnequippedReady(bool)
     self.onUnequippedReady = bool
@@ -473,6 +536,8 @@ function PlayerInventory:sortFishInventory()
     for i, fish in ipairs(fishList) do
         fish.LayoutOrder = i
     end
+    local lenFish = #fishList
+    self.fishTabBtn.Count.Text = lenFish
 end
 function PlayerInventory:addFishToInventory(fishDataDB, sort)
     task.spawn(function()
@@ -692,6 +757,22 @@ function PlayerInventory:cleanUp()
     if self.powerCategHideTween then
         self.powerCategHideTween:Cancel()
         self.powerCategHideTween = nil
+    end
+    if self.ShownInventoryTween then
+        self.ShownInventoryTween:Cancel()
+        self.ShownInventoryTween = nil
+    end
+    if self.closedInventoryTween then
+        self.closedInventoryTween:Cancel()
+        self.closedInventoryTween = nil
+    end
+    if self.ShownHotbarTween then
+        self.ShownHotbarTween:Cancel()
+        self.ShownHotbarTween = nil
+    end
+    if self.closedHotbarTween then
+        self.closedHotbarTween:Cancel()
+        self.closedHotbarTween = nil
     end
     if self.fishingRod then
         self.fishingRod:Destroy()

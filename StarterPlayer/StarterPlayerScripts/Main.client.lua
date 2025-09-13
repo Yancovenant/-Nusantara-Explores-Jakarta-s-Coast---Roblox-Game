@@ -156,7 +156,7 @@ function clientPlayer:setupEventListener()
 		animationTrack:Play()
 	end)
 	timeEvent.OnClientEvent:Connect(function(timeInfo)
-
+		self:setTimeUI(timeInfo)
 	end)
 end
 
