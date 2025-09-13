@@ -148,8 +148,11 @@ function PlayerInventory:createInventoryUI()
         return nil
     end
     self.inventoryUI = ui
+    self.rodHotBar = ui:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
     self.fishInventoryTab = ui:WaitForChild("TabContainer"):WaitForChild("ContentArea"):WaitForChild("Fish")
     self.fishTemplate = self.fishInventoryTab:WaitForChild("TemplateFish")
+    self.rodInventoryTab = ui:WaitForChild("TabContainer"):WaitForChild("ContentArea"):WaitForChild("Rod")
+    self.rodTemplate = self.rodInventoryTab:WaitForChild("TemplateFishingRod")
     return ui
 end
 function PlayerInventory:createGlobalUI()
@@ -326,25 +329,23 @@ function PlayerInventory:getEquippedEquipment(type, data)
     return EquipmentDB[type](EquipmentDB, data)
 end
 function PlayerInventory:updateFishingRodModel()
-    local equippedRod = self:getEquippedEquipment("getRod", self.data.equipment.equippedRod)
+    local equippedRod, equippedRodTemplate = self:getEquippedEquipment("getRod", self.data.equipment.equippedRod)
     if not equippedRod or not self.fishingRod then return end
-    local handlePart = self.fishingRod:FindFirstChild("Handle")
-    if handlePart and equippedRod.meshId then
-        handlePart.Mesh.MeshId = equippedRod.meshId
-    end
-    if handlePart and equippedRod.textureId then
-        -- handlePart.Mesh.TextureID = equippedRod.textureId
-        print(handlePart.Mesh, "handlePart.Mesh")
-    end
+    self.fishingRod:FindFirstChild("Handle"):Destroy()
+    self.fishingRod:FindFirstChild("Rod"):Destroy()
+    local rod = equippedRodTemplate:FindFirstChild("Rod"):Clone()
+    local handle = equippedRodTemplate:FindFirstChild("Handle"):Clone()
+    rod.Parent = self.fishingRod
+    handle.Parent = self.fishingRod
+    handle:FindFirstChild("Main").Part1 = rod
+
+    self.rodHotBar.Icon.Image = equippedRod.icon
 end
 
 -- INTERACTION FUNCTIONS
 function PlayerInventory:holdFishAboveHead(fishName, weight)
     if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
-    if self.holdingFish then
-        self.holdingFish:Destroy()
-        self.holdingFish = nil
-    end
+    self:cleanHoldingFish()
     local fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
     if not fish then
         fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
@@ -380,10 +381,7 @@ function PlayerInventory:holdFishAboveHead(fishName, weight)
 end
 
 function PlayerInventory:toggleRod()
-    if self.holdingFish then
-        self.holdingFish:Destroy()
-        self.holdingFish = nil
-    end
+    self:cleanHoldingFish()
     self:equipTool("FishingRod")
     self:updateHotBarSelected("FishingRod")
 end
@@ -491,6 +489,7 @@ function PlayerInventory:addFishToInventory(fishDataDB, sort)
 
         if self.inventoryFishTween == nil then self.inventoryFishTween = {} end
         local isPressed = false
+        local isActive = false
         template.MouseButton1Click:Connect(function()
             if isPressed then return end
             isPressed = true
@@ -511,7 +510,12 @@ function PlayerInventory:addFishToInventory(fishDataDB, sort)
                 isPressed = false
                 tween:Destroy()
             end)
-            self:holdFishAboveHead(fishName, fishDataDB.weight)
+            if isActive and self.holdingFish then
+                self:cleanHoldingFish()
+            else
+                self:holdFishAboveHead(fishName, fishDataDB.weight)
+                isActive = true
+            end
         end)
 
         local fishDataValue = Instance.new("StringValue")
@@ -528,6 +532,16 @@ function PlayerInventory:addFishToInventory(fishDataDB, sort)
         if sort then
             self:sortFishInventory()
         end
+    end)
+end
+function PlayerInventory:addRodToInventory(rodDataDB, sort)
+    task.spawn(function()
+        local template = self.rodTemplate:Clone()
+        template.Name = rodDataDB.name
+        -- template.UIGradient.Transparency = 1 -- add gradient later TODO
+        template.Icon.Image = rodDataDB.icon
+        template.Visible = true
+        template.Parent = self.rodInventoryTab
     end)
 end
 
@@ -548,6 +562,10 @@ function PlayerInventory:populateData()
         end
     end
     self:sortFishInventory()
+    for _, rod in pairs(self.data.equipment.ownedRods) do
+        local equippedRod, equippedRodTemplate = self:getEquippedEquipment("getRod", rod)
+        self:addRodToInventory(equippedRod, false)
+    end
     self._autoSaveRunning = true
     task.spawn(function()
         while self._autoSaveRunning do
@@ -621,6 +639,15 @@ function PlayerInventory:new(player)
 end
 
 
+-- CLEANUP FUNCTIONS
+function PlayerInventory:cleanHoldingFish()
+    if self.holdingFish then
+        self.holdingFish:Destroy()
+        self.holdingFish = nil
+    end
+    ClientAnimationEvent:FireClient(self.player, "holdFishAboveHead")
+end
+
 -- CONNECT EVENTS
 function PlayerInventory:saveData()
     DataStorage:savePlayerData(self.player, self.data)
@@ -684,10 +711,7 @@ function PlayerInventory:cleanUp()
         tween:Cancel()
         tween:Destroy()
     end
-    if self.holdingFish then
-        self.holdingFish:Destroy()
-        self.holdingFish = nil
-    end
+    self:cleanHoldingFish()
     self._autoSaveRunning = false
     self.player = nil
 end

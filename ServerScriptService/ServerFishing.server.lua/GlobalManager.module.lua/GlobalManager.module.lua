@@ -116,6 +116,7 @@ function GlobalManager:createBobber(player, params)
     local fishingRod = params[2]
     
     local RodTip = fishingRod:WaitForChild("Rod"):WaitForChild("RodTip")
+    print(RodTip, "RodTip")
     local Handle = fishingRod:WaitForChild("Handle")
     local bobber, beam, bobberTween, bobConn
     bobber = Instance.new("Part")

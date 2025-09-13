@@ -45,7 +45,7 @@ local function waitForRequestBudget(requestType)
 	local cur = DataStoreService:GetRequestBudgetForRequestType(requestType)
 	while cur < 1 do
 		cur = DataStoreService:GetRequestBudgetForRequestType(requestType)
-		wait(5)
+		task.wait(5)
 	end
 end
 local function key(player)
@@ -131,9 +131,7 @@ end
 function saveData(player, data)
     local success, ret
     local normalizedData = normalizeData(data)
-    print("[DataStorage]: Saving data for", player.Name, normalizedData)
     repeat
-        print("[DataStorage]: Waiting for request budget")
         waitForRequestBudget(Enum.DataStoreRequestType.SetIncrementAsync)
         success, ret = pcall(pDB.UpdateAsync, pDB, key(player), function(oldData)
             if oldData then

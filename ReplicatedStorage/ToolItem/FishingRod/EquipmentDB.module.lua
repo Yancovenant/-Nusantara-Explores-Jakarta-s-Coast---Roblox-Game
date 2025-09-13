@@ -2,6 +2,8 @@
 
 local EquipmentDB = {}
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 --[[
     EQUIPMENT SYSTEM OVERVIEW
     
@@ -28,9 +30,8 @@ EquipmentDB.Rods = {
         luck = 1.0, -- Replaces attraction, affects fish rarity chances
         price = 0,
         description = "A simple fishing rod for beginners",
-        icon = "rbxassetid://123456789",
-        meshId = "rbxassetid://basic_rod_mesh",
-        textureId = "rbxassetid://basic_rod_texture",
+        icon = "rbxassetid://115011593432581",
+        largePreview = "",
         unlockLevel = 1
     },
     ["Wooden Rod"] = {
@@ -40,9 +41,8 @@ EquipmentDB.Rods = {
         luck = 1.2,
         price = 100,
         description = "Sturdy wooden rod with better luck",
-        icon = "rbxassetid://123456790",
-        meshId = "rbxassetid://wooden_rod_mesh",
-        textureId = "rbxassetid://wooden_rod_texture",
+        icon = "rbxassetid://127772934799813",
+        largePreview = "",
         unlockLevel = 3
     },
     
@@ -54,9 +54,8 @@ EquipmentDB.Rods = {
         luck = 1.5,
         price = 500,
         description = "Flexible bamboo rod, increases rare fish chances",
-        icon = "rbxassetid://123456791",
-        meshId = "rbxassetid://bamboo_rod_mesh",
-        textureId = "rbxassetid://bamboo_rod_texture",
+        icon = "rbxassetid://87203609835635",
+        largePreview = "",
         unlockLevel = 8
     },
     ["Carbon Fiber Rod"] = {
@@ -66,9 +65,8 @@ EquipmentDB.Rods = {
         luck = 2.0,
         price = 2000,
         description = "Lightweight and powerful, great for rare catches",
-        icon = "rbxassetid://123456792",
-        meshId = "rbxassetid://carbon_rod_mesh",
-        textureId = "rbxassetid://carbon_rod_texture",
+        icon = "rbxassetid://94535429687898",
+        largePreview = "",
         unlockLevel = 15
     },
     
@@ -80,9 +78,8 @@ EquipmentDB.Rods = {
         luck = 2.5,
         price = 10000,
         description = "Ultra-strong titanium construction with high luck",
-        icon = "rbxassetid://123456793",
-        meshId = "rbxassetid://titanium_rod_mesh",
-        textureId = "rbxassetid://titanium_rod_texture",
+        icon = "rbxassetid://83297816950294",
+        largePreview = "",
         unlockLevel = 25
     },
     ["Legendary Rod"] = {
@@ -92,9 +89,8 @@ EquipmentDB.Rods = {
         luck = 3.0,
         price = 50000,
         description = "Mythical rod with incredible luck for legendary fish",
-        icon = "rbxassetid://123456794",
-        meshId = "rbxassetid://legendary_rod_mesh",
-        textureId = "rbxassetid://legendary_rod_texture",
+        icon = "rbxassetid://109262823337916",
+        largePreview = "",
         unlockLevel = 40
     }
 }
@@ -341,70 +337,75 @@ EquipmentDB.FishingLines = {
 
 -- HELPER FUNCTIONS
 function EquipmentDB:getRod(id)
-    print(self, "self form getRod")
+    local finalRod
     for name, rod in pairs(self.Rods) do
         if rod.id == id then
-            return rod
+            finalRod = rod
+            break
         end
     end
-    return nil
+    local rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild(string.gsub(finalRod.name, "%s+", ""))
+    if not rodTemplateModel then
+        rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild("TemplateRod")
+    end
+    return finalRod, rodTemplateModel
 end
 
-function EquipmentDB:getBobber(id)
-    for name, bobber in pairs(self.Bobbers) do
-        if bobber.id == id then
-            return bobber
-        end
-    end
-    return nil
-end
+-- function EquipmentDB:getBobber(id)
+--     for name, bobber in pairs(self.Bobbers) do
+--         if bobber.id == id then
+--             return bobber
+--         end
+--     end
+--     return nil
+-- end
 
-function EquipmentDB:getBait(id)
-    for name, bait in pairs(self.Bait) do
-        if bait.id == id then
-            return bait
-        end
-    end
-    return nil
-end
+-- function EquipmentDB:getBait(id)
+--     for name, bait in pairs(self.Bait) do
+--         if bait.id == id then
+--             return bait
+--         end
+--     end
+--     return nil
+-- end
 
-function EquipmentDB:getFishingLine(id)
-    for name, line in pairs(self.FishingLines) do
-        if line.id == id then
-            return line
-        end
-    end
-    return nil
-end
+-- function EquipmentDB:getFishingLine(id)
+--     for name, line in pairs(self.FishingLines) do
+--         if line.id == id then
+--             return line
+--         end
+--     end
+--     return nil
+-- end
 
-function EquipmentDB:getEquipmentByRarity(rarity)
-    local equipment = {}
+-- function EquipmentDB:getEquipmentByRarity(rarity)
+--     local equipment = {}
     
-    for name, rod in pairs(self.Rods) do
-        if rod.rarity == rarity then
-            table.insert(equipment, {type = "rod", data = rod})
-        end
-    end
+--     for name, rod in pairs(self.Rods) do
+--         if rod.rarity == rarity then
+--             table.insert(equipment, {type = "rod", data = rod})
+--         end
+--     end
     
-    for name, bobber in pairs(self.Bobbers) do
-        if bobber.rarity == rarity then
-            table.insert(equipment, {type = "bobber", data = bobber})
-        end
-    end
+--     for name, bobber in pairs(self.Bobbers) do
+--         if bobber.rarity == rarity then
+--             table.insert(equipment, {type = "bobber", data = bobber})
+--         end
+--     end
     
-    for name, bait in pairs(self.Bait) do
-        if bait.rarity == rarity then
-            table.insert(equipment, {type = "bait", data = bait})
-        end
-    end
+--     for name, bait in pairs(self.Bait) do
+--         if bait.rarity == rarity then
+--             table.insert(equipment, {type = "bait", data = bait})
+--         end
+--     end
     
-    for name, line in pairs(self.FishingLines) do
-        if line.rarity == rarity then
-            table.insert(equipment, {type = "line", data = line})
-        end
-    end
+--     for name, line in pairs(self.FishingLines) do
+--         if line.rarity == rarity then
+--             table.insert(equipment, {type = "line", data = line})
+--         end
+--     end
     
-    return equipment
-end
+--     return equipment
+-- end
 
 return EquipmentDB
