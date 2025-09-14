@@ -171,6 +171,9 @@ end)
 local ServerFishing = {}
 
 local timeEvent: RemoteEvent = Remotes:WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
+local zoneLists = {
+	"Coast"
+}
 
 function ServerFishing:setServerTime()
 	local function getJakartaTime()
@@ -219,9 +222,26 @@ function ServerFishing:setServerTime()
 		end
 	end)
 end
+function ServerFishing:setupZonesListener()
+	for _,v in pairs(zoneLists) do
+		local zone = workspace:WaitForChild("Zones"):WaitForChild(v)
+		if not zone then return end
+		zone.Touched:Connect(function(hit)
+			local player = Players:GetPlayerFromCharacter(hit.Parent)
+			if not player then return end
+			GlobalFishingManager:playerEnteredZone(player, zone)
+		end)
+		zone.TouchEnded:Connect(function(hit)
+			local player = Players:GetPlayerFromCharacter(hit.Parent)
+			if not player then return end
+			GlobalFishingManager:playerExitedZone(player, zone)
+		end)
+	end
+end
 function ServerFishing:main()
 	self.isShutdown = false
 	self:setServerTime()
+	self.setupZonesListener()
 end
 ServerFishing:main()
 

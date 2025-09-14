@@ -643,6 +643,12 @@ function PlayerInventory:populateData()
 end
 
 
+-- ZONES FUNCTIONS
+function PlayerInventory:updateUIPlayerZone(zone: string)
+    print(zone, "player is moving to zone")
+end
+
+
 -- MAIN FUNCTIONS
 function PlayerInventory:catchResultSuccess(info)
     self:addFishToInventory({

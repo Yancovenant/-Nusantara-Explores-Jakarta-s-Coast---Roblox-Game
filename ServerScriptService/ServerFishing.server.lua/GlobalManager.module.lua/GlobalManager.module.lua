@@ -3,6 +3,7 @@
 local GlobalManager = {}
 
 local PlayerData = {} -- {player = {bobber, beam, bobberTween}}
+local PlayerZones = {} -- player = {currentZone, previousZone}
 
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -231,8 +232,30 @@ function GlobalManager:setUnequippedReady(player, bool)
 end
 
 
+-- ZONE EVENTS
+function GlobalManager:updatePlayerZone(player: Player, zone: string)
+    InventoryModules[player]:updateUIPlayerZone(zone)
+end
+
+
 -- CONNECT EVENTS
+function GlobalManager:playerEnteredZone(player: Player, zone: Part)
+    if PlayerZones[player] and PlayerZones[player].currentZone == zone.Name then return end
+    PlayerZones[player].currentZone = zone.Name
+    PlayerZones[player].previousZone = nil
+    self:updatePlayerZone(player)
+end
+function GlobalManager:playerExitedZone(player: Player, zone: Part)
+    if PlayerZones[player] and PlayerZones[player].currentZone ~= zone.Name then return end
+    if PlayerZones[player].previousZone == zone.Name then return end
+    PlayerZones[player].previousZone = zone.Name
+    PlayerZones[player].currentZone = "Ocean"
+    self:updatePlayerZone(player, PlayerZones[player].currentZone)
+end
 function GlobalManager:playerAdded(player)
+    if InventoryModules[player] == nil then
+        InventoryModules[player] = InventoryModule:new(player)
+    end
     if PlayerData[player] == nil then
         PlayerData[player] = {
             bobber = nil,
@@ -241,8 +264,11 @@ function GlobalManager:playerAdded(player)
             bobConn = nil
         }
     end
-    if InventoryModules[player] == nil then
-        InventoryModules[player] = InventoryModule:new(player)
+    if PlayerZones[player] == nil then
+        PlayerZones[player] = {
+            currentZone = nil,
+            previousZone = nil
+        }
     end
 end
 function GlobalManager:playerRemoved(player)
