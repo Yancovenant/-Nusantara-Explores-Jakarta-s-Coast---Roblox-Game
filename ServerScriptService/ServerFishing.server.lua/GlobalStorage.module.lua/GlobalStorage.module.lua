@@ -53,7 +53,41 @@ function GSM:_MigrateKey(player, data)
     end
 end
 function GSM:_MigrateData2(data)
-    
+    if not data or type(data) ~= "table" then return data end
+    if data.Money ~= nil or data.TotalCatch ~= nil or data.RarestCatch ~= nil then
+        if data.Equipment and type(data.Equipment) == "table" then -- subpart
+            local e = data.Equipment
+            e.OwnedRods = e.OwnedRods or e.ownedRods
+            e.OwnedBobbers = e.OwnedBobbers or e.ownedBobbers
+            e.OwnedBait = e.OwnedBait or e.ownedBait
+            e.OwnedLines = e.OwnedLines or e.ownedLines
+            e.EquippedRod = e.EquippedRod or e.equippedRod
+            e.EquippedBobber = e.EquippedBobber or e.equippedBobber
+            e.EquippedBait = e.EquippedBait or e.equippedBait
+            e.EquippedLine = e.EquippedLine or e.equippedLine
+        end
+        return data -- early return
+    end
+    local migrated = {}
+    migrated.Money = data.money or 0
+    migrated.TotalCatch = data.totalCatch or 0
+    migrated.RarestCatch = data.rarestCatch or 0
+    migrated.FishInventory = data.fishInventory or {}
+    migrated.PlayerLevel = data.playerLevel or 1
+    migrated.PlayerXP = data.playerXP or 0
+
+    local oldE = data.equipment or {}
+    migrated.Equipment = {
+        OwnedRods = oldE.ownedRods or {1},
+        OwnedBobbers = oldE.ownedBobbers or {1},
+        OwnedBait = oldE.ownedBait or {1},
+        OwnedLines = oldE.ownedLines or {1},
+        EquippedRod = oldE.equippedRod or 1,
+        EquippedBobber = oldE.equippedBobber or 1,
+        EquippedBait = oldE.equippedBait or 1,
+        EquippedLine = oldE.equippedLine or 1,
+    }
+    return migrated
 end
 function GSM:_MigrateFishData(data)
     if data.FishCounts and data.FishWeights and not data.FishInventory then
@@ -126,7 +160,8 @@ function GSM:_SaveData(player, data)
         WaitForRequestBudget(Enum.DataStoreRequestType.SetIncrementAsync)
         success, ret = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
             if oldData then
-                if oldData.totalCatch > normalizedData.totalCatch then
+                local compareOld = self:_MigrateData2(oldData)
+                if compareOld and (compareOld.TotalCatch or 0) > (normalizedData.TotalCatch or 0) then
                     return oldData
                 end
             end

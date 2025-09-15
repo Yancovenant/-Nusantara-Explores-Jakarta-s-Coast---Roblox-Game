@@ -156,29 +156,6 @@ function PlayerInventory:catchResultSuccess(info)
     end
     self:calculateXP(info)
 end
-function PlayerInventory:setupEventListener()
-    -- local inventoryUI
-    -- repeat
-    --     inventoryUI = self.inventoryUI
-    -- until inventoryUI
-    -- local backpackBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("Backpack")
-    -- local backpackTooltip = backpackBtn:WaitForChild("Tooltip")
-    -- local fishingRodBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
-    
-    -- self.backpackBtnEnterConnection = backpackBtn.MouseEnter:Connect(function()
-	-- 	backpackTooltip.Visible = true
-	-- end)
-	-- self.backpackBtnLeaveConnection = backpackBtn.MouseLeave:Connect(function()
-	-- 	backpackTooltip.Visible = false
-	-- end)
-	-- self.backpackBtnClickConnection = backpackBtn.MouseButton1Click:Connect(function()
-    --     self:toggleInventory()
-	-- end)
-
-    -- self.fishingRodBtnClickConnection = fishingRodBtn.MouseButton1Click:Connect(function()
-    --     self:toggleRod()
-    -- end)
-end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
     self.player = player

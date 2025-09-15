@@ -36,29 +36,34 @@ function PUI:ToggleInventory()
     end
 end
 function PUI:SortFishInventoryUI()
-    local FishList = {}
-    for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
-        if fish.Name ~= "TemplateFish" and fish:FindFirstChild("FishData") then
-            table.insert(FishList, fish)
+    task.spawn(function()
+        local FishList = {}
+        for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
+            if fish.Name ~= "TemplateFish" then
+                local data = fish:FindFirstChild("FishData")
+                if data then
+                    local parts = string.split(data.Value, "|")
+                    local rarity = parts[2]
+                    local id = tonumber(parts[4])
+                    table.insert(FishList, {
+                        instance = fish,
+                        rarity = c.RARITY_ORDER[rarity] or 0,
+                        id = id or 0,
+                    })
+                end
+            end
         end
-    end
-    table.sort(FishList, function(a, b)
-        local aData = a:FindFirstChild("FishData")
-		local bData = b:FindFirstChild("FishData")
-		if not aData or not bData then return end
-		local rarityA = aData.Value:split("|")[2]
-		local rarityB = bData.Value:split("|")[2]
-		if rarityA ~= rarityB then
-			return c.RARITY_ORDER[rarityA] > c.RARITY_ORDER[rarityB]
-		end
-		local idA = tonumber(aData.Value:split("|")[4])
-		local idB = tonumber(bData.Value:split("|")[4])
-		return idA > idB
+        table.sort(FishList, function(a, b)
+            if a.rarity ~= b.rarity then
+                return a.rarity > b.rarity
+            end
+            return a.id > b.id
+        end)
+        for i, FishData in ipairs(FishList) do
+            FishData.instance.LayoutOrder = i
+        end
+        self.FishTabBtn.Count.Text = #FishList
     end)
-    for i, fish in ipairs(FishList) do
-        fish.LayoutOrder = i
-    end
-    self.FishTabBtn.Count.Text = #FishList
 end
 function PUI:_UpdateHotBarSelected(toolName:string)
     if not self.InventoryUI then return end
@@ -134,40 +139,36 @@ end
 function PUI:_SetupTweenAndConnection()
     self.ShownInventoryTween = TS:Create(
         self.MockTabContainer,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
         {Size = UDim2.new(0.8, 0, 0.8, 0)}
     )
     self.ClosedInventoryTween = TS:Create(
         self.MockTabContainer,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
         ),
         {Size = UDim2.new(0, 0, 0, 0)}
     )
     self.ShownHotbarTween = TS:Create(
         self.HotBar,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
         {Position = UDim2.new(0.5, 0, 0.875, 0)}
     )
     self.ClosedHotbarTween = TS:Create(
         self.HotBar,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
         {Position = UDim2.new(0.5, 0, 1.375, 0)}
     )
+    self.ShownPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.25, 0, 1.375, 0)}
+    )
+    self.ClosedPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.25, 0, 1.375, 0)}
+    )
+
     self.CloseButtonTween = TS:Create(
         self.CloseInvButton,
         TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
@@ -200,6 +201,7 @@ function PUI:_CreatePlayerUI()
     self.ZoneUI = self.TopBarUI:WaitForChild("Zone")
     self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
     self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
+    self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
     self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
     self.CloseInvButton = self.TabContainer:WaitForChild("CloseButton")
     self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
@@ -260,6 +262,15 @@ function PUI:CleanUp()
         self.ClosedHotbarTween:Cancel()
         self.ClosedHotbarTween = nil
     end
+    if self.ShownPlayerInfoTween then
+        self.ShownPlayerInfoTween:Cancel()
+        self.ShownPlayerInfoTween = nil
+    end
+    if self.ClosedPlayerInfoTween then
+        self.ClosedPlayerInfoTween:Cancel()
+        self.ClosedPlayerInfoTween = nil
+    end
+
     if self.CloseButtonTween then
         self.CloseButtonTween:Cancel()
         self.CloseButtonTween = nil

@@ -59,6 +59,9 @@ end
 function PM:ShowPowerCategoryUI(power)
     self.PUI:ShowPowerCategoryUI(power)
 end
+function PM:CatchResultSuccess(info)
+
+end
 function PM:_CreateLeaderstats()
     local leaderstats
     if not self.player:FindFirstChild("leaderstats") then
@@ -104,6 +107,7 @@ function PM:_PopulateData()
     self.Data = DBM:LoadDataPlayer(self.player)
     self.Money.Value = self.Data.Money
     self.TotalCatch.Value = self.Data.TotalCatch
+    print(tostring(self.Data.RarestCatch), "string")
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
     for id, fish in pairs(self.Data.FishInventory) do
         for _, weight in pairs(fish) do
