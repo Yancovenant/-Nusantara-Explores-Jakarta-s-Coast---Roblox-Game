@@ -1,55 +1,65 @@
 -- GlobalManager.module.lua
 
-local GlobalManager = {}
+local GM = {}
+local GSM = require(script.Parent.GlobalStorage)
+local PM = require(script.PlayerManager)
+local PlayerManagers = {}
 
-local PlayerData = {} -- {player = {bobber, beam, bobberTween}}
-local PlayerZones = {} -- player = {currentZone, previousZone}
-
-local TweenService = game:GetService("TweenService")
+local TS = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local fishingConfig = require(ReplicatedStorage:WaitForChild("FishingConfig"))
 local RunService = game:GetService("RunService")
+
+local FTEMPLATE = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish")
 
 local CatchTweenFinishEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("FishingEvents"):WaitForChild("CatchTweenFinish")
 
-local InventoryModule = require(script.PlayerInventory)
-local InventoryModules = {}
+local c = ReplicatedStorage:WaitForChild("GlobalConfig")
 
--- HELPER FUNCTIONS
-local function scaleWeight(weight)
-    local ratio = weight / 50 -- base weight is 50kg
+-- HELPER
+-- === zone ====
+function GM._isStillInside(player:Player, zone: Part)
+    if player and zone then
+        local localPos = zone.CFrame:PointToObjectSpace(player.Character.HumanoidRootPart)
+        local insideHeight = math.abs(localPos.X) <= (zone.Size.X / 2)
+        local insideEllipse = (
+            ((localPos.Y ^ 2) / ((zone.Size.Y / 2) ^ 2)) +
+            ((localPos.Z ^ 2) / ((zone.Size.Z / 2) ^ 2))
+        ) <= 1
+        return insideHeight and insideEllipse
+    else
+        return false
+    end
+end
+-- === fishing ===
+function GM:_ScaleWeight(w)
+    local ratio = w / 50 -- base weight is 50kg
     local factor = ratio^(1/3)
     return 1 * factor
 end
-function GlobalManager:createFishAnimation(fishName, weight, position)
-    --[[
-        TODO: add weight scaling
-    ]]--
-    local fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
-    if not fish then
-        fish = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
-    end
+function GM:_CreateFishAnimation(fishName, weight, pos)
+    local fish = FTEMPLATE:FindFirstChild(fishName)
+    if not fish then fish = FTEMPLATE:FindFirstChild("TestFish") end
     fish = fish:Clone()
     fish.Body.Anchored = true
 	fish.Body.CanCollide = false
-    fish:ScaleTo(scaleWeight(weight))
+    fish:ScaleTo(self:_ScaleWeight(weight))
     fish.Parent = workspace
-    fish:SetPrimaryPartCFrame(CFrame.new(position))
-    local struggleTween = TweenService:Create(
+    fish:SetPrimaryPartCFrame(CFrame.new(pos))
+    local struggleTween = TS:Create(
         fish.Body,
         TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
         {Rotation = fish.Body.Rotation + Vector3.new(0, 0, 15)}
     )
     struggleTween:Play()
-    local jumpTween = TweenService:Create(
+    local jumpTween = TS:Create(
         fish.Body,
         TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
-        {Position = position + Vector3.new(0, 0.5, 0)}
+        {Position = pos + Vector3.new(0, 0.5, 0)}
     )
     jumpTween:Play()
     return fish, struggleTween, jumpTween
 end
-function GlobalManager:createFishSlungTween(player, fish)
+function GM:_CreateFishSlungTween(player:Player, fish)
     local rootPart = player.Character.HumanoidRootPart
 	local behindPlayer = rootPart.Position - (rootPart.CFrame.LookVector * 2)
 
@@ -61,24 +71,24 @@ function GlobalManager:createFishSlungTween(player, fish)
 	local raycastResult = workspace:Raycast(origin, direction, params)
 	local groundPosition = raycastResult and raycastResult.Position or behindPlayer
 
-	local slungTween = TweenService:Create(
+	local slungTween = TS:Create(
 		fish.Body,
 		TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{Position = groundPosition}
 	)
 	slungTween:Play()
 
-	local bounceTween = TweenService:Create(
+	local bounceTween = TS:Create(
 		fish.Body,
 		TweenInfo.new(0.3, Enum.EasingStyle.Bounce, Enum.EasingDirection.Out, -1, true),
 		{Position = groundPosition + Vector3.new(0, 0.3, 0)}
 	)
-	local rotateTween = TweenService:Create(
+	local rotateTween = TS:Create(
 		fish.Body,
 		TweenInfo.new(0.4, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
 		{Rotation = fish.Body.Rotation + Vector3.new(0, 15, 0)}
 	)
-	local fadeTween = TweenService:Create(
+	local fadeTween = TS:Create(
 		fish.Body,
 		TweenInfo.new(2.0, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
 		{Transparency = 1}
@@ -95,30 +105,18 @@ function GlobalManager:createFishSlungTween(player, fish)
 		end)
 	end)
 end
-
--- GLOBAL SURFACE UI
-function GlobalManager:showPowerCategoryUI(player, power)
-    InventoryModules[player]:showPowerCategoryUI(power)
+function GM:CleanBobber(player)
+    if self.PlayerData[player].bobConn then self.PlayerData[player].bobConn:Disconnect() self.PlayerData[player].bobConn = nil end
+    if self.PlayerData[player].bobberTween then self.PlayerData[player].bobberTween:Cancel() self.PlayerData[player].bobberTween = nil end
+    if self.PlayerData[player].bobber then self.PlayerData[player].bobber:Destroy() self.PlayerData[player].bobber = nil end
+    if self.PlayerData[player].beam then self.PlayerData[player].beam:Destroy() self.PlayerData[player].beam = nil end
 end
-function GlobalManager:showBitUI(player, visible)
-    InventoryModules[player]:showBitUI(visible)
-end
-
-
--- GLOBAL INSTANCES
-function GlobalManager:cleanBobber(player)
-    if PlayerData[player].bobConn then PlayerData[player].bobConn:Disconnect() PlayerData[player].bobConn = nil end
-    if PlayerData[player].bobberTween then PlayerData[player].bobberTween:Cancel() PlayerData[player].bobberTween = nil end
-    if PlayerData[player].bobber then PlayerData[player].bobber:Destroy() PlayerData[player].bobber = nil end
-    if PlayerData[player].beam then PlayerData[player].beam:Destroy() PlayerData[player].beam = nil end
-end
-function GlobalManager:createBobber(player, params)
+function GM:CreateBobber(player, params)
     local finalPos = params[1]
-    local fishingRod = params[2]
+    local ROD = params[2]
     
-    local RodTip = fishingRod:WaitForChild("Rod"):WaitForChild("RodTip")
-    print(RodTip, "RodTip")
-    local Handle = fishingRod:WaitForChild("Handle")
+    local RodTip = ROD:WaitForChild("Rod"):WaitForChild("RodTip")
+    local Handle = ROD:WaitForChild("Handle")
     local bobber, beam, bobberTween, bobConn
     bobber = Instance.new("Part")
 	bobber.Name = "Bobber"
@@ -132,33 +130,34 @@ function GlobalManager:createBobber(player, params)
 	att.Parent = bobber
 
     -- tween
-	local tween = TweenService:Create(
-        bobber, 
+	local tween = TS:Create(
+        bobber,
         TweenInfo.new(
             0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out
-        ), 
+        ),
         {Position = finalPos})
+    table.insert(self.PlayerData[player].CleanableTweens, tween)
 	tween:Play()
 	tween.Completed:Wait()
 
 	local t0 = tick()
 	local bobberY = finalPos.Y
-	bobberTween = TweenService:Create(
-        bobber, 
+	bobberTween = TS:Create(
+        bobber,
         TweenInfo.new(
-            fishingConfig.Gameplay.BOBBER_ANIMATION_SPEED, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), 
-            {Position = Vector3.new(finalPos.X, bobberY + fishingConfig.Gameplay.BOBBER_FLOAT_HEIGHT, finalPos.Z)
+            c.FISHING.BOBBER_ANIMATION_SPEED, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), 
+            {Position = Vector3.new(finalPos.X, bobberY + c.FISHING.BOBBER_FLOAT_HEIGHT, finalPos.Z)
 	})
 	bobberTween:Play()
 
 	bobConn = RunService.Heartbeat:Connect(function()
 		if not bobber or not bobberTween then return end
 		local currentPos = bobber.Position
-		bobber.Position = Vector3.new(currentPos.X, bobberY + math.sin((tick() - t0) * 2) * fishingConfig.Gameplay.BOBBER_FLOAT_HEIGHT, currentPos.Z)
+		bobber.Position = Vector3.new(currentPos.X, bobberY + math.sin((tick() - t0) * 2) * c.FISHING.BOBBER_FLOAT_HEIGHT, currentPos.Z)
 	end)
-    PlayerData[player].bobber = bobber
-    PlayerData[player].bobberTween = bobberTween
-    PlayerData[player].bobConn = bobConn
+    self.PlayerData[player].bobber = bobber
+    self.PlayerData[player].bobberTween = bobberTween
+    self.PlayerData[player].bobConn = bobConn
     
 	beam = Instance.new("Beam")
 	beam.Attachment0 = RodTip
@@ -168,44 +167,105 @@ function GlobalManager:createBobber(player, params)
 	beam.FaceCamera = true
 	beam.Parent = Handle
     
-    PlayerData[player].beam = beam
+    self.PlayerData[player].beam = beam
+end
+
+-- PLAYER MANAGER (PM) CONNECTION
+-- === zone ===
+function GM:_onUpdatePlayerZones(player:Player, zoneName:string)
+    if not self.PlayerManagers[player] then self._setupPlayerManager(player) end
+    self.PlayerManagers[player]:updatePlayerZone(zoneName)
 end
 
 
--- GLOBAL SOUND
-function GlobalManager:cleanSounds(player)
-    print("cleanSounds", player.Name)
+-- PLAYER SETUP FUNCTIONS
+-- === zone ===
+function GM:_setupPlayerZones(player)
+    if self.PlayerZones[player] == nil then
+        self.PlayerZones[player] = {
+            currentZone = nil
+        }
+    end
 end
-function GlobalManager:playSound(player, params)
-    local sound = params[1]
-    local tool = params[2]
-    if tool then
-        tool:WaitForChild("Sounds"):FindFirstChild(sound):Play()
+-- === manager ===
+function GM:_setupPlayerManager(player)
+    if self.PlayerManagers[player] == nil then
+        self.PlayerManagers[player] = PM:new(player)
     end
 end
 
 
--- GLOBAL EVENTS
-function GlobalManager:catchResultSuccess(player, params)
-    local info = params[1]
-    local fishingRod = params[2]
+-- STATIC METHOD
+function GM:PlaySound(player, sound:Sound, cleanable:boolean)
+    if cleanable then
+        table.insert(self.PlayerData[player].CleanableSounds, sound)
+    end
+    sound:Play()
+    sound.Ended:Connect(function()
+        for i,strack in ipairs(self.PlayerData[player].CleanableSounds) do
+            if sound == strack then
+                table.remove(self.PlayerData[player].CleanableSounds, i)
+                break
+            end
+        end
+    end)
+end
+function GM:CleanSounds(player)
+    for _,sound in self.PlayerData[player].CleanableSounds do
+        sound:Stop()
+    end
+end
 
-    local target = fishingRod:WaitForChild("Rod"):WaitForChild("RodTip").WorldPosition
-    local tween = TweenService:Create( -- roll bobber from water to tip
-        PlayerData[player].bobber,
+
+-- CLEANUP
+function GM:CleanUp(player:Player)
+    self:CleanBobber(player)
+    self:CleanSounds(player)
+end
+
+
+-- ENTRY POINTS
+-- === interaction ===
+-- ToolEvent
+function GM:ToggleInventory(player)
+   self.PlayerManagers[player]:ToggleInventory()
+end
+function GM:ToggleRod(player)
+   self.PlayerManagers[player]:ToggleRod()
+end
+function GM:UnEquippedReady(player, bool)
+    self.PlayerManagers[player]:UnEquippedReady(bool)
+end
+-- FishingEvent
+function GM:PlayFishingSound(player, params)
+    local sound = params[1]
+    local tool = params[2]
+    local strack = tool:WaitForChild("Sounds"):FindFirstChild(sound)
+    self:PlaySound(player, strack, true)
+end
+function GM:CleanFishingSounds(player)
+    self:CleanSounds(player)
+end
+function GM:CatchResultSuccess(player:Player, params)
+    local info = params[1]
+    local ROD = params[2]
+
+    local target = ROD:WaitForChild("Rod"):WaitForChild("RodTip").WorldPosition
+    local tween = TS:Create( -- roll bobber from water to tip
+        self.PlayerData[player].bobber,
         TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
         {Position = target}
     )
     tween:Play()
-    local fish, struggleTween, jumpTween = self:createFishAnimation(info.fishName, info.weight, PlayerData[player].bobber.Position)
-    local fishFollowConnection = RunService.Heartbeat:Connect(function()
-        if fish and PlayerData[player].bobber then
-            fish:SetPrimaryPartCFrame(CFrame.new(PlayerData[player].bobber.Position))
+    local fish, struggleTween, jumpTween = self:_CreateFishAnimation(info.fishName, info.weight, self.PlayerData[player].bobber.Position)
+    local FFConnection = RunService.Heartbeat:Connect(function()
+        if fish and self.PlayerData[player].bobber then
+            fish:SetPrimaryPartCFrame(CFrame.new(self.PlayerData[player].bobber.Position))
             jumpTween:Cancel()
-            jumpTween = TweenService:Create(
+            jumpTween = TS:Create(
                 fish.Body,
                 TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
-                {Position = PlayerData[player].bobber.Position + Vector3.new(0, 0.5, 0)}
+                {Position = self.PlayerData[player].bobber.Position + Vector3.new(0, 0.5, 0)}
             )
             jumpTween:Play()
         end
@@ -213,79 +273,91 @@ function GlobalManager:catchResultSuccess(player, params)
     tween.Completed:Wait()
     struggleTween:Cancel()
     jumpTween:Cancel()
-    fishFollowConnection:Disconnect()
-    self:createFishSlungTween(player, fish)
+    FFConnection:Disconnect()
+    self:_CreateFishSlungTween(player, fish)
 
-    InventoryModules[player]:catchResultSuccess(info)
+    self.PlayerManagers[player]:CatchResultSuccess(info)
 
-    self:cleanBobber(player)
+    self:CleanBobber(player)
     CatchTweenFinishEvent:FireClient(player)
 end
-function GlobalManager:toggleRod(player)
-    InventoryModules[player]:toggleRod()
+function GM:ShowFishBiteUI(player, visible)
+    self.PlayerManagers[player]:ShowFishBiteUI(visible)
 end
-function GlobalManager:toggleInventory(player)
-    InventoryModules[player]:toggleInventory()
+function GM:ShowPowerCategoryUI(player, power)
+    self.PlayerManagers[player]:ShowPowerCategoryUI(power)
 end
-function GlobalManager:setUnequippedReady(player, bool)
-    InventoryModules[player]:setUnequippedReady(bool)
+-- === zone ===
+function GM:playerEnteredZone(player:Player, zone: Part)
+    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
+    local pz = self.PlayerZones[player]
+    if pz and pz.currentZone == zone.Name then return end
+    pz.currentZone = zone.Name
+    self.PlayerZones[player].currentZone = pz.currentZone
+    self:_onUpdatePlayerZones(player, pz.currentZone)
 end
-
-
--- ZONE EVENTS
-function GlobalManager:updatePlayerZone(player: Player, zone: string)
-    InventoryModules[player]:updateUIPlayerZone(zone)
+function GM:playerExitedZone(player:Player, zone: Part)
+    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
+    local pz = self.PlayerZones[player]
+    if pz and pz.currentZone ~= zone.Name then return end
+    if self:_isStillInside(player, zone) then return end
+    pz.currentZone = "Ocean"
+    self.PlayerZones[player].currentZone = pz.currentZone
+    self:_onUpdatePlayerZones(player, pz.currentZone)
 end
-
-
--- CONNECT EVENTS
-function GlobalManager:playerEnteredZone(player: Player, zone: Part)
-    if PlayerZones[player] and PlayerZones[player].currentZone == zone.Name then return end
-    PlayerZones[player].currentZone = zone.Name
-    PlayerZones[player].previousZone = nil
-    self:updatePlayerZone(player)
-end
-function GlobalManager:playerExitedZone(player: Player, zone: Part)
-    if PlayerZones[player] and PlayerZones[player].currentZone ~= zone.Name then return end
-    if PlayerZones[player].previousZone == zone.Name then return end
-    PlayerZones[player].previousZone = zone.Name
-    PlayerZones[player].currentZone = "Ocean"
-    self:updatePlayerZone(player, PlayerZones[player].currentZone)
-end
-function GlobalManager:playerAdded(player)
-    if InventoryModules[player] == nil then
-        InventoryModules[player] = InventoryModule:new(player)
-    end
-    if PlayerData[player] == nil then
-        PlayerData[player] = {
+-- === player ===
+function GM:playerAdded(player:Player)
+    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
+    if not self.PlayerManagers[player] then self:_setupPlayerManager(player) end
+    GSM:LoadDataPlayer(player)
+    if self.PlayerData[player] == nil then
+        self.PlayerData[player] = {
             bobber = nil,
             beam = nil,
             bobberTween = nil,
-            bobConn = nil
-        }
-    end
-    if PlayerZones[player] == nil then
-        PlayerZones[player] = {
-            currentZone = nil,
-            previousZone = nil
+            bobConn = nil,
+            CleanableSounds = {},
         }
     end
 end
-function GlobalManager:playerRemoved(player)
-    if PlayerData[player] then
-        self:cleanBobber(player)
-        PlayerData[player] = nil
+function GM:playerRemoved(player:Player)
+    GSM:SaveDataPlayers(player)
+    if self.PlayerData[player] then
+        self.CleanUp(player)
+        self.PlayerData[player] = nil
     end
-    if InventoryModules[player] then
-        InventoryModules[player]:cleanUp()
-        InventoryModules[player] = nil
-    end
-end
-function GlobalManager:onShutdown(player)
-    if InventoryModules[player] then
-        InventoryModules[player]:saveData()
+    if self.PlayerManagers[player] then
+        self.PlayerManagers[player].CleanUp()
+        self.PlayerManagers[player] = nil
     end
 end
 
+GM.ALLOWED_METHOD = {
+    "ToggleRod",
+    "ToggleInventory",
 
-return GlobalManager
+    "UnEquippedReady",
+
+    "PlayFishingSound",
+    "CatchResultSuccess",
+    "ShowFishBiteUI",
+    "CleanFishingSounds",
+    "CleanBobber",
+    "CreateBobber",
+    "ShowPowerCategoryUI"
+}
+GM.PlayerZones = {}
+GM.PlayerManagers = {}
+GM.PlayerData = {}
+function GM:SetupServer()
+    self.CleanableSounds = {}
+end
+
+-- EXIT POINT
+function GM:onShutdown(player)
+    if self.PlayerManagers[player] then
+        self.PlayerManagers[player]:saveData()
+    end
+end
+
+return GM

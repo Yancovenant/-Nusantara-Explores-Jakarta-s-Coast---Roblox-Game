@@ -16,6 +16,15 @@ local RARITY_ORDER = {
 	["Uncommon"] = 2,
 	["Common"] = 1
 }
+local RARITY_MULTIXP = {
+    ["Classified"] = 7,
+	["Mythical"] = 5.5,
+	["Legendary"] = 5,
+	["Epic"] = 3.5,
+	["Rare"] = 2,
+	["Uncommon"] = 1.25,
+	["Common"] = 1
+}
 local AUTOSAVE_INTERVAL = 120 -- 2 minutes
 
 local PlayerInventory = {}
@@ -28,7 +37,6 @@ local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChi
 local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 local ClientAnimationEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
 
-local FishingRodItem = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
 local FishDB = require(FishingRodItem:WaitForChild("FishDB"))
 local EquipmentDB = require(FishingRodItem:WaitForChild("EquipmentDB"))
 
@@ -51,74 +59,38 @@ local function formatWeight(weight)
 		return string.format("%.1f Kg", weight)
 	end
 end
-local function formatChance(chance)
-	-- Convert decimal back to fraction format
-	local function gcd(a, b)
-		while b ~= 0 do
-			a, b = b, a % b
-		end
-		return a
-	end
+-- local function formatChance(chance)
+-- 	-- Convert decimal back to fraction format
+-- 	local function gcd(a, b)
+-- 		while b ~= 0 do
+-- 			a, b = b, a % b
+-- 		end
+-- 		return a
+-- 	end
 
-	local function decimalToFraction(decimal)
-		local tolerance = 1e-6
-		local h1, h2, k1, k2 = 1, 0, 0, 1
-		local x = decimal
+-- 	local function decimalToFraction(decimal)
+-- 		local tolerance = 1e-6
+-- 		local h1, h2, k1, k2 = 1, 0, 0, 1
+-- 		local x = decimal
 
-		while math.abs(x - math.floor(x + 0.5)) > tolerance do
-			x = 1 / (x - math.floor(x))
-			h1, h2 = h1 * math.floor(x) + h2, h1
-			k1, k2 = k1 * math.floor(x) + k2, k1
-		end
+-- 		while math.abs(x - math.floor(x + 0.5)) > tolerance do
+-- 			x = 1 / (x - math.floor(x))
+-- 			h1, h2 = h1 * math.floor(x) + h2, h1
+-- 			k1, k2 = k1 * math.floor(x) + k2, k1
+-- 		end
 
-		return math.floor(x + 0.5) * h1 + h2, h1
-	end
+-- 		return math.floor(x + 0.5) * h1 + h2, h1
+-- 	end
 
-	local numerator, denominator = decimalToFraction(chance)
-	local divisor = gcd(numerator, denominator)
-	numerator = numerator / divisor
-	denominator = denominator / divisor
+-- 	local numerator, denominator = decimalToFraction(chance)
+-- 	local divisor = gcd(numerator, denominator)
+-- 	numerator = numerator / divisor
+-- 	denominator = denominator / divisor
 
-	return string.format("1/%d", denominator)
-end
+-- 	return string.format("1/%d", denominator)
+-- end
 function PlayerInventory:createLeaderstats()
-    local leaderstats
-    if not self.player:FindFirstChild("leaderstats") then
-        leaderstats = Instance.new("Folder")
-        leaderstats.Name = "leaderstats"
-        leaderstats.Parent = self.player
-    else
-        leaderstats = self.player:WaitForChild("leaderstats")
-    end
-    local money, totalCatch, rarestCatch
-    money = Instance.new("IntValue")
-    money.Name = "Money"
-    money.Value = 0
-    money.Parent = leaderstats
-    self.money = money
-
-    totalCatch = Instance.new("IntValue")
-    totalCatch.Name = "Caught"
-    totalCatch.Value = 0
-    totalCatch.Parent = leaderstats
-    self.totalCatch = totalCatch
-
-    rarestCatch = Instance.new("StringValue")
-    rarestCatch.Name = "Rarest Caught"
-    rarestCatch.Value = "0"
-    rarestCatch.Parent = leaderstats
-    self.rarestCatch = rarestCatch
-
-    -- self.totalCatch:GetPropertyChangedSignal("Value"):Connect(function()
-    --     DataStorage:updateTotalCatch(self.player, self.totalCatch.Value)
-    -- end)
-    -- self.money:GetPropertyChangedSignal("Value"):Connect(function()
-    --     DataStorage:updateMoney(self.player, self.money.Value)
-    -- end)
-    -- self.rarestCatch:GetPropertyChangedSignal("Value"):Connect(function()
-    --     DataStorage:updateRarestCatch(self.player, self.rarestCatch.Value)
-    -- end)
-    return leaderstats
+    
 end
 function PlayerInventory:getRarityColor(rarity, transparency)
 	transparency = transparency or 0.3
@@ -148,65 +120,81 @@ function PlayerInventory:createInventoryUI()
         return nil
     end
     self.FishingUI = playerGUI:WaitForChild("FishingUI")
-    self.inventoryUI = ui
-    self.hotBar = ui:WaitForChild("InventoryFrame")
+    -- self.inventoryUI = ui
+    -- self.hotBar = ui:WaitForChild("InventoryFrame")
     self.rodHotBar = self.hotBar:WaitForChild("FishingRod")
-    self.tabContainer = ui:WaitForChild("TabContainer")
+    -- self.tabContainer = ui:WaitForChild("TabContainer")
     self.fishInventoryTab = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
     self.fishTemplate = self.fishInventoryTab:WaitForChild("TemplateFish")
     self.rodInventoryTab = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
     self.rodTemplate = self.rodInventoryTab:WaitForChild("TemplateFishingRod")
     self.fishTabBtn = self.tabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+    -- self.closeInvButton = self.tabContainer:WaitForChild("CloseButton")
     
-    self.mockTabContainer = ui:WaitForChild("MockTabContainer")
+    -- self.mockTabContainer = ui:WaitForChild("MockTabContainer")
 
-    self.ShownInventoryTween = TweenService:Create(
-        self.mockTabContainer,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
-        {Size = UDim2.new(0.8, 0, 0.8, 0)}
-    )
-    self.closedInventoryTween = TweenService:Create(
-        self.mockTabContainer,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
-        {Size = UDim2.new(0, 0, 0, 0)}
-    )
-    self.ShownHotbarTween = TweenService:Create(
-        self.hotBar,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
-        {Position = UDim2.new(0.5, 0, 0.875, 0)}
-    )
-    self.closedHotbarTween = TweenService:Create(
-        self.hotBar,
-        TweenInfo.new(
-            0.3,
-            Enum.EasingStyle.Back,
-            Enum.EasingDirection.InOut
-        ),
-        {Position = UDim2.new(0.5, 0, 1.375, 0)}
-    )
+    -- self.ShownInventoryTween = TweenService:Create(
+    --     self.mockTabContainer,
+    --     TweenInfo.new(
+    --         0.3,
+    --         Enum.EasingStyle.Back,
+    --         Enum.EasingDirection.InOut
+    --     ),
+    --     {Size = UDim2.new(0.8, 0, 0.8, 0)}
+    -- )
+    -- self.closedInventoryTween = TweenService:Create(
+    --     self.mockTabContainer,
+    --     TweenInfo.new(
+    --         0.3,
+    --         Enum.EasingStyle.Back,
+    --         Enum.EasingDirection.InOut
+    --     ),
+    --     {Size = UDim2.new(0, 0, 0, 0)}
+    -- )
+    -- self.ShownHotbarTween = TweenService:Create(
+    --     self.hotBar,
+    --     TweenInfo.new(
+    --         0.3,
+    --         Enum.EasingStyle.Back,
+    --         Enum.EasingDirection.InOut
+    --     ),
+    --     {Position = UDim2.new(0.5, 0, 0.875, 0)}
+    -- )
+    -- self.closedHotbarTween = TweenService:Create(
+    --     self.hotBar,
+    --     TweenInfo.new(
+    --         0.3,
+    --         Enum.EasingStyle.Back,
+    --         Enum.EasingDirection.InOut
+    --     ),
+    --     {Position = UDim2.new(0.5, 0, 1.375, 0)}
+    -- )
+    -- self.closeButtonTween = TweenService:Create(
+    --     self.closeInvButton,
+    --     TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
+    --     {Size = UDim2.new(.9, 0, .9, 0)}
+    -- )
+    -- local isPressed
+    -- self.closeInvButton.MouseButton1Click:Connect(function()
+    --     if isPressed then return end
+    --     isPressed = true
+    --     self.closeButtonTween:Play()
+    --     self:toggleInventory()
+    --     self.closeButtonTween.Completed:Connect(function()
+    --         isPressed = false
+    --     end)
+    -- end)
     return ui
 end
 function PlayerInventory:createGlobalUI()
-    local baitUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("FishingBaitUI"):Clone()
-    baitUI.Parent = self.player.Character.Head
-    local powerCategoryUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("PowerCategoryUI"):Clone()
-    powerCategoryUI.Parent = self.player.Character.Head
-    self.globalUI = {
-        baitUI = baitUI,
-        powerCategoryUI = powerCategoryUI
-    }
+    -- local baitUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("FishingBaitUI"):Clone()
+    -- baitUI.Parent = self.player.Character.Head
+    -- local powerCategoryUI = ReplicatedStorage:WaitForChild("Template"):WaitForChild("PowerCategoryUI"):Clone()
+    -- powerCategoryUI.Parent = self.player.Character.Head
+    -- self.globalUI = {
+    --     baitUI = baitUI,
+    --     powerCategoryUI = powerCategoryUI
+    -- }
 end
 
 function PlayerInventory:showBitUI(visible)
@@ -424,59 +412,13 @@ function PlayerInventory:holdFishAboveHead(fishName, weight)
     -- })
 end
 
-function PlayerInventory:toggleRod()
-    self:cleanHoldingFish()
-    self:equipTool("FishingRod")
-    self:updateHotBarSelected("FishingRod")
-end
-function PlayerInventory:toggleInventory()
-    local isShown = self.tabContainer.Visible
-    if isShown then
-        self.tabContainer.Visible = not isShown
-        self.closedInventoryTween:Play()
-        self.ShownHotbarTween:Play()
-        self.closedInventoryTween.Completed:Connect(function()
-            self.mockTabContainer.Visible = not isShown
-        end)
-        self.ShownHotbarTween.Completed:Connect(function()
-            self.FishingUI.Enabled = true
-        end)
-    else
-        self.FishingUI.Enabled = false
-        self.mockTabContainer.Size = UDim2.new(0,0,0,0)
-        self.mockTabContainer.Visible = not isShown
-        self.ShownInventoryTween:Play()
-        self.closedHotbarTween:Play()
-        self.ShownInventoryTween.Completed:Connect(function()
-            self.tabContainer.Visible = not isShown
-        end)
-    end
-end
-function PlayerInventory:setUnequippedReady(bool)
-    self.onUnequippedReady = bool
-end
+
 
 
 -- INVENTORY FUNCTIONS
-function PlayerInventory:createBackpack()
-    if not self.player:FindFirstChild("Custom Backpack") then
-        self.backpack = Instance.new("Folder")
-        self.backpack.Name = "Custom Backpack"
-        self.backpack.Parent = self.player
-
-        self.fishFolder = Instance.new("Folder")
-        self.fishFolder.Name = "Fish"
-        self.fishFolder.Parent = self.backpack
-
-        self.toolFolder = Instance.new("Folder")
-        self.toolFolder.Name = "Tool"
-        self.toolFolder.Parent = self.backpack
-    end
-    if not self.toolFolder:FindFirstChild("FishingRod") then
-        self.fishingRod = FishingRodItem:Clone()
-        self.fishingRod.Parent = self.toolFolder
-    end
-end
+-- function PlayerInventory:createBackpack()
+    
+-- end
 
 function PlayerInventory:refreshTools()
     if not self.toolFolder then return end
@@ -614,32 +556,32 @@ end
 
 -- STORAGE FUNCTIONS
 function PlayerInventory:populateData()
-    self.leaderstats = self:createLeaderstats()
-    self.data = DataStorage:loadPlayerData(self.player)
-    self.money.Value = self.data.money
-    self.totalCatch.Value = self.data.totalCatch
-    self.rarestCatch.Value = formatChance(self.data.rarestCatch)
-    for id, fish in pairs(self.data.fishInventory) do
-        for _, weight in pairs(fish) do
-            self:addFishToInventory({
-                id = id,
-                weight = weight
-            }, false)
-        end
-    end
-    self:sortFishInventory()
-    for _, rod in pairs(self.data.equipment.ownedRods) do
-        local equippedRod, equippedRodTemplate = self:getEquippedEquipment("getRod", rod)
-        self:addRodToInventory(equippedRod, false)
-    end
-    self._autoSaveRunning = true
-    task.spawn(function()
-        while self._autoSaveRunning do
-            task.wait(AUTOSAVE_INTERVAL)
-            if not self._autoSaveRunning then break end
-            self:saveData()
-        end
-    end)
+    -- self.leaderstats = self:createLeaderstats()
+    -- self.data = DataStorage:loadPlayerData(self.player)
+    -- self.money.Value = self.data.money
+    -- self.totalCatch.Value = self.data.totalCatch
+    -- self.rarestCatch.Value = formatChance(self.data.rarestCatch)
+    -- for id, fish in pairs(self.data.fishInventory) do
+    --     for _, weight in pairs(fish) do
+    --         self:addFishToInventory({
+    --             id = id,
+    --             weight = weight
+    --         }, false)
+    --     end
+    -- end
+    -- self:sortFishInventory()
+    -- for _, rod in pairs(self.data.equipment.ownedRods) do
+    --     local equippedRod, equippedRodTemplate = self:getEquippedEquipment("getRod", rod)
+    --     self:addRodToInventory(equippedRod, false)
+    -- end
+    -- self._autoSaveRunning = true
+    -- task.spawn(function()
+    --     while self._autoSaveRunning do
+    --         task.wait(AUTOSAVE_INTERVAL)
+    --         if not self._autoSaveRunning then break end
+    --         self:saveData()
+    --     end
+    -- end)
 end
 
 
@@ -648,6 +590,13 @@ function PlayerInventory:updateUIPlayerZone(zone: string)
     print(zone, "player is moving to zone")
 end
 
+
+-- PLAYER FUNCTIONS
+function PlayerInventory:calculateXP(info)
+    local multi = RARITY_MULTIXP[info.fishData.rarity]
+    local xp = (info.weight ^ 0.75) * multi
+    print("get xp is", xp)
+end
 
 -- MAIN FUNCTIONS
 function PlayerInventory:catchResultSuccess(info)
@@ -669,29 +618,30 @@ function PlayerInventory:catchResultSuccess(info)
         self.rarestCatch.Value = formatChance(info.fishData.baseChance)
         self.data.rarestCatch = info.fishData.baseChance
     end
+    self:calculateXP(info)
 end
 function PlayerInventory:setupEventListener()
-    local inventoryUI
-    repeat
-        inventoryUI = self.inventoryUI
-    until inventoryUI
-    local backpackBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("Backpack")
-    local backpackTooltip = backpackBtn:WaitForChild("Tooltip")
-    local fishingRodBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
+    -- local inventoryUI
+    -- repeat
+    --     inventoryUI = self.inventoryUI
+    -- until inventoryUI
+    -- local backpackBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("Backpack")
+    -- local backpackTooltip = backpackBtn:WaitForChild("Tooltip")
+    -- local fishingRodBtn = inventoryUI:WaitForChild("InventoryFrame"):WaitForChild("FishingRod")
     
-    self.backpackBtnEnterConnection = backpackBtn.MouseEnter:Connect(function()
-		backpackTooltip.Visible = true
-	end)
-	self.backpackBtnLeaveConnection = backpackBtn.MouseLeave:Connect(function()
-		backpackTooltip.Visible = false
-	end)
-	self.backpackBtnClickConnection = backpackBtn.MouseButton1Click:Connect(function()
-        self:toggleInventory()
-	end)
+    -- self.backpackBtnEnterConnection = backpackBtn.MouseEnter:Connect(function()
+	-- 	backpackTooltip.Visible = true
+	-- end)
+	-- self.backpackBtnLeaveConnection = backpackBtn.MouseLeave:Connect(function()
+	-- 	backpackTooltip.Visible = false
+	-- end)
+	-- self.backpackBtnClickConnection = backpackBtn.MouseButton1Click:Connect(function()
+    --     self:toggleInventory()
+	-- end)
 
-    self.fishingRodBtnClickConnection = fishingRodBtn.MouseButton1Click:Connect(function()
-        self:toggleRod()
-    end)
+    -- self.fishingRodBtnClickConnection = fishingRodBtn.MouseButton1Click:Connect(function()
+    --     self:toggleRod()
+    -- end)
 end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
@@ -699,11 +649,11 @@ function PlayerInventory:new(player)
     self.inventoryUI = nil
     self.globalUI = nil
 
-    self:createInventoryUI()
-    self:createGlobalUI()
-    self:setupEventListener()
+    -- self:createInventoryUI()
+    -- self:createGlobalUI()
+    -- self:setupEventListener()
 
-    self:createBackpack()
+    -- self:createBackpack()
 
     self:populateData()
     self:updateFishingRodModel()
@@ -779,6 +729,10 @@ function PlayerInventory:cleanUp()
     if self.closedHotbarTween then
         self.closedHotbarTween:Cancel()
         self.closedHotbarTween = nil
+    end
+    if self.closeButtonTween then
+        self.closeButtonTween:Cancel()
+        self.closeButtonTween = nil
     end
     if self.fishingRod then
         self.fishingRod:Destroy()
