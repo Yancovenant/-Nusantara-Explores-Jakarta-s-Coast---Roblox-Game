@@ -10,7 +10,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
 
-local ROD = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("FishingRod")
 
 
 -- HELPER
@@ -44,15 +43,21 @@ function PM:updatePlayerZone(zone)
     self.PUI:UpdateZoneUI(zone)
 end
 function PM:ToggleRod()
-    self:_CleanHoldingFish()
-    self:_EquipTool("FishingRod")
-    self:_UpdateHotBarSelected("FishingRod")
+    self.PINV:_CleanHoldingFish()
+    self.PINV:_EquipTool("FishingRod")
+    self.PUI:_UpdateHotBarSelected("FishingRod")
 end
 function PM:ToggleInventory()
     self.PUI:ToggleInventory()
 end
 function PM:UnEquippedReady(bool)
-    self.onUnequippedReady = bool
+    self.PINV:UnEquippedReady(bool)
+end
+function PM:ShowFishBiteUI(visible)
+    self.PUI:ShowFishBiteUI(visible)
+end
+function PM:ShowPowerCategoryUI(power)
+    self.PUI:ShowPowerCategoryUI(power)
 end
 function PM:_CreateLeaderstats()
     local leaderstats
@@ -84,33 +89,19 @@ function PM:_CreateLeaderstats()
     -- end)
     return leaderstats
 end
+function PM:SaveData()
+    DBM:SaveDataPlayer(self.player, self.Data)
+end
 
 -- SETUP FUNCTIONS
 function PM:_SetupEventListener()
-    -- nothing
-end
-function PM:_CreateBackpack()
-    if not self.player:FindFirstChild("Custom Backpack") then
-        self.Backpack = Instance.new("Folder")
-        self.Backpack.Name = "Custom Backpack"
-        self.Backpack.Parent = self.player
-
-        self.FishFolder = Instance.new("Folder")
-        self.FishFolder.Name = "Fish"
-        self.FishFolder.Parent = self.backpack
-
-        self.ToolFolder = Instance.new("Folder")
-        self.ToolFolder.Name = "Tool"
-        self.ToolFolder.Parent = self.backpack
-    end
-    if not self.ToolFolder:FindFirstChild("FishingRod") then
-        self.FishingRod = ROD:Clone()
-        self.FishingRod.Parent = self.ToolFolder
-    end
+    self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
+        self:ToggleRod()
+    end)
 end
 function PM:_PopulateData()
     self.Leaderstats = self:_CreateLeaderstats()
-    self.Data = DBM:LoadPlayerData(self.player)
+    self.Data = DBM:LoadDataPlayer(self.player)
     self.Money.Value = self.Data.Money
     self.TotalCatch.Value = self.Data.TotalCatch
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
@@ -123,9 +114,9 @@ function PM:_PopulateData()
         end
     end
     self.PUI:SortFishInventoryUI()
-    for _, rod in pairs(self.Data.Eequipment.OwnedRods) do -- fix this
-        local equippedRod, equippedRodTemplate = self.PINV:GetEquippedEquipment("getRod", rod)
-        self.PINV:AddRodToInventory(equippedRod, false)
+    for _, rod in pairs(self.Data.Equipment.OwnedRods) do -- FIX THIS/NAMING CONVENTION
+        local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", rod)
+        self.PINV:AddRodToInventory(RodData, false)
     end
     self._AutoSaveRunning = true
     task.spawn(function()
@@ -136,6 +127,19 @@ function PM:_PopulateData()
         end
     end)
 end
+function PM:_UpdateFishingRodModel()
+    local RodData, RodModel = self.PINV:GetEquipmentData("GetRod", self.Data.Equipment.EquippedRod)
+    if not RodData or not self.PINV.FishingRod then return end
+    self.PINV.FishingRod:FindFirstChild("Handle"):Destroy()
+    self.PINV.FishingRod:FindFirstChild("Rod"):Destroy()
+    local Rod = RodModel:FindFirstChild("Rod"):Clone()
+    local handle = RodModel:FindFirstChild("Handle"):Clone()
+    Rod.Parent = self.PINV.FishingRod
+    handle.Parent = self.PINV.FishingRod
+    handle:FindFirstChild("Main").Part1 = Rod
+
+    self.PUI.RodHotBar.Icon.Image = RodData.icon
+end
 
 -- ENTRY POINTS
 function PM:new(player)
@@ -145,12 +149,23 @@ function PM:new(player)
     self.PUI = PUI:new(player)
     self.PINV = PINV:new(player)
     self:_SetupEventListener()
-    self:_CreateBackpack()
+    
     self:_PopulateData()
+    self:_UpdateFishingRodModel()
     return self
 end
 function PM:CleanUp()
-    print("[PlayerManager]: Cleaning up")
+    self:SaveData()
+    if self.FishingRodBtnClickConnection then
+        self.FishingRodBtnClickConnection:Disconnect()
+        self.FishingRodBtnClickConnection = nil
+    end
+    self.PUI:CleanUp()
+    self.PINV:CleanUp()
+    self._autoSaveRunning = false
+    self.PUI = nil
+    self.PINV = nil
+    self.player = nil
 end
 
 return PM

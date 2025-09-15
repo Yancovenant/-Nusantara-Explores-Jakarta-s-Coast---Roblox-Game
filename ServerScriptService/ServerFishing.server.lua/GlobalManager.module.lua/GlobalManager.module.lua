@@ -5,21 +5,21 @@ local GSM = require(script.Parent.GlobalStorage)
 local PM = require(script.PlayerManager)
 local PlayerManagers = {}
 
-local TS = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TS:TweenService = game:GetService("TweenService")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local FTEMPLATE = ReplicatedStorage:WaitForChild("Template"):WaitForChild("Fish")
+local FTEMPLATE = RS:WaitForChild("Template"):WaitForChild("Fish")
 
-local CatchTweenFinishEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("FishingEvents"):WaitForChild("CatchTweenFinish")
+local CatchTweenFinishEvent = RS:WaitForChild("Remotes"):WaitForChild("FishingEvents"):WaitForChild("CatchTweenFinish")
 
-local c = ReplicatedStorage:WaitForChild("GlobalConfig")
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 -- HELPER
 -- === zone ====
-function GM._isStillInside(player:Player, zone: Part)
+function GM:_isStillInside(player:Player, zone: Part)
     if player and zone then
-        local localPos = zone.CFrame:PointToObjectSpace(player.Character.HumanoidRootPart)
+        local localPos = zone.CFrame:PointToObjectSpace(player.Character.HumanoidRootPart.Position)
         local insideHeight = math.abs(localPos.X) <= (zone.Size.X / 2)
         local insideEllipse = (
             ((localPos.Y ^ 2) / ((zone.Size.Y / 2) ^ 2)) +
@@ -173,7 +173,10 @@ end
 -- PLAYER MANAGER (PM) CONNECTION
 -- === zone ===
 function GM:_onUpdatePlayerZones(player:Player, zoneName:string)
-    if not self.PlayerManagers[player] then self._setupPlayerManager(player) end
+    -- if not self.PlayerManagers[player] then self:_setupPlayerManager(player) end
+    while self.PlayerManagers[player] == nil do
+        task.wait(0.5)
+    end
     self.PlayerManagers[player]:updatePlayerZone(zoneName)
 end
 
@@ -316,18 +319,19 @@ function GM:playerAdded(player:Player)
             beam = nil,
             bobberTween = nil,
             bobConn = nil,
-            CleanableSounds = {},
+            CleanableTweens = {},
+            CleanableSounds = {}
         }
     end
 end
 function GM:playerRemoved(player:Player)
-    GSM:SaveDataPlayers(player)
+    GSM:SaveDataPlayer(player)
     if self.PlayerData[player] then
         self.CleanUp(player)
         self.PlayerData[player] = nil
     end
     if self.PlayerManagers[player] then
-        self.PlayerManagers[player].CleanUp()
+        self.PlayerManagers[player]:CleanUp()
         self.PlayerManagers[player] = nil
     end
 end
@@ -350,7 +354,7 @@ GM.PlayerZones = {}
 GM.PlayerManagers = {}
 GM.PlayerData = {}
 function GM:SetupServer()
-    self.CleanableSounds = {}
+    -- self.CleanableSounds = {}
 end
 
 -- EXIT POINT

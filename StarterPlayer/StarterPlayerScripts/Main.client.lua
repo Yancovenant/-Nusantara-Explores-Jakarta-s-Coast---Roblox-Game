@@ -30,7 +30,7 @@ local rodKey: Enum.KeyCode = Enum.KeyCode.One
 
 -- ENTRY POINTS
 function CPM:_SetUIS()
-	local cantRun = Character:GetAttribute("isFishing") or Character:GetAttribute("isCasting")
+	local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 	if UIS.TouchEnabled and not UIS.GyroscopeEnabled then
 		-- mobile
 	else
@@ -55,7 +55,7 @@ function CPM:_SetUIS()
 					if not self.isRunning then return end
 					if cantRun then return end
 					self.isRunning = false
-					Humanoid.WalkSpeed = c.PLAYER.DEFAULT_ATTRS.WalkSpeed
+					Humanoid.WalkSpeed = c.PLAYER.HUMANOID_DEFAULT_ATTRS.WalkSpeed
 					self.walkingTween:Play()
 				end
 			end
@@ -65,7 +65,7 @@ end
 function CPM:_SetRemoteEventListener()
 	AnimationEvent.OnClientEvent:Connect(function(animName:string)
 		local animation: Animation
-		if animName =="holdFishAboveHead" then
+		if animName =="HoldFishAboveHead" then
 			animation = holdingFishAnimation
 		else
 			return CAM:CleanAnimations()
@@ -91,9 +91,9 @@ function CPM:_SetPlayerConfig()
 end
 function CPM:main()
 	CUI:main()
-	self.sprintingTween = TS:Create(camera,TweenInfo.new(0.3),{FieldOfView = DEFAULT_CAMFOV + (8/5)})
+	self.sprintingTween = TS:Create(camera,TweenInfo.new(0.3),{FieldOfView = DEFAULT_CAMFOV + ( c.PLAYER.RUN_SPEED / 5 )})
 	self.walkingTween = TS:Create(camera,TweenInfo.new(0.3),{FieldOfView = DEFAULT_CAMFOV})
 	self:_SetPlayerConfig()
-	self._SetEventListener()
+	self:_SetEventListener()
 end
 CPM:main()

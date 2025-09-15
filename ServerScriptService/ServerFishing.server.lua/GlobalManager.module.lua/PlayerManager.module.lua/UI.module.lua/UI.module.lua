@@ -2,39 +2,133 @@
 
 local PUI = {}
 PUI.__index = PUI
+local DBM = require(script.Parent.Parent.Parent.GlobalStorage)
 
-local StarterPlayer = game:GetService("StarterPlayer")
 local TS:TweenService = game:GetService("TweenService")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 -- MAIN FUNCTIONS
 function PUI:UpdateZoneUI(zoneName)
     self.ZoneUI.ZoneText.Text = zoneName
 end
 function PUI:ToggleInventory()
-    local isShown = self.tabContainer.Visible
+    local isShown = self.TabContainer.Visible
     if isShown then
-        self.tabContainer.Visible = not isShown
-        self.closedInventoryTween:Play()
+        self.TabContainer.Visible = not isShown
+        self.ClosedInventoryTween:Play()
         self.ShownHotbarTween:Play()
-        self.closedInventoryTween.Completed:Connect(function()
-            self.mockTabContainer.Visible = not isShown
+        self.ClosedInventoryTween.Completed:Connect(function()
+            self.MockTabContainer.Visible = not isShown
         end)
         self.ShownHotbarTween.Completed:Connect(function()
             self.FishingUI.Enabled = true
         end)
     else
         self.FishingUI.Enabled = false
-        self.mockTabContainer.Size = UDim2.new(0,0,0,0)
-        self.mockTabContainer.Visible = not isShown
+        self.MockTabContainer.Size = UDim2.new(0,0,0,0)
+        self.MockTabContainer.Visible = not isShown
         self.ShownInventoryTween:Play()
-        self.closedHotbarTween:Play()
+        self.ClosedHotbarTween:Play()
         self.ShownInventoryTween.Completed:Connect(function()
-            self.tabContainer.Visible = not isShown
+            self.TabContainer.Visible = not isShown
         end)
     end
 end
-
+function PUI:SortFishInventoryUI()
+    local FishList = {}
+    for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
+        if fish.Name ~= "TemplateFish" and fish:FindFirstChild("FishData") then
+            table.insert(FishList, fish)
+        end
+    end
+    table.sort(FishList, function(a, b)
+        local aData = a:FindFirstChild("FishData")
+		local bData = b:FindFirstChild("FishData")
+		if not aData or not bData then return end
+		local rarityA = aData.Value:split("|")[2]
+		local rarityB = bData.Value:split("|")[2]
+		if rarityA ~= rarityB then
+			return c.RARITY_ORDER[rarityA] > c.RARITY_ORDER[rarityB]
+		end
+		local idA = tonumber(aData.Value:split("|")[4])
+		local idB = tonumber(bData.Value:split("|")[4])
+		return idA > idB
+    end)
+    for i, fish in ipairs(FishList) do
+        fish.LayoutOrder = i
+    end
+    self.FishTabBtn.Count.Text = #FishList
+end
+function PUI:_UpdateHotBarSelected(toolName:string)
+    if not self.InventoryUI then return end
+    local HotbarSlot = self.InventoryUI:FindFirstChild("InventoryFrame"):FindFirstChild(toolName)
+    if not HotbarSlot then return end
+    local SelectedFrame = HotbarSlot:FindFirstChild("SelectedFrame")
+    if not SelectedFrame then return end
+    SelectedFrame.Visible = not SelectedFrame.Visible
+    HotbarSlot.BackgroundTransparency = SelectedFrame.Visible and 1 or 0.5
+end
+function PUI:ShowFishBiteUI(visible:boolean)
+    if not self.globalUI.BaitUI then return end
+    self.globalUI.BaitUI.Frame.Visible = visible
+    if not visible then
+        if self.BaitPulseTween then
+            self.BaitPulseTween:Cancel()
+            self.BaitPulseTween = nil
+        end
+        return
+    end
+    self.BaitPulseTween = TS:Create(
+        self.globalUI.BaitUI.Frame,
+        TweenInfo.new(0.5, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+        {BackgroundTransparency = 0.5}
+    )
+    self.BaitPulseTween:Play()
+end
+function PUI:ShowPowerCategoryUI(power)
+    if not self.globalUI.PowerCategoryUI then return end
+	local percentage = math.clamp(power * 100, 0, 100)
+	local category = nil
+	for _, cat in pairs(c.FISHING.POWER_CATEGORIES) do
+		if percentage >= cat.min and percentage <= cat.max then
+			category = cat
+			break
+		end
+	end
+	if not category then return end
+	self.globalUI.PowerCategoryUI.Frame.TextLabel.TextColor3 = category.color
+	self.globalUI.PowerCategoryUI.Frame.TextLabel.Text = category.name
+	self.globalUI.PowerCategoryUI.Frame.Visible = true
+	task.spawn(function()
+		self.PowerCategShownTween = TS:Create(
+			self.globalUI.PowerCategoryUI.Frame,
+			TweenInfo.new(
+				0.3,
+				Enum.EasingStyle.Back,
+				Enum.EasingDirection.Out
+			),
+			{Size = UDim2.new(2, 0, 1, 0)}
+		)
+		self.PowerCategShownTween:Play()
+		task.wait(0.6)
+		self.PowerCategShownTween:Cancel()
+        self.PowerCategShownTween = nil
+		self.PowerCategHideTween = TS:Create(
+			self.globalUI.PowerCategoryUI.Frame,
+			TweenInfo.new(
+				0.6,
+				Enum.EasingStyle.Back,
+				Enum.EasingDirection.Out
+			),
+			{Size = UDim2.new(0,0,0,0)}
+		)
+		self.PowerCategHideTween:Play()
+		self.PowerCategHideTween.Completed:Wait()
+		self.globalUI.PowerCategoryUI.Frame.Visible = false
+        self.PowerCategHideTween = nil
+	end)
+end
 
 -- SETUP
 function PUI:_SetupTweenAndConnection()
@@ -91,18 +185,14 @@ function PUI:_SetupTweenAndConnection()
     end)
 
     self.BackpackBtnEnterConnection = self.BackpackBtn.MouseEnter:Connect(function()
-		self.BackpackTooltip.Visible = true
+		self.BackpackToolTip.Visible = true
 	end)
 	self.BackpackBtnLeaveConnection = self.BackpackBtn.MouseLeave:Connect(function()
-		self.BackpackTooltip.Visible = false
+		self.BackpackToolTip.Visible = false
 	end)
 	self.BackpackBtnClickConnection = self.BackpackBtn.MouseButton1Click:Connect(function()
         self:ToggleInventory()
 	end)
-
-    self.FishingRodBtnClickConnection = self.FishingRodBtn.MouseButton1Click:Connect(function()
-        self:ToggleRod()
-    end)
 end
 function PUI:_CreatePlayerUI()
     local PlayerGui = self.player:WaitForChild("PlayerGui")
@@ -115,7 +205,7 @@ function PUI:_CreatePlayerUI()
     self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
     self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
     self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
-    self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
+    self.FishingUI = PlayerGui:WaitForChild("FishingUI")
     
     self:_SetupTweenAndConnection()
 
@@ -127,12 +217,79 @@ function PUI:_CreatePlayerUI()
         BaitUI = BaitUI,
         PowerCategoryUI = PowerCategoryUI
     }
+
+    self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+    self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
+    self.RodHotBar = self.HotBar:WaitForChild("FishingRod")
 end
 
 -- ENTRY POINTS
 function PUI:new(player)
+    local self = setmetatable({}, PUI)
     self.player = player
+    self.Data = DBM:LoadDataPlayer(self.player)
     self:_CreatePlayerUI()
+    return self
+end
+
+-- CLEANING
+function PUI:CleanUp()
+    if self.InventoryUI then
+        self.InventoryUI:Destroy()
+        self.InventoryUI = nil
+    end
+    if self.globalUI then
+        self.globalUI.BaitUI:Destroy()
+        self.globalUI.PowerCategoryUI:Destroy()
+        self.globalUI = nil
+    end
+
+    if self.ShownInventoryTween then
+        self.ShownInventoryTween:Cancel()
+        self.ShownInventoryTween = nil
+    end
+    if self.ClosedInventoryTween then
+        self.ClosedInventoryTween:Cancel()
+        self.ClosedInventoryTween = nil
+    end
+    if self.ShownHotbarTween then
+        self.ShownHotbarTween:Cancel()
+        self.ShownHotbarTween = nil
+    end
+    if self.ClosedHotbarTween then
+        self.ClosedHotbarTween:Cancel()
+        self.ClosedHotbarTween = nil
+    end
+    if self.CloseButtonTween then
+        self.CloseButtonTween:Cancel()
+        self.CloseButtonTween = nil
+    end
+    if self.BaitPulseTween then
+        self.BaitPulseTween:Cancel()
+        self.BaitPulseTween = nil
+    end
+    if self.PowerCategShownTween then
+        self.PowerCategShownTween:Cancel()
+        self.PowerCategShownTween = nil
+    end
+    if self.PowerCategHideTween then
+        self.PowerCategHideTween:Cancel()
+        self.PowerCategHideTween = nil
+    end
+
+    if self.BackpackBtnEnterConnection then
+        self.BackpackBtnEnterConnection:Disconnect()
+        self.BackpackBtnEnterConnection = nil
+    end
+    if self.BackpackBtnLeaveConnection then
+        self.BackpackBtnLeaveConnection:Disconnect()
+        self.BackpackBtnLeaveConnection = nil
+    end
+    if self.BackpackBtnClickConnection then
+        self.BackpackBtnClickConnection:Disconnect()
+        self.BackpackBtnClickConnection = nil
+    end
+    self.player = nil
 end
 
 return PUI

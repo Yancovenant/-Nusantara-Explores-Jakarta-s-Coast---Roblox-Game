@@ -3,7 +3,7 @@
 local CAM = {}
 local Player:Player = game:GetService("Players").LocalPlayer
 local Humanoid:Humanoid = Player.Character.Humanoid
-local Animator:Animator = Humanoid:FindFirstAncestorOfClass("Animator")
+local Animator:Animator = Humanoid:FindFirstChildWhichIsA("Animator")
 
 -- STATIC FUNCTIONS
 function CAM:LoadAnimation(animation: Animation)

@@ -11,9 +11,20 @@ GC.FISHING = {
     CHARGE_TIME = 1.0,
     BASE_RANGE = 19,
     WalkSpeed = 8,
-    FISH_DATA = require(script.GlobalFishDB)
+    FISH_DATA = require(script.GlobalFishDB),
+    POWER_CATEGORIES = {
+        {min = 0, max = 30, name = "Weak", color = Color3.fromRGB(255, 100, 100)},      -- Red
+        {min = 31, max = 50, name = "Not Bad", color = Color3.fromRGB(255, 165, 0)},   -- Orange
+        {min = 51, max = 70, name = "OK", color = Color3.fromRGB(255, 255, 0)},        -- Yellow
+        {min = 71, max = 90, name = "Regular", color = Color3.fromRGB(100, 255, 100)}, -- Green
+        {min = 91, max = 100, name = "Professional", color = Color3.fromRGB(100, 100, 255)} -- Blue
+    }
 }
 
+-- EQUIPMENT --
+GC.EQUIPMENT = {
+    GED = require(script.GlobalEquipmentDB)
+}
 
 -- PLAYER --
 GC.PLAYER = {
@@ -29,7 +40,7 @@ GC.PLAYER = {
     AUTOSAVE_INTERVAL = 120 -- 2 minutes
 }
 
--- RARITY
+-- RARITY --
 GC.RARITY_COLORS = {
     Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
     Uncommon = Color3.fromRGB(100, 255, 100),      -- Bright Green - Fresh, nature
@@ -39,14 +50,20 @@ GC.RARITY_COLORS = {
     Mythical = Color3.fromRGB(255, 100, 255),     -- Magenta - Mystical, otherworldly
     Classified = Color3.fromRGB(255, 255, 255)    -- White - Pure, secretive
 }
+GC.RARITY_ORDER = {
+    ["Classified"] = 7,
+    ["Mythical"] = 6,
+    ["Legendary"] = 5,
+    ["Epic"] = 4,
+    ["Rare"] = 3,
+    ["Uncommon"] = 2,
+    ["Common"] = 1
+}
 
 -- STATIC FUNCTIONS
 function GC:GetRarityColor(rarity)
     return self.RARITY_COLORS[rarity] or self.RARITY_COLORS.Common
 end
-
-
-
 
 --- 
 local ZONEVIBES_CONFIG = {

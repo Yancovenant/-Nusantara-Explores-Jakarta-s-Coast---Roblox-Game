@@ -8,7 +8,7 @@ local FA = require(script.FishingAction)
 -- ENTRY POINTS
 function FM:main()
 	FA:CleanConnections()
-	FUI:createFishingUI()
-	FA:setupEventListener()
+	FUI:CreateFishingUI()
+	FA:SetupEventListener()
 end
 FM:main()

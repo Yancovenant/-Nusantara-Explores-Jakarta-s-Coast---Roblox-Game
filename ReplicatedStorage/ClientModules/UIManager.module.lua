@@ -25,6 +25,7 @@ function CUI:UpdateTime(t)
     if t == nil then
         t = {hour = Lighting:GetAttribute("Hour"), min = Lighting:GetAttribute("Minute")}
     end
+	print("[CUI]: trying to update ui clock", t)
     local nH = string.format("%02d", t.hour)
     local nM = string.format("%02d", t.min)    
     self.TopBarUI.Time.TimeText.Text = nH .. ":" .. nM
@@ -33,7 +34,7 @@ end
 -- ENTRY POINTS
 function CUI:main()
     self:_CreateUI()
-    self.UpdateTime()
+    -- self.UpdateTime()
 end
 
 return CUI

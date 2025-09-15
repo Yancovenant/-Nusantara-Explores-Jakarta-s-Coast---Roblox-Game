@@ -93,6 +93,7 @@ function SF:main()
 	GM:SetupServer()
 	GAM:SetupServer()
 end
+SF:main()
 
 Players.PlayerAdded:Connect(function(player)
     GM:playerAdded(player)

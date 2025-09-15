@@ -21,79 +21,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 ]]--
 
 -- EQUIPMENT CATEGORIES
-EquipmentDB.Rods = {
-    -- ===== STARTER RODS =====
-    ["Basic Rod"] = {
-        id = 1,
-        name = "Basic Rod",
-        rarity = "Common",
-        luck = 1.0, -- Replaces attraction, affects fish rarity chances
-        price = 0,
-        description = "A simple fishing rod for beginners",
-        icon = "rbxassetid://115011593432581",
-        largePreview = "",
-        unlockLevel = 1
-    },
-    ["Wooden Rod"] = {
-        id = 2,
-        name = "Wooden Rod", 
-        rarity = "Common",
-        luck = 1.2,
-        price = 100,
-        description = "Sturdy wooden rod with better luck",
-        icon = "rbxassetid://127772934799813",
-        largePreview = "",
-        unlockLevel = 3
-    },
+-- EquipmentDB.Rods = {
     
-    -- ===== INTERMEDIATE RODS =====
-    ["Bamboo Rod"] = {
-        id = 3,
-        name = "Bamboo Rod",
-        rarity = "Uncommon", 
-        luck = 1.5,
-        price = 500,
-        description = "Flexible bamboo rod, increases rare fish chances",
-        icon = "rbxassetid://87203609835635",
-        largePreview = "",
-        unlockLevel = 8
-    },
-    ["Carbon Fiber Rod"] = {
-        id = 4,
-        name = "Carbon Fiber Rod",
-        rarity = "Rare",
-        luck = 2.0,
-        price = 2000,
-        description = "Lightweight and powerful, great for rare catches",
-        icon = "rbxassetid://94535429687898",
-        largePreview = "",
-        unlockLevel = 15
-    },
-    
-    -- ===== ADVANCED RODS =====
-    ["Titanium Rod"] = {
-        id = 5,
-        name = "Titanium Rod",
-        rarity = "Epic",
-        luck = 2.5,
-        price = 10000,
-        description = "Ultra-strong titanium construction with high luck",
-        icon = "rbxassetid://83297816950294",
-        largePreview = "",
-        unlockLevel = 25
-    },
-    ["Legendary Rod"] = {
-        id = 6,
-        name = "Legendary Rod",
-        rarity = "Legendary",
-        luck = 3.0,
-        price = 50000,
-        description = "Mythical rod with incredible luck for legendary fish",
-        icon = "rbxassetid://109262823337916",
-        largePreview = "",
-        unlockLevel = 40
-    }
-}
+-- }
 
 EquipmentDB.Bobbers = {
     -- ===== BASIC BOBBERS =====
@@ -337,18 +267,18 @@ EquipmentDB.FishingLines = {
 
 -- HELPER FUNCTIONS
 function EquipmentDB:getRod(id)
-    local finalRod
-    for name, rod in pairs(self.Rods) do
-        if rod.id == id then
-            finalRod = rod
-            break
-        end
-    end
-    local rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild(string.gsub(finalRod.name, "%s+", ""))
-    if not rodTemplateModel then
-        rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild("TemplateRod")
-    end
-    return finalRod, rodTemplateModel
+    -- local finalRod
+    -- for name, rod in pairs(self.Rods) do
+    --     if rod.id == id then
+    --         finalRod = rod
+    --         break
+    --     end
+    -- end
+    -- local rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild(string.gsub(finalRod.name, "%s+", ""))
+    -- if not rodTemplateModel then
+    --     rodTemplateModel = ReplicatedStorage:WaitForChild("ToolItem"):WaitForChild("RodTemplate"):FindFirstChild("TemplateRod")
+    -- end
+    -- return finalRod, rodTemplateModel
 end
 
 -- function EquipmentDB:getBobber(id)

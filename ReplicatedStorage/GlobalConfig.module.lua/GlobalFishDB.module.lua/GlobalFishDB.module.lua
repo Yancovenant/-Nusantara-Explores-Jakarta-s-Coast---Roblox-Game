@@ -1,7 +1,69 @@
 -- Global Fish DB
 
+--[[
+    Probability System
+    - Fish Base Rarity
+    - Player Skill Level
+    - Equipment Quality
+    - Location Difficulty
+    - Time of Day/Weather
+    -- === secondary Factors ===
+    - Player Luck
+    - Consecutive Catch Bonus
+    - Power Level
+
+    Formula
+    Final Chance = Base Chance * 
+                   Skill Multiplier * 
+                   Equipment Multiplier * 
+                   Environmental Multiplier *
+                   Luck Multiplier *
+                   Power Bonus
+    
+    Example:
+        (1/100) * 1.5 * 2.0 * 0.8 * 1.2 * 1.3 * 1.1 = 0.041184 = 4.1184%
+
+    Features Engagement
+    - Fish Encyclopedia
+    - Rarity Achievemnts
+    - Fish Market
+    - Equipment Upgrades
+    - Fishing Tournaments
+    - Leaderboards
+    - Trading System
+]]--
+
+--[[
+	HABITAT DEFINITIONS
+		1. Coastal:
+			- Near the coast/ terrain or shoreline.
+			- Depth water check from water surface to bottom < 20studs e.g
+		2. Mangrove:
+			- Mangrove Zone
+		3. Reef:
+			- Reef Zone
+		4. Ocean:
+			- Position from land > 200studs
+			- or Ocean Zone
+		5. DeepSea:
+			- Water depth > 100 studs
+			- cast line should be close to seabed, 10 studs from seabed
+			- or DeepSea Zone
+		6. Events/FantasyZones:
+			- Server-side events
+			- Special Zones e.g. events, fantasy zones, etc.
+]]--
+
 local GFD = {}
 
+function GFD:FindFish(id)
+	for fishName, fishInfo in pairs(GFD.FISH) do
+		if fishInfo.id == tonumber(id) then
+			return fishName, fishInfo
+		end
+	end
+	return nil
+end
 
 GFD.FISH = {
     -- ===== COMMON FISH =====
@@ -255,6 +317,5 @@ GFD.FISH = {
 	-- ===== MYTHICAL FISH =====
 	-- ===== CLASSIFIED FISH =====
 }
-
 
 return GFD

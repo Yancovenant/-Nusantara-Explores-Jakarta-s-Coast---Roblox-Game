@@ -6,7 +6,7 @@ local TS = game:GetService("TweenService")
 
 local Player = game:GetService("Players").LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local c = ReplicatedStorage:WaitForChild("GlobalConfig")
+local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
 
 
 -- HELPERS
@@ -49,8 +49,8 @@ end
 -- STATIC FUNCTIONS
 function LUIC:ShowPopup(params:table)
     task.spawn(function()
-        local message = self.popupFrame:FindFirstChild("PopupTemplate"):Clone()
-		message.Parent = self.popupFrame
+        local message = self.PopupFrame:FindFirstChild("PopupTemplate"):Clone()
+		message.Parent = self.PopupFrame
 		table.insert(self.messagePopup, message)
 		for childNames, props in pairs(params) do
 			local child = message:FindFirstChild(childNames)
@@ -119,7 +119,7 @@ end
 
 -- ENTRY POINTS
 function LUIC:CreateFishingUI()
-    local fishingUI = Player:WaitForChild("PlayerGUI"):WaitForChild("FishingUI")
+    local fishingUI = Player:WaitForChild("PlayerGui"):WaitForChild("FishingUI")
     self.AutoFishButton =  fishingUI:WaitForChild("AutoFishButton")
     self.PowerBar = fishingUI:WaitForChild("PowerBar")
 	self.PopupFrame = fishingUI:WaitForChild("PopupFrame")

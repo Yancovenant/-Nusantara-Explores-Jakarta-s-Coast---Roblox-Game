@@ -12,7 +12,8 @@ local CollectionService = game:GetService("CollectionService")
 local Player:Player = game:GetService("Players").LocalPlayer
 local Humanoid:Humanoid = Player.Character.Humanoid
 
-local CAM = ReplicatedStorage:WaitForChild("ClientModule"):WaitForChild("AnimationManager")
+local CAM = require(ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
+
 local ReelingAnimation = ROD:WaitForChild("Animations"):WaitForChild("Reeling")
 local CatchAnimation = ROD:WaitForChild("Animations"):WaitForChild("Catch")
 local StartCastAnimation = ROD:WaitForChild("Animations"):WaitForChild("StartCast")
@@ -27,18 +28,18 @@ local FishingRemotes = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("F
 local ReelComplete = FishingRemotes:WaitForChild("ReelComplete")
 local StartCast = FishingRemotes:WaitForChild("StartCast")
 
-local c = ReplicatedStorage:WaitForChild("GlobalConfig")
+local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
 
 local power = 0
 
 -- HELPER
 -- === player ===
 function FA:_getAttr(key)
-    Player.Character:GetAttribute(key)
+    return Player.Character:GetAttribute(key)
 end
 function FA:IsFishing() return self:_getAttr("IsFishing") end
-function FA:IsCasting() return self._getAttr("IsCasting") end
-function FA:CanFish() return self._getAttr("CanFish") end
+function FA:IsCasting() return self:_getAttr("IsCasting") end
+function FA:CanFish() return self:_getAttr("CanFish") end
 function FA:_setAttr(key, value)
     Player.Character:SetAttribute(key, value)
 end
@@ -160,7 +161,7 @@ function FA:Fishing(target)
 		return r.Material == Enum.Material.Water or CollectionService:HasTag(rInstance, "Water")
 	end
 	finalPos = r.Position
-    FUI:FireServer("CreateBobber", {finalPos, ROD})
+    GlobalEvent:FireServer("CreateBobber", {finalPos, ROD})
     ROD:WaitForChild("Handle"):WaitForChild("Beam")
     local idleFishingAnimation = CAM:LoadAnimation(IdleFishingAnimation)
 	idleFishingAnimation:Play()
@@ -211,7 +212,7 @@ function FA:StartCast(AFKPOWER)
 		FUI.PowerBar.Visible = true
 		FUI.PowerBar.Fill.Size = UDim2.new(1, 0, power, 0)
 		FUI.PowerBar.Label.Text = string.format("%d%%", math.floor(power * 100))
-		if self.IsAFK and not self.IsFishing() then
+		if self.IsAFK and not self:IsFishing() then
 			self:ReleaseCast()
 			self:_setAttr("IsCasting", false)
 		end
@@ -233,7 +234,7 @@ function FA:StartAfk()
 	local afkLoop = function()
 		while self.IsAFK and self:CanFish() do
 			local afkpower = 0.5 + (math.random() * 0.5)
-			self:startCast(afkpower)
+			self:StartCast(afkpower)
 			while self:IsFishing() and self.IsAFK do
 				task.wait(0.1)
 			end
@@ -272,7 +273,6 @@ function FA:OnUnequipped()
     self:CleanUp()
     self:_setAttr("CanFish", false)
     FUI.AutoFishButton.Visible = false
-	self.ready = false
 	ToolEvent:FireServer("UnEquippedReady", true)
 end
 function FA:OnEquipped()
@@ -291,7 +291,7 @@ function FA:OnEquipped()
 		if gp then return end
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then self:ReleaseCast() end
 	end)
-	self:setupEventListener()
+	self:SetupEventListener()
 end
 
 
@@ -345,7 +345,7 @@ function FA:CleanConnections()
 end
 
 -- ENTRY POINTS
-function FA:setupEventListener()
+function FA:SetupEventListener()
     -- === fishing events ===
     local CastApproved = FishingRemotes:WaitForChild("CastApproved")
     local BiteEvent = FishingRemotes:WaitForChild("Bite")
