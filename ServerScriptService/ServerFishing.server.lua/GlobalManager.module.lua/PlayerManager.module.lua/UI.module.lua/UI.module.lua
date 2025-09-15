@@ -18,6 +18,7 @@ function PUI:ToggleInventory()
         self.TabContainer.Visible = not isShown
         self.ClosedInventoryTween:Play()
         self.ShownHotbarTween:Play()
+        self.ShownPlayerInfoTween:Play()
         self.ClosedInventoryTween.Completed:Connect(function()
             self.MockTabContainer.Visible = not isShown
         end)
@@ -30,6 +31,7 @@ function PUI:ToggleInventory()
         self.MockTabContainer.Visible = not isShown
         self.ShownInventoryTween:Play()
         self.ClosedHotbarTween:Play()
+        self.ClosedPlayerInfoTween:Play()
         self.ShownInventoryTween.Completed:Connect(function()
             self.TabContainer.Visible = not isShown
         end)
