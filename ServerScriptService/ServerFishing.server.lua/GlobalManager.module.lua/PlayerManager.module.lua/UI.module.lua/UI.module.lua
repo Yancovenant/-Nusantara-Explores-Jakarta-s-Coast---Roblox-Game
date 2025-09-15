@@ -164,12 +164,12 @@ function PUI:_SetupTweenAndConnection()
     self.ShownPlayerInfoTween = TS:Create(
         self.PlayerInfoUI,
         TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.25, 0, 0.775, 0)}
+        {Position = UDim2.new(0.025, 0, 0.775, 0)}
     )
     self.ClosedPlayerInfoTween = TS:Create(
         self.PlayerInfoUI,
         TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.25, 0, 1.375, 0)}
+        {Position = UDim2.new(0.025, 0, 1.375, 0)}
     )
 
     self.CloseButtonTween = TS:Create(
