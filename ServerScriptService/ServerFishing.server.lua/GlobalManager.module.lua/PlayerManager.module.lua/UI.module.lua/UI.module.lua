@@ -160,10 +160,11 @@ function PUI:_SetupTweenAndConnection()
         TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
         {Position = UDim2.new(0.5, 0, 1.375, 0)}
     )
+    -- playerInfo
     self.ShownPlayerInfoTween = TS:Create(
         self.PlayerInfoUI,
         TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.25, 0, 1.375, 0)}
+        {Position = UDim2.new(0.25, 0, 0.775, 0)}
     )
     self.ClosedPlayerInfoTween = TS:Create(
         self.PlayerInfoUI,
