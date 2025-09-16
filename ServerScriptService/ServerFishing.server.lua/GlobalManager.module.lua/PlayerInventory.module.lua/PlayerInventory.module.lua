@@ -136,25 +136,7 @@ end
 
 -- MAIN FUNCTIONS
 function PlayerInventory:catchResultSuccess(info)
-    self:addFishToInventory({
-        id = info.fishData.id,
-        weight = info.weight,
-    }, true)
-    if self.data.fishInventory[tostring(info.fishData.id)] == nil then
-        self.data.fishInventory[tostring(info.fishData.id)] = {}
-    end
-    table.insert(
-        self.data.fishInventory[tostring(info.fishData.id)],
-        info.weight
-    )
-    self.totalCatch.Value = self.totalCatch.Value + 1
-    self.data.totalCatch = self.totalCatch.Value
-
-    if self.data.rarestCatch > info.fishData.baseChance or self.data.rarestCatch == 0 then
-        self.rarestCatch.Value = formatChance(info.fishData.baseChance)
-        self.data.rarestCatch = info.fishData.baseChance
-    end
-    self:calculateXP(info)
+    
 end
 function PlayerInventory:new(player)
     local self = setmetatable({}, PlayerInventory)
@@ -173,28 +155,5 @@ function PlayerInventory:new(player)
     return self
 end
 
-
--- CLEANUP FUNCTIONS
--- function PlayerInventory:cleanHoldingFish()
---     if self.holdingFish then
---         self.holdingFish:Destroy()
---         self.holdingFish = nil
---     end
---     ClientAnimationEvent:FireClient(self.player, "clean")
--- end
-
-
--- CONNECT EVENTS
--- function PlayerInventory:saveData()
---     DataStorage:savePlayerData(self.player, self.data)
--- end
-function PlayerInventory:cleanUp()
-    -- self:saveData()
-    
-    
-    
-    
-    -- self.player = nil
-end
 
 return PlayerInventory

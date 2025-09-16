@@ -36,6 +36,11 @@ function PM:_FormatChance(ch)
 	denominator = denominator / divisor
 	return string.format("1/%d", denominator)
 end
+function PM:_CalculateXP(info)
+    local multi = RARITY_MULTIXP[info.fishData.rarity]
+    local xp = (info.weight ^ 0.75) * multi
+    print("get xp is", xp)
+end
 
 
 -- MAIN FUNCTIONS
@@ -60,7 +65,25 @@ function PM:ShowPowerCategoryUI(power)
     self.PUI:ShowPowerCategoryUI(power)
 end
 function PM:CatchResultSuccess(info)
+    self.PINV:AddFishToInventory({
+        id = info.fishData.id,
+        weight = info.weight,
+    }, true)
+    if self.Data.FishInventory[tostring(info.fishData.id)] == nil then
+        self.Data.FishInventory[tostring(info.fishData.id)] = {}
+    end
+    table.insert(
+        self.Data.FishInventory[tostring(info.fishData.id)],
+        info.weight
+    )
+    self.TotalCatch.Value = self.TotalCatch.Value + 1
+    self.Data.TotalCatch = self.TotalCatch.Value
 
+    if self.data.rarestCatch > info.fishData.baseChance or self.data.rarestCatch == 0 then
+        self.rarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
+        self.data.rarestCatch = info.fishData.baseChance
+    end
+    self:_CalculateXP(info)
 end
 function PM:_CreateLeaderstats()
     local leaderstats

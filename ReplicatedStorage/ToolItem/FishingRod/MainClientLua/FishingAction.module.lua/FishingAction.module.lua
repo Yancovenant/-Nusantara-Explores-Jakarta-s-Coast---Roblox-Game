@@ -104,7 +104,7 @@ function FA:_OnBite()
     reelingAnimationTrack:AdjustSpeed(1)
     GlobalEvent:FireServer("PlayFishingSound", {"Reel", ROD})
     task.wait(0.8)
-    GlobalEvent:FireServer("PlayFishingSound", false)
+    GlobalEvent:FireServer("ShowFishBiteUI", false)
     ReelComplete:FireServer(true)
 end
 function FA:_OnCastApproved(success:boolean, result)
