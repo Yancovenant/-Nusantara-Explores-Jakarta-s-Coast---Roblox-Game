@@ -2,6 +2,7 @@
 
 local GSM = {}
 GSM.DEFAULT_PLAYER_DATA = {
+    SessionLock = false, -- important for handling locksession
     Money = 0,
 	TotalCatch = 0,
 	RarestCatch = 0,
@@ -42,8 +43,10 @@ end
 function GSM:_MigrateKey(player, data)
     local saveSuccess
     repeat
-        WaitForRequestBudget(Enum.DataStoreRequestType.SetIncrementAsync)
-        saveSuccess = pcall(DB.SetAsync, DB, key(player), data) -- new key
+        WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
+        saveSuccess = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
+            return data
+        end) -- new key
     until saveSuccess
     if saveSuccess then
         repeat
@@ -119,17 +122,37 @@ function GSM:_Validate(data)
     return validated
 end
 function GSM:_LoadData(player)
-    local success, data
+    local success, data, shouldWait
     repeat
-        WaitForRequestBudget(Enum.DataStoreRequestType.GetAsync)
-        success, data = pcall(DB.GetAsync, DB, key(player)) -- new key
-    until success or not Players:FindFirstChild(player) -- or until leaves
+        WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
+        success, data = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
+            oldData = oldData or self.DEFAULT_PLAYER_DATA
+            if oldData.SessionLock then
+                warn("[GSM] Player", player.Name, "has active session lock:", oldData.SessionLock)
+                if os.time() - oldData.SessionLock < 1800 then
+                    shouldWait = true
+                else
+                    oldData.SessionLock = os.time()
+					data = oldData
+                    return data
+                end
+            else
+                oldData.SessionLock = os.time()
+				data = oldData
+				return data
+            end
+        end) -- new key
+        if shouldWait then
+			task.wait(5)
+			shouldWait = false
+		end
+    until (success and data) or not Players:FindFirstChild(player) -- or until leaves
     if success and data then
-        self:_MigrateKey(player, data)
         return data
     end
+    -- OLD KEY GET
     repeat
-        WaitForRequestBudget(Enum.DataStoreRequestType.GetAsync)
+        WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
         success, data = pcall(DB.GetAsync, DB, player.UserId) -- old key
     until success or not Players:FindFirstChild(player)
     if success and data then
@@ -153,18 +176,19 @@ function GSM:_NormalizeData(data)
     end
     return normalized
 end
-function GSM:_SaveData(player, data)
+function GSM:_SaveData(player, data, locksession, force)
     local success, ret
     local normalizedData = self:_NormalizeData(data)
     repeat
-        WaitForRequestBudget(Enum.DataStoreRequestType.SetIncrementAsync)
+        if not force then
+            WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
+        end
         success, ret = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
-            if oldData then
-                local compareOld = self:_MigrateData2(oldData)
-                if compareOld and (compareOld.TotalCatch or 0) > (normalizedData.TotalCatch or 0) then
-                    return oldData
-                end
+            oldData = self:_MigrateData2(oldData or {})
+            if oldData and (oldData.TotalCatch or 0) > (normalizedData.TotalCatch or 0) then
+                return oldData
             end
+            normalizedData.SessionLock = locksession and os.time() or nil
             return normalizedData
         end)
     until success
@@ -177,12 +201,11 @@ function GSM:LoadDataPlayer(player)
     self.Data[player] = self:_Validate(self:_LoadData(player))
     return self.Data[player]
 end
-function GSM:SaveDataPlayer(player, data)
+function GSM:SaveDataPlayer(player, data, locksession, force)
     if not data and not self.Data[player] then return end
     -- todo we can add some validation to check if the data is same...
-    print("[GSM]: Trying to Save, with self.Data[player]", self.Data[player], "and new data passed", data)
     if data == nil then data = self.Data[player] end
-    self:_SaveData(player, data)
+    self:_SaveData(player, data, locksession, force)
 end
 
 

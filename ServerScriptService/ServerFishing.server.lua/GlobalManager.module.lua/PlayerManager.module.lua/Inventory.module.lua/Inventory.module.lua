@@ -178,7 +178,7 @@ function PINV:AddFishToInventory(FishData:table, sort:boolean)
             sort = true
         end
         if sort then
-            PUI:SortFishInventoryUI()
+            self.PUI:SortFishInventoryUI()
         end
     end)
 end
@@ -220,9 +220,10 @@ function PINV:_CreateBackpack()
 end
 
 -- ENTRY POINTS
-function PINV:new(player)
+function PINV:new(player:Player, PUI:Instance)
     local self = setmetatable({}, PINV)
     self.player = player
+    self.PUI = PUI
     self:_CreateInventory()
     self:_CreateBackpack()
     return self

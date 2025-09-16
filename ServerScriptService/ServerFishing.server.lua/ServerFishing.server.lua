@@ -4,6 +4,7 @@ local SF = {}
 local GM = require(script.GlobalManager)
 local GAM = require(script.GlobalActionManager)
 
+local RunService = game:GetService("RunService")
 local TS:TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -104,5 +105,22 @@ Players.PlayerRemoving:Connect(function(player)
 end)
 game:BindToClose(function()
 	SF.IsShutDown = true
-    GM:onShutdown()
+	if RunService:IsStudio() then
+		task.wait(2)
+	else
+		local finished = Instance.new("BindableEvent")
+		local allPlayers = Players:GetPlayers()
+		local leftPlayers = #allPlayers
+		for _, player in ipairs(allPlayers) do
+			task.spawn(function()
+				print("[SERVER SHUTDOWNING] FOR player", _, player)
+				GM:onShutdown(player)
+				leftPlayers -= 1
+				if leftPlayers == 0 then
+					finished:Fire()
+				end
+			end)
+		end
+		finished.Event:Wait()
+	end
 end)

@@ -18,6 +18,11 @@ GC.FISHING = {
         {min = 51, max = 70, name = "OK", color = Color3.fromRGB(255, 255, 0)},        -- Yellow
         {min = 71, max = 90, name = "Regular", color = Color3.fromRGB(100, 255, 100)}, -- Green
         {min = 91, max = 100, name = "Professional", color = Color3.fromRGB(100, 100, 255)} -- Blue
+    },
+    MULTI = {
+        LUCK = 0.1,
+        LVL = 0.3,
+        POWER = 0.3,
     }
 }
 
@@ -37,7 +42,11 @@ GC.PLAYER = {
         Health = 100
     },
     RUN_SPEED = 24,
-    AUTOSAVE_INTERVAL = 120 -- 2 minutes
+    AUTOSAVE_INTERVAL = 120, -- 2 minutes
+    XPGROWTH = {
+        BASE_XP = 50,
+        GROWTH = 1.5
+    }
 }
 
 -- RARITY --
@@ -58,6 +67,15 @@ GC.RARITY_ORDER = {
     ["Rare"] = 3,
     ["Uncommon"] = 2,
     ["Common"] = 1
+}
+GC.RARITY_MULTIXP = {
+    ["Classified"] = 7,
+	["Mythical"] = 5.5,
+	["Legendary"] = 5,
+	["Epic"] = 3.5,
+	["Rare"] = 2,
+	["Uncommon"] = 1.25,
+	["Common"] = 1
 }
 
 -- STATIC FUNCTIONS

@@ -1,28 +1,6 @@
 -- PlayerInventory.module.lua
 
-
-local RARITY_MULTIXP = {
-    ["Classified"] = 7,
-	["Mythical"] = 5.5,
-	["Legendary"] = 5,
-	["Epic"] = 3.5,
-	["Rare"] = 2,
-	["Uncommon"] = 1.25,
-	["Common"] = 1
-}
-local AUTOSAVE_INTERVAL = 120 -- 2 minutes
-
 local PlayerInventory = {}
-PlayerInventory.__index = PlayerInventory
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
-local DataStorage = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Storage"):WaitForChild("DataStorage"))
-
-
-local FishDB = require(FishingRodItem:WaitForChild("FishDB"))
-local EquipmentDB = require(FishingRodItem:WaitForChild("EquipmentDB"))
-
 
 
 -- -- EQUIPMENT FUNCTIONS
@@ -112,48 +90,5 @@ local EquipmentDB = require(FishingRodItem:WaitForChild("EquipmentDB"))
     
 --     return true, "Equipment purchased successfully"
 -- end
-
-
-
-
-
-
-
-
-
--- ZONES FUNCTIONS
-function PlayerInventory:updateUIPlayerZone(zone: string)
-    print(zone, "player is moving to zone")
-end
-
-
--- PLAYER FUNCTIONS
-function PlayerInventory:calculateXP(info)
-    local multi = RARITY_MULTIXP[info.fishData.rarity]
-    local xp = (info.weight ^ 0.75) * multi
-    print("get xp is", xp)
-end
-
--- MAIN FUNCTIONS
-function PlayerInventory:catchResultSuccess(info)
-    
-end
-function PlayerInventory:new(player)
-    local self = setmetatable({}, PlayerInventory)
-    self.player = player
-    self.inventoryUI = nil
-    self.globalUI = nil
-
-    -- self:createInventoryUI()
-    -- self:createGlobalUI()
-    -- self:setupEventListener()
-
-    -- self:createBackpack()
-
-    self:populateData()
-    self:updateFishingRodModel()
-    return self
-end
-
 
 return PlayerInventory

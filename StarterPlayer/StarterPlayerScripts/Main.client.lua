@@ -13,6 +13,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ToolEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 local TimeEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
 local AnimationEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
+local UIEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
+
 local holdingFishAnimation: Animation = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("HoldingFish")
 
 local CAM = require(ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
@@ -75,6 +77,9 @@ function CPM:_SetRemoteEventListener()
 	end)
 	TimeEvent.OnClientEvent:Connect(function(timeInfo)
 		CUI:UpdateTime(timeInfo)
+	end)
+	UIEvent.OnClientEvent:Connect(function(method, ...)
+		CUI[method](CUI, ...)
 	end)
 end
 function CPM:_SetEventListener()

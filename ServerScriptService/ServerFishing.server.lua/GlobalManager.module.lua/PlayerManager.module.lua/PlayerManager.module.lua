@@ -7,9 +7,9 @@ local PUI = require(script.UI)
 local DBM = require(script.Parent.Parent.GlobalStorage)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ClientUIEvent:RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
 
 local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
-
 
 
 -- HELPER
@@ -36,10 +36,34 @@ function PM:_FormatChance(ch)
 	denominator = denominator / divisor
 	return string.format("1/%d", denominator)
 end
+
+
+-- PLAYER PROGRESSION
 function PM:_CalculateXP(info)
-    local multi = RARITY_MULTIXP[info.fishData.rarity]
+    local multi = c.RARITY_MULTIXP[info.fishData.rarity]
     local xp = (info.weight ^ 0.75) * multi
-    print("get xp is", xp)
+    return xp
+end
+--
+function PM:_XPRequiredForLevel(level)
+    return math.floor(c.PLAYER.XPGROWTH.BASE_XP * (level ^ c.PLAYER.XPGROWTH.GROWTH))
+end
+function PM:_GetLevelFromXP(xp)
+    local level = 1
+    while xp >= self:_XPRequiredForLevel(level) do
+        xp -= self:_XPRequiredForLevel(level)
+        level += 1
+    end
+    return level, xp, self:_XPRequiredForLevel(level)
+end
+function PM:_UpdateXP(GainedXp)
+    self.Data.PlayerXP += GainedXp
+    local Lvl, CurrentXP, RequiredXP = self:_GetLevelFromXP(self.Data.PlayerXP)
+    if self.Data.PlayerLevel < Lvl then
+        print("OnLevelUp")
+        -- need to update data.playerlevel
+    end
+    ClientUIEvent:FireClient(self.player, "UpdateXP", self.Data.PlayerLevel, CurrentXP, RequiredXP)
 end
 
 
@@ -76,14 +100,16 @@ function PM:CatchResultSuccess(info)
         self.Data.FishInventory[tostring(info.fishData.id)],
         info.weight
     )
+    -- loop wrapper leaderstats + data
     self.TotalCatch.Value = self.TotalCatch.Value + 1
     self.Data.TotalCatch = self.TotalCatch.Value
 
-    if self.data.rarestCatch > info.fishData.baseChance or self.data.rarestCatch == 0 then
-        self.rarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
-        self.data.rarestCatch = info.fishData.baseChance
+    if self.Data.RarestCatch > info.fishData.baseChance or self.Data.RarestCatch == 0 then
+        self.RarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
+        self.Data.RarestCatch = info.fishData.baseChance
     end
-    self:_CalculateXP(info)
+    local GainedXp = self:_CalculateXP(info)
+    self:_UpdateXP(GainedXp)
 end
 function PM:_CreateLeaderstats()
     local leaderstats
@@ -115,8 +141,8 @@ function PM:_CreateLeaderstats()
     -- end)
     return leaderstats
 end
-function PM:SaveData()
-    DBM:SaveDataPlayer(self.player, self.Data)
+function PM:SaveData(locksession, force)
+    DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
 end
 
 -- SETUP FUNCTIONS
@@ -130,7 +156,6 @@ function PM:_PopulateData()
     self.Data = DBM:LoadDataPlayer(self.player)
     self.Money.Value = self.Data.Money
     self.TotalCatch.Value = self.Data.TotalCatch
-    print(tostring(self.Data.RarestCatch), "string")
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
     for id, fish in pairs(self.Data.FishInventory) do
         for _, weight in pairs(fish) do
@@ -150,7 +175,7 @@ function PM:_PopulateData()
         while self._AutoSaveRunning do
             task.wait(c.PLAYER.AUTOSAVE_INTERVAL)
             if not self._AutoSaveRunning then break end
-            self:SaveData()
+            self:SaveData(true)
         end
     end)
 end
@@ -174,7 +199,7 @@ function PM:new(player)
     self.player = player
     self.currentZone = nil
     self.PUI = PUI:new(player)
-    self.PINV = PINV:new(player)
+    self.PINV = PINV:new(player, self.PUI)
     self:_SetupEventListener()
     
     self:_PopulateData()
@@ -182,14 +207,14 @@ function PM:new(player)
     return self
 end
 function PM:CleanUp()
-    self:SaveData()
+    self._autoSaveRunning = false
+    self:SaveData(false, true)
     if self.FishingRodBtnClickConnection then
         self.FishingRodBtnClickConnection:Disconnect()
         self.FishingRodBtnClickConnection = nil
     end
     self.PUI:CleanUp()
     self.PINV:CleanUp()
-    self._autoSaveRunning = false
     self.PUI = nil
     self.PINV = nil
     self.player = nil

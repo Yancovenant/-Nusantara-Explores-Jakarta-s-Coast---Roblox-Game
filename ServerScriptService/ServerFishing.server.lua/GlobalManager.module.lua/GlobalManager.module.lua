@@ -325,9 +325,8 @@ function GM:playerAdded(player:Player)
     end
 end
 function GM:playerRemoved(player:Player)
-    GSM:SaveDataPlayer(player)
     if self.PlayerData[player] then
-        self.CleanUp(player)
+        self:CleanUp(player)
         self.PlayerData[player] = nil
     end
     if self.PlayerManagers[player] then
@@ -360,7 +359,7 @@ end
 -- EXIT POINT
 function GM:onShutdown(player)
     if self.PlayerManagers[player] then
-        self.PlayerManagers[player]:saveData()
+        self.PlayerManagers[player]:saveData(false, true)
     end
 end
 

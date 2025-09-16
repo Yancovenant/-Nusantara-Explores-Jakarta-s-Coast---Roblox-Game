@@ -257,7 +257,7 @@ end
 function FA:ToggleAfk()
     if self.IsAFK then
 		self:StopAfk()
-		FUI:showPopup({
+		FUI:ShowPopup({
 			Text = {
 				Text = "Auto fishing disabled",
 				TextColor3 = Color3.fromRGB(150, 50, 50),
@@ -358,10 +358,10 @@ function FA:SetupEventListener()
         self:_OnBite()
     end)
     self.CRConnection = CatchResult.OnClientEvent:Connect(function(fishInfo:table)
-        self._OnCatchResult(fishInfo)
+        self:_OnCatchResult(fishInfo)
     end)
     self.CTFConnection = CatchTweenFinish.OnClientEvent:Connect(function()
-        self._OnCatchTweenFinish()
+        self:_OnCatchTweenFinish()
     end)
     -- === tools events ===
     self.TEConnection = ToolEvent.OnClientEvent:Connect(function(method, params)

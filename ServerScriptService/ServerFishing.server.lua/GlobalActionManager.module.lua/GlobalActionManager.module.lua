@@ -41,7 +41,7 @@ function GAM:OnReelingCompleteEvent()
         local s = self.state[player]
         if not s or not s.isFishing then return end
         if sc then
-            local fn, fd, w = GRM:fishReward(player, s.power)
+            local fn, fd, w = GRM:FishReward(player, s.power)
             CatchResult:FireClient(player, {
                 success = true,
                 fishName = fn,

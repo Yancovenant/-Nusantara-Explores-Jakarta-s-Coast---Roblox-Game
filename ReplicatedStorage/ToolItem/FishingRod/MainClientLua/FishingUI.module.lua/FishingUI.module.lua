@@ -68,11 +68,11 @@ function LUIC:ShowPopup(params:table)
         end
     end)
 end
-function LUIC:ShowFishPopup(catchInfo:table)
-    self.PopupFish.ImageLabel.Image = catchInfo.fishData.icon
-	self.PopupFish.FishInfo.TextColor3 = c:getRarityColor(catchInfo.fishData.rarity)
-	self.PopupFish.FishInfo.Text = catchInfo.fishName .. " (" .. FormatWeight(catchInfo.weight) .. ")"
-	self.PopupFish.Chance.Text = FormatChance(catchInfo.fishData.baseChance)
+function LUIC:ShowFishPopup(CatchInfo:table)
+    self.PopupFish.ImageLabel.Image = CatchInfo.fishData.icon
+	self.PopupFish.FishInfo.TextColor3 = c:GetRarityColor(CatchInfo.fishData.rarity)
+	self.PopupFish.FishInfo.Text = CatchInfo.fishName .. " (" .. FormatWeight(CatchInfo.weight) .. ")"
+	self.PopupFish.Chance.Text = FormatChance(CatchInfo.fishData.baseChance)
 
 	self.PopupFish.Visible = true
 	self.FishPopupTween = TS:Create(
