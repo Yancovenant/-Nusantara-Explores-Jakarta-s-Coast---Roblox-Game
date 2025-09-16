@@ -34,8 +34,7 @@ function CUI:UpdateTime(t)
 end
 
 function CUI:UpdateXP(level, currentXp, requiredXp)
-	print(level, currentXp, requiredXp)
-	self.ExpUI.Text = currentXp .. " / " .. requiredXp
+	self.ExpUI.Text.Text = math.floor(currentXp) .. " / " .. math.floor(requiredXp)
 	self.ExpUI.Fill.Size = UDim2.new(currentXp/requiredXp,0,1,0)
 end
 
