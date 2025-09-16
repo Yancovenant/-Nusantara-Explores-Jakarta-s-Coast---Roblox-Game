@@ -2,6 +2,7 @@
 
 local CUI = {}
 local Player = game:GetService("Players").LocalPlayer
+local TS:TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 
 function CUI:_CreateUI()
@@ -35,7 +36,11 @@ end
 
 function CUI:UpdateXP(level, currentXp, requiredXp)
 	self.ExpUI.Text.Text = math.floor(currentXp) .. " / " .. math.floor(requiredXp)
-	self.ExpUI.Fill.Size = UDim2.new(currentXp/requiredXp,0,1,0)
+	TS:Create(
+		self.ExpUI.Fill,
+		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{Size = UDim2.new(currentXp/requiredXp,0,1,0)}
+	):Play()
 end
 
 -- ENTRY POINTS
