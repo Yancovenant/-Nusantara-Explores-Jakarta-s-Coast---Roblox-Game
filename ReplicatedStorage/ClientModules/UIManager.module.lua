@@ -22,7 +22,9 @@ function CUI:_CreateUI()
 	end)
     self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
 	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
-	self.ExpUI = self.PlayerInfoUI:WaitForChild("Level"):WaitForChild("LevelContainer"):WaitForChild("Exp")
+	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
+	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
+	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
 end
 
 function CUI:UpdateTime(t)
@@ -34,13 +36,25 @@ function CUI:UpdateTime(t)
     self.TopBarUI.Time.TimeText.Text = nH .. ":" .. nM
 end
 
-function CUI:UpdateXP(level, currentXp, requiredXp)
-	self.ExpUI.Text.Text = math.floor(currentXp) .. " / " .. math.floor(requiredXp)
+function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
+	self.ExpUI.Text.Text = math.floor(CurrentXp) .. " / " .. math.floor(RequiredXp)
 	TS:Create(
 		self.ExpUI.Fill,
 		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-		{Size = UDim2.new(currentXp/requiredXp,0,1,0)}
+		{Size = UDim2.new(CurrentXp/RequiredXp,0,1,0)}
 	):Play()
+	self.GainedXpText.Text = "+" .. math.floor(GainedXp) .. " XP!"
+	self.GainedXpText.TextTransparency = 0
+	self.GainedXpText.Position = UDim2.new(0.5, 0, 0.3, 0)
+    self.GainedXpText.Visible = true
+	local tweenUp = TS:Create(self.GainedXpText, TweenInfo.new(1), {
+        Position = UDim2.new(0.5, 0, -1, 0),
+        TextTransparency = 1
+    })
+    tweenUp:Play()
+    tweenUp.Completed:Connect(function()
+        self.GainedXpText.Visible = false
+    end)
 end
 
 -- ENTRY POINTS

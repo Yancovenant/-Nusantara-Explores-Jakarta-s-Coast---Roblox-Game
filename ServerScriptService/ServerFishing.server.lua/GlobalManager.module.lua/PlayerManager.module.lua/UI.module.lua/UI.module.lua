@@ -136,6 +136,9 @@ function PUI:ShowPowerCategoryUI(power)
         self.PowerCategHideTween = nil
 	end)
 end
+function PUI:UpdateLevel(Level)
+    self.globalUI.LevelUI.Frame.Text.Text = "Lv. " .. tostring(Level)
+end
 
 -- SETUP
 function PUI:_SetupTweenAndConnection()
@@ -218,9 +221,12 @@ function PUI:_CreatePlayerUI()
     BaitUI.Parent = self.player.Character.Head
     local PowerCategoryUI = RS:WaitForChild("Template"):WaitForChild("PowerCategoryUI"):Clone()
     PowerCategoryUI.Parent = self.player.Character.Head
+    local LevelUI = RS:WaitForChild("Template"):WaitForChild("LevelUI"):Clone()
+    LevelUI.Parent = self.player.Character.Head
     self.globalUI = {
         BaitUI = BaitUI,
-        PowerCategoryUI = PowerCategoryUI
+        PowerCategoryUI = PowerCategoryUI,
+        LevelUI = LevelUI
     }
 
     self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")

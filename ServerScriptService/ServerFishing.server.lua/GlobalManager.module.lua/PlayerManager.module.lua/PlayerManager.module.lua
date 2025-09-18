@@ -61,9 +61,11 @@ function PM:_UpdateXP(GainedXp)
     local Lvl, CurrentXP, RequiredXP = self:_GetLevelFromXP(self.Data.PlayerXP)
     if self.Data.PlayerLevel < Lvl then
         print("OnLevelUp")
+        self.Data.PlayerLevel = Lvl
+        self.PUI:UpdateLevel(self.Data.PlayerLevel)
         -- need to update data.playerlevel
     end
-    ClientUIEvent:FireClient(self.player, "UpdateXP", self.Data.PlayerLevel, CurrentXP, RequiredXP)
+    ClientUIEvent:FireClient(self.player, "UpdateXP", self.Data.PlayerLevel, CurrentXP, RequiredXP, GainedXp)
 end
 
 
@@ -165,6 +167,7 @@ function PM:_PopulateData()
             }, false)
         end
     end
+    self.PUI:UpdateLevel(self.Data.PlayerLevel)
     self.PUI:SortFishInventoryUI()
     for _, rod in pairs(self.Data.Equipment.OwnedRods) do -- FIX THIS/NAMING CONVENTION
         local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", rod)
