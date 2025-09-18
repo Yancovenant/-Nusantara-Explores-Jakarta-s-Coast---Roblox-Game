@@ -153,6 +153,14 @@ function PM:_SetupEventListener()
         self:ToggleRod()
     end)
 end
+function PM:_SetupPlayerAttributes()
+    local GED = c.EQUIPMENT.GED
+    local EquippedRod = self.Data.Equipment.EquippedRod
+    local dataRod, modelRod = self.PINV:GetEquipmentData("GetRod", EquippedRod)
+    self.Data.Attributes = {
+        maxWeight = dataRod.maxWeight
+    }
+end
 function PM:_PopulateData()
     self.Leaderstats = self:_CreateLeaderstats()
     self.Data = DBM:LoadDataPlayer(self.player)
@@ -167,6 +175,7 @@ function PM:_PopulateData()
             }, false)
         end
     end
+    self:_SetupPlayerAttributes()
     self.PUI:UpdateLevel(self.Data.PlayerLevel)
     self.PUI:SortFishInventoryUI()
     for _, rod in pairs(self.Data.Equipment.OwnedRods) do -- FIX THIS/NAMING CONVENTION

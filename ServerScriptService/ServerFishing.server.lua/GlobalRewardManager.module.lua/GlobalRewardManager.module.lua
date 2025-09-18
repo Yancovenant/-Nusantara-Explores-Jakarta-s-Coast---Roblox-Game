@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local GM = require(script.Parent.GlobalManager)
 local GSM = require(script.Parent.GlobalStorage)
 
 local GRM = {}
@@ -39,15 +40,21 @@ function GRM:_GetFishTable()
     end)
     return norm, totalPercentageWeight
 end
-function GRM:_FishWeightReward(player, data, r, cm, ch)
+function GRM:_FishWeightReward(player, data, roll, cum, chance, multi)
     local minW = data.minWeight
     local maxW = data.maxWeight
-    if GSM.Data[player].maxW and maxW >= GSM.Data[player].maxW then
-        maxW = GSM.Data[player].maxW
+    local attr = GM.PlayerManagers[player] and GM.PlayerManagers[player].Data.Attributes
+    if attr and attr.maxWeight then
+        maxW = math.min(maxW, attr.maxWeight)
     end
-    local rp = r - (cm - ch)
-    local p = rp / (cm - (cm - ch))
-    local w = minW + (p * (maxW - minW))
+    multi = multi or 1
+    local scaledStart = (cum - chance) * multi
+    local scaledSegment = chance * multi
+    local prob = 0
+    if scaledSegment > 0 then
+        prob = (roll - scaledStart) / scaledSegment
+    end
+    local w = minW + (prob * (maxW - minW))
     return math.floor(w * 100) / 100
 end
 
@@ -61,7 +68,7 @@ function GRM:FishReward(player, power)
         cumulative = cumulative + d.chance
         local cm2 = cumulative * multi
         if roll <= cm2 then
-            return d.name, c.FISHING.FISH_DATA.FISH[d.name], self:_FishWeightReward(player, c.FISHING.FISH_DATA.FISH[d.name], roll, cumulative, d.chance)
+            return d.name, c.FISHING.FISH_DATA.FISH[d.name], self:_FishWeightReward(player, c.FISHING.FISH_DATA.FISH[d.name], roll, cumulative, d.chance, multi)
         end
     end
 end

@@ -163,8 +163,15 @@ function GSM:_LoadData(player)
 end
 function GSM:_NormalizeData(data)
     local normalized = {}
-    for k, v in pairs(data) do
+    for k, v in pairs(self.DEFAULT_PLAYER_DATA) do
         normalized[k] = v
+    end
+    if type(data) == "table" then
+        for k, v in pairs(data) do
+            if self.DEFAULT_PLAYER_DATA[k] ~= nil then
+                normalized[k] = v
+            end
+        end
     end
     for k, v in pairs(normalized) do
         if k == "FishInventory" and type(v) == "table" then
