@@ -5,14 +5,14 @@ local FUI = require(script.Parent.FishingUI)
 local ROD = script.Parent.Parent
 
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
 local CollectionService = game:GetService("CollectionService")
 
 local Player:Player = game:GetService("Players").LocalPlayer
 local Humanoid:Humanoid = Player.Character.Humanoid
 
-local CAM = require(ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
+local CAM = require(RS:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
 
 local ReelingAnimation = ROD:WaitForChild("Animations"):WaitForChild("Reeling")
 local CatchAnimation = ROD:WaitForChild("Animations"):WaitForChild("Catch")
@@ -20,15 +20,15 @@ local StartCastAnimation = ROD:WaitForChild("Animations"):WaitForChild("StartCas
 local ReleaseCastAnimation = ROD:WaitForChild("Animations"):WaitForChild("ReleaseCast")
 local IdleFishingAnimation = ROD:WaitForChild("Animations"):WaitForChild("IdleFishing")
 
-local GlobalRemotes = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GlobalEvents")
+local GlobalRemotes = RS:WaitForChild("Remotes"):WaitForChild("GlobalEvents")
 local GlobalEvent = GlobalRemotes:WaitForChild("GlobalEvent")
-local ToolEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+local ToolEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
 
-local FishingRemotes = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("FishingEvents")
+local FishingRemotes = RS:WaitForChild("Remotes"):WaitForChild("FishingEvents")
 local ReelComplete = FishingRemotes:WaitForChild("ReelComplete")
 local StartCast = FishingRemotes:WaitForChild("StartCast")
 
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 local power = 0
 
@@ -368,5 +368,9 @@ function FA:SetupEventListener()
         self[method](self, params)
     end)
 end
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(FA, "Client_FishingAction")
 
 return FA
