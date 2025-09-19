@@ -9,6 +9,7 @@ local TS:TweenService = game:GetService("TweenService")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+
 local FTEMPLATE = RS:WaitForChild("Template"):WaitForChild("Fish")
 
 local CatchTweenFinishEvent = RS:WaitForChild("Remotes"):WaitForChild("FishingEvents"):WaitForChild("CatchTweenFinish")
@@ -106,10 +107,22 @@ function GM:_CreateFishSlungTween(player:Player, fish)
 	end)
 end
 function GM:CleanBobber(player)
-    if self.PlayerData[player].bobConn then self.PlayerData[player].bobConn:Disconnect() self.PlayerData[player].bobConn = nil end
-    if self.PlayerData[player].bobberTween then self.PlayerData[player].bobberTween:Cancel() self.PlayerData[player].bobberTween = nil end
-    if self.PlayerData[player].bobber then self.PlayerData[player].bobber:Destroy() self.PlayerData[player].bobber = nil end
-    if self.PlayerData[player].beam then self.PlayerData[player].beam:Destroy() self.PlayerData[player].beam = nil end
+    if self.PlayerData[player].bobConn then 
+        self.PlayerData[player].bobConn:Disconnect() 
+        self.PlayerData[player].bobConn = nil 
+    end
+    if self.PlayerData[player].bobberTween then 
+        self.PlayerData[player].bobberTween:Cancel() 
+        self.PlayerData[player].bobberTween = nil 
+    end
+    if self.PlayerData[player].beam then 
+        self.PlayerData[player].beam:Destroy() 
+        self.PlayerData[player].beam = nil 
+    end
+    if self.PlayerData[player].bobber then 
+        self.PlayerData[player].bobber:Destroy() 
+        self.PlayerData[player].bobber = nil 
+    end
 end
 function GM:CreateBobber(player, params)
     local finalPos = params[1]
@@ -138,42 +151,41 @@ function GM:CreateBobber(player, params)
         {Position = finalPos})
     table.insert(self.PlayerData[player].CleanableTweens, tween)
 	tween:Play()
-	tween.Completed:Wait()
+	tween.Completed:Connect(function()
+        local t0 = tick()
+        local bobberY = finalPos.Y
+        bobberTween = TS:Create(
+            bobber,
+            TweenInfo.new(
+                c.FISHING.BOBBER_ANIMATION_SPEED, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), 
+                {Position = Vector3.new(finalPos.X, bobberY + c.FISHING.BOBBER_FLOAT_HEIGHT, finalPos.Z)
+        })
+        bobberTween:Play()
 
-	local t0 = tick()
-	local bobberY = finalPos.Y
-	bobberTween = TS:Create(
-        bobber,
-        TweenInfo.new(
-            c.FISHING.BOBBER_ANIMATION_SPEED, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), 
-            {Position = Vector3.new(finalPos.X, bobberY + c.FISHING.BOBBER_FLOAT_HEIGHT, finalPos.Z)
-	})
-	bobberTween:Play()
-
-	bobConn = RunService.Heartbeat:Connect(function()
-		if not bobber or not bobberTween then return end
-		local currentPos = bobber.Position
-		bobber.Position = Vector3.new(currentPos.X, bobberY + math.sin((tick() - t0) * 2) * c.FISHING.BOBBER_FLOAT_HEIGHT, currentPos.Z)
-	end)
-    self.PlayerData[player].bobber = bobber
-    self.PlayerData[player].bobberTween = bobberTween
-    self.PlayerData[player].bobConn = bobConn
-    
-	beam = Instance.new("Beam")
-	beam.Attachment0 = RodTip
-	beam.Attachment1 = att
-	beam.Width0 = 0.03
-	beam.Width1 = 0.03
-	beam.FaceCamera = true
-	beam.Parent = Handle
-    
-    self.PlayerData[player].beam = beam
+        bobConn = RunService.Heartbeat:Connect(function()
+            if not bobber or not bobberTween then return end
+            local currentPos = bobber.Position
+            bobber.Position = Vector3.new(currentPos.X, bobberY + math.sin((tick() - t0) * 2) * c.FISHING.BOBBER_FLOAT_HEIGHT, currentPos.Z)
+        end)
+        self.PlayerData[player].bobber = bobber
+        self.PlayerData[player].bobberTween = bobberTween
+        self.PlayerData[player].bobConn = bobConn
+        
+        beam = Instance.new("Beam")
+        beam.Attachment0 = RodTip
+        beam.Attachment1 = att
+        beam.Width0 = 0.03
+        beam.Width1 = 0.03
+        beam.FaceCamera = true
+        beam.Parent = Handle
+        
+        self.PlayerData[player].beam = beam
+    end)
 end
 
 -- PLAYER MANAGER (PM) CONNECTION
 -- === zone ===
 function GM:_onUpdatePlayerZones(player:Player, zoneName:string)
-    -- if not self.PlayerManagers[player] then self:_setupPlayerManager(player) end
     while self.PlayerManagers[player] == nil do
         task.wait(0.5)
     end
@@ -253,7 +265,7 @@ function GM:CatchResultSuccess(player:Player, params)
     local info = params[1]
     local ROD = params[2]
 
-    local target = ROD:WaitForChild("Rod"):WaitForChild("RodTip").WorldPosition
+    local target = ROD:FindFirstChild("Rod"):FindFirstChild("RodTip").WorldPosition
     local tween = TS:Create( -- roll bobber from water to tip
         self.PlayerData[player].bobber,
         TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.InOut),
@@ -273,16 +285,17 @@ function GM:CatchResultSuccess(player:Player, params)
             jumpTween:Play()
         end
     end)
-    tween.Completed:Wait()
-    struggleTween:Cancel()
-    jumpTween:Cancel()
-    FFConnection:Disconnect()
-    self:_CreateFishSlungTween(player, fish)
+    tween.Completed:Connect(function()
+        struggleTween:Cancel()
+        jumpTween:Cancel()
+        FFConnection:Disconnect()
+        self:_CreateFishSlungTween(player, fish)
 
-    self.PlayerManagers[player]:CatchResultSuccess(info)
+        self.PlayerManagers[player]:CatchResultSuccess(info)
 
-    self:CleanBobber(player)
-    CatchTweenFinishEvent:FireClient(player)
+        self:CleanBobber(player)
+        CatchTweenFinishEvent:FireClient(player)
+    end)
 end
 function GM:ShowFishBiteUI(player, visible)
     self.PlayerManagers[player]:ShowFishBiteUI(visible)
@@ -335,6 +348,7 @@ function GM:playerRemoved(player:Player)
     end
 end
 
+
 GM.ALLOWED_METHOD = {
     "ToggleRod",
     "ToggleInventory",
@@ -362,5 +376,11 @@ function GM:onShutdown(player)
         self.PlayerManagers[player]:saveData(false, true)
     end
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(GM, "GlobalManager")
+
 
 return GM

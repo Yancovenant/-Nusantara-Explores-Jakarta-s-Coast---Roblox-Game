@@ -2,6 +2,7 @@
 
 local CAM = {}
 local Player:Player = game:GetService("Players").LocalPlayer
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Humanoid:Humanoid = Player.Character.Humanoid
 local Animator:Animator = Humanoid:FindFirstChildWhichIsA("Animator")
 
@@ -19,5 +20,11 @@ function CAM:CleanAnimations()
         end
     end
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(CAM, "Client_AnimationManager")
+
 
 return CAM

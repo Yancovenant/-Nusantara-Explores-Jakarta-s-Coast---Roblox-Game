@@ -6,10 +6,10 @@ local PINV = require(script.Inventory)
 local PUI = require(script.UI)
 local DBM = require(script.Parent.Parent.GlobalStorage)
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local ClientUIEvent:RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
 
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 
 -- HELPER
@@ -231,5 +231,10 @@ function PM:CleanUp()
     self.PINV = nil
     self.player = nil
 end
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(PM, "PlayerManagers")
+
 
 return PM

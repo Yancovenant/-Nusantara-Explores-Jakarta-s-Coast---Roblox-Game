@@ -1,9 +1,9 @@
 -- Global Reward Manager
 -- STATIC module
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS = game:GetService("ReplicatedStorage")
 
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local c = require(RS:WaitForChild("GlobalConfig"))
 local GM = require(script.Parent.GlobalManager)
 local GSM = require(script.Parent.GlobalStorage)
 
@@ -72,6 +72,11 @@ function GRM:FishReward(player, power)
         end
     end
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(GRM, "GlobalRewardManager")
 
 
 return GRM

@@ -6,6 +6,9 @@ local DBM = require(script.Parent.Parent.Parent.GlobalStorage)
 
 local TS:TweenService = game:GetService("TweenService")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
+
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 -- MAIN FUNCTIONS
@@ -38,34 +41,7 @@ function PUI:ToggleInventory()
     end
 end
 function PUI:SortFishInventoryUI()
-    task.spawn(function()
-        local FishList = {}
-        for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
-            if fish.Name ~= "TemplateFish" then
-                local data = fish:FindFirstChild("FishData")
-                if data then
-                    local parts = string.split(data.Value, "|")
-                    local rarity = parts[2]
-                    local id = tonumber(parts[4])
-                    table.insert(FishList, {
-                        instance = fish,
-                        rarity = c.RARITY_ORDER[rarity] or 0,
-                        id = id or 0,
-                    })
-                end
-            end
-        end
-        table.sort(FishList, function(a, b)
-            if a.rarity ~= b.rarity then
-                return a.rarity > b.rarity
-            end
-            return a.id > b.id
-        end)
-        for i, FishData in ipairs(FishList) do
-            FishData.instance.LayoutOrder = i
-        end
-        self.FishTabBtn.Count.Text = #FishList
-    end)
+    ClientUIEvent:FireClient(self.player, "SortFishInventoryUI")
 end
 function PUI:_UpdateHotBarSelected(toolName:string)
     if not self.InventoryUI then return end
@@ -107,7 +83,9 @@ function PUI:ShowPowerCategoryUI(power)
 	self.globalUI.PowerCategoryUI.Frame.TextLabel.TextColor3 = category.color
 	self.globalUI.PowerCategoryUI.Frame.TextLabel.Text = category.name
 	self.globalUI.PowerCategoryUI.Frame.Visible = true
-	task.spawn(function()
+	
+	-- FIXED: Store task reference for proper cleanup
+	self.PowerCategoryTask = task.spawn(function()
 		self.PowerCategShownTween = TS:Create(
 			self.globalUI.PowerCategoryUI.Frame,
 			TweenInfo.new(
@@ -134,6 +112,7 @@ function PUI:ShowPowerCategoryUI(power)
 		self.PowerCategHideTween.Completed:Wait()
 		self.globalUI.PowerCategoryUI.Frame.Visible = false
         self.PowerCategHideTween = nil
+        self.PowerCategoryTask = nil
 	end)
 end
 function PUI:UpdateLevel(Level)
@@ -231,6 +210,7 @@ function PUI:_CreatePlayerUI()
 
     self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
     self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
+    self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
     self.RodHotBar = self.HotBar:WaitForChild("FishingRod")
 end
 
@@ -296,6 +276,11 @@ function PUI:CleanUp()
         self.PowerCategHideTween:Cancel()
         self.PowerCategHideTween = nil
     end
+    -- FIXED: Clean up power category task
+    if self.PowerCategoryTask then
+        task.cancel(self.PowerCategoryTask)
+        self.PowerCategoryTask = nil
+    end
 
     if self.BackpackBtnEnterConnection then
         self.BackpackBtnEnterConnection:Disconnect()
@@ -311,5 +296,11 @@ function PUI:CleanUp()
     end
     self.player = nil
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(PUI, "PlayerUI")
+
 
 return PUI

@@ -8,18 +8,18 @@ local Player = game:GetService("Players").LocalPlayer
 local Character = Player.Character or Player.CharacterAdded:Wait()
 local Humanoid: Humanoid = Character:WaitForChild("Humanoid")
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local ToolEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
-local TimeEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
-local AnimationEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
-local UIEvent: RemoteEvent = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
+local ToolEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+local TimeEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
+local AnimationEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
+local UIEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
 
-local holdingFishAnimation: Animation = ReplicatedStorage:WaitForChild("Animations"):WaitForChild("HoldingFish")
+local holdingFishAnimation: Animation = RS:WaitForChild("Animations"):WaitForChild("HoldingFish")
 
-local CAM = require(ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
-local CUI = require(ReplicatedStorage:WaitForChild("ClientModules"):WaitForChild("UIManager"))
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local CAM = require(RS:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
+local CUI = require(RS:WaitForChild("ClientModules"):WaitForChild("UIManager"))
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 local camera: Camera = workspace.CurrentCamera
 local DEFAULT_CAMFOV = camera.FieldOfView
@@ -101,4 +101,11 @@ function CPM:main()
 	self:_SetPlayerConfig()
 	self:_SetEventListener()
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(CPM, "Client_Main")
+
+
 CPM:main()

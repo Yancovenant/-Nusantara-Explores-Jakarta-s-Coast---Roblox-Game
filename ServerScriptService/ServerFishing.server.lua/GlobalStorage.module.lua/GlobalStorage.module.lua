@@ -23,6 +23,7 @@ GSM.DEFAULT_PLAYER_DATA = {
 GSM.Data = {}
 
 local Players = game:GetService("Players")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DSS:DataStoreService = game:GetService("DataStoreService")
 local DB:DataStore = DSS:GetDataStore("pDB_v1")
 
@@ -123,7 +124,14 @@ function GSM:_Validate(data)
 end
 function GSM:_LoadData(player)
     local success, data, shouldWait
+    local retry = 0
+    local maxRetries = 10
     repeat
+        retry += 1
+        if retry > maxRetries then
+            warn("[GSM] Max retries reached for player", player.Name, "using default data")
+            return self.DEFAULT_PLAYER_DATA
+        end
         WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
         success, data = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
             oldData = oldData or self.DEFAULT_PLAYER_DATA
@@ -143,10 +151,11 @@ function GSM:_LoadData(player)
             end
         end) -- new key
         if shouldWait then
+            warn("[GSM] Player", player.Name, "Waiting for session lock to release")
 			task.wait(5)
 			shouldWait = false
 		end
-    until (success and data) or not Players:FindFirstChild(player) -- or until leaves
+    until (success and data) or not Players:FindFirstChild(player.Name) -- or until leaves
     if success and data then
         return data
     end
@@ -154,7 +163,7 @@ function GSM:_LoadData(player)
     repeat
         WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)
         success, data = pcall(DB.GetAsync, DB, player.UserId) -- old key
-    until success or not Players:FindFirstChild(player)
+    until success or not Players:FindFirstChild(player.Name)
     if success and data then
         self:_MigrateKey(player, data)
         return data
@@ -193,6 +202,7 @@ function GSM:_SaveData(player, data, locksession, force)
         success, ret = pcall(DB.UpdateAsync, DB, key(player), function(oldData)
             oldData = self:_MigrateData2(oldData or {})
             if oldData and (oldData.TotalCatch or 0) > (normalizedData.TotalCatch or 0) then
+                oldData.SessionLock = locksession and os.time() or nil
                 return oldData
             end
             normalizedData.SessionLock = locksession and os.time() or nil
@@ -214,6 +224,11 @@ function GSM:SaveDataPlayer(player, data, locksession, force)
     if data == nil then data = self.Data[player] end
     self:_SaveData(player, data, locksession, force)
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(GSM, "GlobalStorageManager")
 
 
 return GSM

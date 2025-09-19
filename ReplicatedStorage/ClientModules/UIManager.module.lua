@@ -3,17 +3,20 @@
 local CUI = {}
 local Player = game:GetService("Players").LocalPlayer
 local TS:TweenService = game:GetService("TweenService")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
+
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 function CUI:_CreateUI()
     local PlayerGui = Player:WaitForChild("PlayerGui")
 	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-	self.tabContainer = self.InventoryUI:WaitForChild("TabContainer")
-	local fishTabBtn = self.tabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
-	local rodTabBtn = self.tabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
-	local pageLayout = self.tabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
-	local fishPageFrame = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
-	local rodPageFrame = self.tabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
+	self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+	local fishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+	local rodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
+	local pageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
+	local fishPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
+	local rodPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
 	fishTabBtn.MouseButton1Click:Connect(function()
 		pageLayout:JumpTo(fishPageFrame)
 	end)
@@ -25,6 +28,10 @@ function CUI:_CreateUI()
 	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
 	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
 	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
+
+	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
+	self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
 end
 
 function CUI:UpdateTime(t)
@@ -57,11 +64,68 @@ function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
     end)
 end
 
+function CUI:SortFishInventoryUI()
+	self.FishGridLayout.Parent = nil
+    local FishList = {}
+    local startTimeFishList = tick()
+    for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
+        if fish.Name ~= "TemplateFish" then
+            local data = fish:FindFirstChild("FishData")
+            if data then
+                local parts = string.split(data.Value, "|")
+                local rarity = parts[2]
+                local id = tonumber(parts[4])
+                table.insert(FishList, {
+                    instance = fish,
+                    rarity = c.RARITY_ORDER[rarity] or 0,
+                    id = id or 0,
+                })
+            end
+        end
+    end
+    local durationFishList = (tick() - startTimeFishList) * 1000
+    if durationFishList > 1 then
+        print(string.format("[PUI]: Creating FishList takes about %.2fms", durationFishList))
+    end
+    local startTimeSort = tick()
+    table.sort(FishList, function(a, b)
+        if a.rarity ~= b.rarity then
+            return a.rarity > b.rarity
+        end
+        return a.id > b.id
+    end)
+    local durationSort = (tick() - startTimeSort) * 1000
+    if durationSort > 1 then
+        print(string.format("[PUI]: Sorting FishList takes about %.2fms", durationSort))
+    end
+    local startTimeOrdering = tick()
+    for i, FishData in ipairs(FishList) do
+        FishData.instance.LayoutOrder = i
+    end
+    local durationOrdering = (tick() - startTimeOrdering) * 1000
+    if durationOrdering > 1 then
+        print(string.format("[PUI]: Ordering FishList takes about %.2fms", durationOrdering))
+    end
+    local startTimeTextCount = tick()
+    self.FishTabBtn.Count.Text = #FishList
+    local durationTextCount = (tick() - startTimeTextCount) * 1000
+    if durationTextCount > 1 then
+        print(string.format("[PUI]: TextCount Update takes about %.2fms", durationTextCount))
+    end
+    self.FishGridLayout.Parent = self.FishInventoryTab
+end
+
 -- ENTRY POINTS
 function CUI:main()
     self:_CreateUI()
 	
     -- self.UpdateTime()
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(CUI, "Client_UIManager")
+
 
 return CUI

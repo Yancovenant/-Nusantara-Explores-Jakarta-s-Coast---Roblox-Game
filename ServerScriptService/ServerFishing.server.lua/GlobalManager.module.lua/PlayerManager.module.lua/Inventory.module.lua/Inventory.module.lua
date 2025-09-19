@@ -111,76 +111,74 @@ function PINV:GetEquipmentData(type:string, params)
     return c.EQUIPMENT.GED[type](c.EQUIPMENT.GED, params)
 end
 function PINV:AddRodToInventory(RodData:table, sort:boolean)
-    task.spawn(function()
-        local template = self.RodTemplate:Clone()
-        template.Name = RodData.name
-        -- template.UIGradient.Transparency = 1 -- add gradient later TODO
-        template.Icon.Image = RodData.icon
-        template.Visible = true
-        template.Parent = self.RodInventoryTab
-        -- TODO: Add Sort
-    end)
+    -- FIXED: Remove unnecessary task.spawn for better performance
+    local template = self.RodTemplate:Clone()
+    template.Name = RodData.name
+    -- template.UIGradient.Transparency = 1 -- add gradient later TODO
+    template.Icon.Image = RodData.icon
+    template.Visible = true
+    template.Parent = self.RodInventoryTab
+    -- TODO: Add Sort
 end
 function PINV:AddFishToInventory(FishData:table, sort:boolean)
-    task.spawn(function()
-        local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
-        local template = self.FishTemplate:Clone()
-        template.Name = FishName
-        template.Container.FishText.Text = FishName
-        template.Container.FishText.TextColor3 = c:GetRarityColor(FishInfo.rarity)
-        template.Container.FishWeight.Text = self:_FormatWeight(FishData.weight)
-        if FishInfo.icon then
-            template.Container.Icon.Image = FishInfo.icon
-        end
-        template.Visible = true
-        template.Parent = self.FishInventoryTab
+    -- FIXED: Remove unnecessary task.spawn for better performance
+    local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
+    local template = self.FishTemplate:Clone()
+    template.Name = FishName
+    template.Container.FishText.Text = FishName
+    template.Container.FishText.TextColor3 = c:GetRarityColor(FishInfo.rarity)
+    template.Container.FishWeight.Text = self:_FormatWeight(FishData.weight)
+    if FishInfo.icon then
+        template.Container.Icon.Image = FishInfo.icon
+    end
+    template.Visible = true
+    template.Parent = self.FishInventoryTab
 
-        if self.InventoryFishTween == nil then self.InventoryFishTween = {} end
-        local isPressed = false
-        local isActive = false
-        template.MouseButton1Click:Connect(function()
-            if isPressed then return end
-            isPressed = true
-            local tween = TS:Create(
-                template.Container,
-                TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
-                {Size = UDim2.new(.9, 0, .9, 0)}
-            )
-            tween:Play()
-            table.insert(self.InventoryFishTween, tween)
-            tween.Completed:Connect(function()
-                for i, t in ipairs(self.InventoryFishTween) do
-                    if t == tween then
-                        table.remove(self.InventoryFishTween, i)
-                        break
-                    end
+    if self.InventoryFishTween == nil then self.InventoryFishTween = {} end
+    local isPressed = false
+    local isActive = false
+    template.MouseButton1Click:Connect(function()
+        if isPressed then return end
+        isPressed = true
+        local tween = TS:Create(
+            template.Container,
+            TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
+            {Size = UDim2.new(.9, 0, .9, 0)}
+        )
+        tween:Play()
+        table.insert(self.InventoryFishTween, tween)
+        tween.Completed:Connect(function()
+            for i, t in ipairs(self.InventoryFishTween) do
+                if t == tween then
+                    table.remove(self.InventoryFishTween, i)
+                    break
                 end
-                isPressed = false
-                tween:Destroy()
-            end)
-            if isActive and self.HoldingFish then
-                self:_CleanHoldingFish()
-            else
-                self:_HoldFishAboveHead(FishName, FishData.weight)
-                isActive = true
             end
+            isPressed = false
+            tween:Destroy()
         end)
-
-        local FishDataValue = Instance.new("StringValue")
-        FishDataValue.Name = "FishData"
-        FishDataValue.Value = string.format("%s|%s|%.1f|%d",
-            FishName,
-            FishInfo.rarity,
-            FishData.weight,
-            FishData.id)
-            FishDataValue.Parent = template
-        if sort == nil then
-            sort = true
-        end
-        if sort then
-            self.PUI:SortFishInventoryUI()
+        if isActive and self.HoldingFish then
+            self:_CleanHoldingFish()
+        else
+            self:_HoldFishAboveHead(FishName, FishData.weight)
+            isActive = true
         end
     end)
+
+    local FishDataValue = Instance.new("StringValue")
+    FishDataValue.Name = "FishData"
+    FishDataValue.Value = string.format("%s|%s|%.1f|%d",
+        FishName,
+        FishInfo.rarity,
+        FishData.weight,
+        FishData.id)
+        FishDataValue.Parent = template
+    if sort == nil then
+        sort = true
+    end
+    if sort then
+        self.PUI:SortFishInventoryUI()
+    end
 end
 function PINV:UnEquippedReady(bool:boolean)
     self._OnUnequippedReady = bool
@@ -247,12 +245,19 @@ function PINV:CleanUp()
         self.Backpack:Destroy()
         self.Backpack = nil
     end
-    for _, tween in pairs(self.InventoryFishTween) do
-        tween:Cancel()
-        tween:Destroy()
+    if self.InventoryFishTween then
+        for _, tween in pairs(self.InventoryFishTween) do
+            tween:Cancel()
+            tween:Destroy()
+        end
     end
     self:_CleanHoldingFish()
     self.player = nil
 end
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(PINV, "PlayerInventory")
+
 
 return PINV

@@ -2,11 +2,11 @@
 
 local GAM = {}
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS = game:GetService("ReplicatedStorage")
 
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+local Remotes = RS:WaitForChild("Remotes")
 
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local c = require(RS:WaitForChild("GlobalConfig"))
 local GRM = require(script.Parent.GlobalRewardManager)
 local GM = require(script.Parent.GlobalManager)
 
@@ -90,5 +90,11 @@ function GAM:SetupServer()
     self.state = {}
     self:SetupRemoteListener()
 end
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(GAM, "GlobalActionManager")
+
 
 return GAM

@@ -7,10 +7,11 @@ local GAM = require(script.GlobalActionManager)
 local RunService = game:GetService("RunService")
 local TS:TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS = game:GetService("ReplicatedStorage")
 local Lighting: Lighting = game:GetService("Lighting")
 
-local Remotes = ReplicatedStorage:WaitForChild("Remotes")
+
+local Remotes = RS:WaitForChild("Remotes")
 local TimeEvent: RemoteEvent = Remotes:WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
 
 local ZONE_LISTS = {
@@ -95,6 +96,12 @@ function SF:main()
 	GAM:SetupServer()
 end
 SF:main()
+
+
+-- DEBUG
+local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:WrapModule(SF, "ServerFishing")
+
 
 Players.PlayerAdded:Connect(function(player)
     GM:playerAdded(player)
