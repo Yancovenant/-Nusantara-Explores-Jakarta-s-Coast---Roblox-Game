@@ -217,7 +217,8 @@ function PM:_UpdateFishingRodModel()
     local gripAttachment = Instance.new("Attachment")
     gripAttachment.Name = "BodyBackAttachment"
     -- gripAttachment.CFrame = CFrame.new(0, 0, 0) -- offset from hand
-    gripAttachment.Position = Vector3.new(0, -0.24, -0.45)
+    gripAttachment.Position = Vector3.new(0.7, 0.2, 0.7)
+    gripAttachment.Orientation = Vector3.new(90, 90, 0)
     gripAttachment.Parent = rodHandle
     
     hum:AddAccessory(rodAccessory)
