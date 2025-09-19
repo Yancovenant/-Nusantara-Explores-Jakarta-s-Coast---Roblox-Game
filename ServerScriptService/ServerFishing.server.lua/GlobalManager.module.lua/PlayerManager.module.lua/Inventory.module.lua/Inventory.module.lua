@@ -165,14 +165,9 @@ function PINV:AddFishToInventory(FishData:table, sort:boolean)
         end
     end)
 
-    local FishDataValue = Instance.new("StringValue")
-    FishDataValue.Name = "FishData"
-    FishDataValue.Value = string.format("%s|%s|%.1f|%d",
-        FishName,
-        FishInfo.rarity,
-        FishData.weight,
-        FishData.id)
-        FishDataValue.Parent = template
+    template:SetAttribute("rarity", FishInfo.rarity)
+    template:SetAttribute("weight", FishData.weight)
+    template:SetAttribute("id", FishData.id)
     if sort == nil then
         sort = true
     end

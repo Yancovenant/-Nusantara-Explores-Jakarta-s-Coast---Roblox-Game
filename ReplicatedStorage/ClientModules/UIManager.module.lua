@@ -65,22 +65,21 @@ function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
 end
 
 function CUI:SortFishInventoryUI()
-	self.FishGridLayout.Parent = nil
+	local startTimeReparenting = tick()
+	-- self.FishGridLayout.Parent = nil
+	local durationReparenting = (tick() - startTimeReparenting) * 1000
+    if durationReparenting > 1 then
+        print(string.format("[PUI]: Removing Parent takes about %.2fms", durationReparenting))
+    end
     local FishList = {}
     local startTimeFishList = tick()
     for _, fish in pairs(self.FishInventoryTab:GetChildren()) do
-        if fish.Name ~= "TemplateFish" then
-            local data = fish:FindFirstChild("FishData")
-            if data then
-                local parts = string.split(data.Value, "|")
-                local rarity = parts[2]
-                local id = tonumber(parts[4])
-                table.insert(FishList, {
-                    instance = fish,
-                    rarity = c.RARITY_ORDER[rarity] or 0,
-                    id = id or 0,
-                })
-            end
+        if fish.Name ~= "TemplateFish" and fish:IsA("TextButton") then
+			table.insert(FishList, {
+				instance = fish,
+				rarity = c.RARITY_ORDER[fish:GetAttribute("rarity")] or 0,
+				id = tonumber(fish:GetAttribute("id")) or 0
+			})
         end
     end
     local durationFishList = (tick() - startTimeFishList) * 1000
@@ -112,7 +111,12 @@ function CUI:SortFishInventoryUI()
     if durationTextCount > 1 then
         print(string.format("[PUI]: TextCount Update takes about %.2fms", durationTextCount))
     end
-    self.FishGridLayout.Parent = self.FishInventoryTab
+	local startTimeReparenting = tick()
+    -- self.FishGridLayout.Parent = self.FishInventoryTab
+	local durationReparenting = (tick() - startTimeReparenting) * 1000
+    if durationReparenting > 1 then
+        print(string.format("[PUI]: Reparenting Parent takes about %.2fms", durationReparenting))
+    end
 end
 
 -- ENTRY POINTS

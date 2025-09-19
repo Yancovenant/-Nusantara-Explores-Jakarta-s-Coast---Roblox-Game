@@ -203,6 +203,50 @@ function PM:_UpdateFishingRodModel()
     handle:FindFirstChild("Main").Part1 = Rod
 
     self.PUI.RodHotBar.Icon.Image = RodData.icon
+
+    local hrod = RodModel:Clone()
+    local hum = self.player.Character:WaitForChild("Humanoid")
+    local clockworksShades = Instance.new("Accessory")
+    clockworksShades.Name = "ClockworksShades"
+    hrod.Parent = clockworksShades
+    hum:AddAccessory(clockworksShades)
+    -- local torso = self.player.Character.UpperTorso or self.player.Character:FindFirstChild("Torso")
+    -- self.HolsterFishingRod = Instance.new("Part")
+    -- hrod.Parent = self.HolsterFishingRod
+    -- self.HolsterFishingRod.Name = "HolsterAttach"
+    -- self.HolsterFishingRod.Transparency = 1
+    -- self.HolsterFishingRod.Size = Vector3.new(0.2, 0.2, 0.2)
+    -- self.HolsterFishingRod.Anchored = false
+    -- self.HolsterFishingRod.CanCollide = false
+    -- self.HolsterFishingRod.Massless = true
+    -- self.HolsterFishingRod.Parent = torso
+    -- self.HolsterFishingRod.CFrame = torso.CFrame * CFrame.new(0, 0.1, 0.45)
+
+    -- -- ensure non-colliding, non-anchored
+    -- for _, inst in ipairs(self.HolsterFishingRod:GetDescendants()) do
+    --     if inst:IsA("BasePart") then
+    --         inst.Anchored = false
+    --         inst.CanCollide = false
+    --         inst.Massless = true
+    --     end
+    -- end
+
+    -- -- Weld attach to torso
+    -- local w0 = Instance.new("WeldConstraint")
+    -- w0.Part0 = self.HolsterFishingRod
+    -- w0.Part1 = torso
+    -- w0.Parent = self.HolsterFishingRod
+    
+    -- local w2 = Instance.new("WeldConstraint")
+    -- w2.Part0 = hrod:FindFirstChild("Handle")
+    -- w2.Part1 = self.HolsterFishingRod
+    -- w2.Parent = self.HolsterFishingRod
+    
+    -- -- rotate to look natural on back (tweak as needed)
+    -- -- slight tilt, point tip upward-right
+    -- hrod.Position = self.HolsterFishingRod.Position
+    -- local pivot = self.HolsterFishingRod.CFrame
+    -- self.HolsterFishingRod:PivotTo(pivot * CFrame.Angles(math.rad(15), math.rad(20), math.rad(10)))
 end
 
 -- ENTRY POINTS
