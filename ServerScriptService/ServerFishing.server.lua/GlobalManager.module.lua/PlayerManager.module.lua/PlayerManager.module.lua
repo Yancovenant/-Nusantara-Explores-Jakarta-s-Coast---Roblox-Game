@@ -204,12 +204,35 @@ function PM:_UpdateFishingRodModel()
 
     self.PUI.RodHotBar.Icon.Image = RodData.icon
 
-    local hrod = RodModel:Clone()
+    --- ROD ACCSESSORY
     local hum = self.player.Character:WaitForChild("Humanoid")
-    local clockworksShades = Instance.new("Accessory")
-    clockworksShades.Name = "ClockworksShades"
-    hrod.Parent = clockworksShades
-    hum:AddAccessory(clockworksShades)
+    local rodAccessory = Instance.new("Accessory")
+    rodAccessory.Name = "FishingRod"
+
+    local rodHandle = RodModel:FindFirstChild("Handle"):Clone()
+    rodHandle.Name = "Handle"
+    rodHandle.Parent = rodAccessory
+    
+    -- Add attachment that matches character hand
+    local gripAttachment = Instance.new("Attachment")
+    gripAttachment.Name = "BodyBackAttachment"
+    -- gripAttachment.CFrame = CFrame.new(0, 0, 0) -- offset from hand
+    gripAttachment.Position = Vector3.new(0, -0.24, -0.45)
+    gripAttachment.Parent = rodHandle
+    
+    hum:AddAccessory(rodAccessory)
+
+    -- local handle2 = Instance.new("Part")
+    -- handle2.Name = "Handle"
+    -- handle2.Size = Vector3.new(1, 1.6, 1)
+    -- handle2.Parent = clockworksShades
+
+    -- local mesh = Instance.new("SpecialMesh")
+    -- mesh.Name = "Mesh"
+    -- mesh.Scale = Vector3.new(1, 1.3, 1)
+    -- mesh.MeshId = "rbxassetid://1577360"
+    -- mesh.TextureId = "rbxassetid://1577349"
+    -- mesh.Parent = handle2
     -- local torso = self.player.Character.UpperTorso or self.player.Character:FindFirstChild("Torso")
     -- self.HolsterFishingRod = Instance.new("Part")
     -- hrod.Parent = self.HolsterFishingRod
