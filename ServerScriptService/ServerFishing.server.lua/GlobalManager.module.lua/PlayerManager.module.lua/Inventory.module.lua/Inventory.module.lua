@@ -154,9 +154,8 @@ function PINV:AddRodToInventory(RodData:table, sort:boolean)
     template.Parent = self.RodInventoryTab
     -- TODO: Add Sort
 end
-function PINV:AddFishToInventory(FishData:table, sort:boolean)
-    -- FIXED: Remove unnecessary task.spawn for better performance
-    local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
+
+function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
     local template = self.FishTemplate:Clone()
     template.Name = FishName
     template.Container.FishText.Text = FishName
@@ -209,6 +208,27 @@ function PINV:AddFishToInventory(FishData:table, sort:boolean)
         self.PUI:SortFishInventoryUI()
     end
 end
+function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
+    local template = self.FishShopTemplate:Clone()
+    template.Name = FishName
+    template.Label.Text = FishName
+    template.Label.TextColor3 = c:GetRarityColor(FishInfo.rarity)
+    template.Weight.Text = self:_FormatWeight(FishData.weight)
+    if FishInfo.icon then
+        print(FishInfo.icon)
+        template.Icon.Image = FishInfo.icon
+    end
+    template.Price.Text = FishData.price or 0
+    template.Visible = true
+    template.Parent = self.FishShopSellList
+    template:SetAttribute("price", FishData.price or 0)
+end
+function PINV:AddFishToInventory(FishData:table, sort:boolean)
+    local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
+    self:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
+    self:_AddFishToFishShopTab(FishData, FishName, FishInfo)
+end
+
 function PINV:UnEquippedReady(bool:boolean)
     self._OnUnequippedReady = bool
 end
@@ -225,6 +245,10 @@ function PINV:_CreateInventory()
 
     self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
     self.FishTemplate = self.FishInventoryTab:WaitForChild("TemplateFish")
+
+    self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
+    self.FishShopSellList = self.FishShopSellTab.ScrollingFrame
+    self.FishShopTemplate = self.FishShopSellList.TemplateItem
 end
 function PINV:_CreateBackpack()
     if not self.player:FindFirstChild("Custom Backpack") then
@@ -286,6 +310,9 @@ end
 
 -- DEBUG
 local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
+LOGGER:Skip(PINV.AddFishToInventory)
+LOGGER:Skip(PINV._AddFishToInventoryTab)
+LOGGER:Skip(PINV._AddFishToFishShopTab)
 LOGGER:WrapModule(PINV, "PlayerInventory")
 
 

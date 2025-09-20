@@ -72,6 +72,14 @@ function GRM:FishReward(player, power)
         end
     end
 end
+function GRM:FishValue(weight, FishData:table)
+    --
+    -- we can calculate it by
+    -- 1. fishdata.rarity, fishdata.chance multiplier
+    -- 2. weight.
+    --
+    print("[GRM] Received", weight, FishData)
+end
 
 
 -- DEBUG

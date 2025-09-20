@@ -2,7 +2,8 @@
 
 local GAM = {}
 
-local RS = game:GetService("ReplicatedStorage")
+local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local PSS:ProximityPromptService = game:GetService("ProximityPromptService")
 
 local Remotes = RS:WaitForChild("Remotes")
 
@@ -79,7 +80,22 @@ function GAM:OnGlobalEvent()
     end)
 end
 
+-- PROXIMITY EVENT
+function GAM:OnFishShop(player:Player, ...)
+    GM:ToggleFishShopUI(player, GRM, ...)
+end
+
 -- ENTRY POINT
+function GAM:SetupProximityListener()
+    PSS.PromptTriggered:Connect(function(prompt, playerWhoTriggered)
+        local method = "On" .. prompt.Name
+        if not GAM[method] then
+            warn("[GlobalActionManager] Invalid method: " .. method)
+            return
+        end
+        GAM[method](GAM, playerWhoTriggered, prompt.Parent)
+    end)
+end
 function GAM:SetupRemoteListener()
     self:OnFishingCastEvent()
     self:OnReelingCompleteEvent()
@@ -89,6 +105,7 @@ end
 function GAM:SetupServer()
     self.state = {}
     self:SetupRemoteListener()
+    self:SetupProximityListener()
 end
 
 

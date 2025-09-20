@@ -241,6 +241,10 @@ end
 
 -- ENTRY POINTS
 -- === interaction ===
+-- PROXOMITY
+function GM:ToggleFishShopUI(player, ...)
+    self.PlayerManagers[player]:ToggleFishShopUI(...)
+end
 -- ToolEvent
 function GM:ToggleInventory(player)
    self.PlayerManagers[player]:ToggleInventory()

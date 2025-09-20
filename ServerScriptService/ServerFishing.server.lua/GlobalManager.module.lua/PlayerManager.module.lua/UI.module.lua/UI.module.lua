@@ -12,6 +12,20 @@ local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Clien
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 -- MAIN FUNCTIONS
+--- Proximity
+function PUI:ToggleFishShopUI(bool:boolean, part:Part)
+    self.FishShopTab.Visible = bool
+    task.spawn(function()
+        while self.FishShopTab.Visible do
+            local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
+            if dist > 10 then
+                self.FishShopTab.Visible = false
+                break
+            end
+            task.wait(0.5)
+        end
+    end)
+end
 function PUI:UpdateZoneUI(zoneName)
     self.ZoneUI.ZoneText.Text = zoneName
 end
@@ -179,6 +193,10 @@ function PUI:_SetupTweenAndConnection()
 	self.BackpackBtnClickConnection = self.BackpackBtn.MouseButton1Click:Connect(function()
         self:ToggleInventory()
 	end)
+
+    self.FishShopCloseBtn.MouseButton1Click:Connect(function()
+        self:ToggleFishShopUI()
+    end)
 end
 function PUI:_CreatePlayerUI()
     local PlayerGui = self.player:WaitForChild("PlayerGui")
@@ -193,6 +211,10 @@ function PUI:_CreatePlayerUI()
     self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
     self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
     self.FishingUI = PlayerGui:WaitForChild("FishingUI")
+
+    self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
+    self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
+    self.FishShopCloseBtn = self.FishShopTab:WaitForChild("CloseButton")
     
     self:_SetupTweenAndConnection()
 

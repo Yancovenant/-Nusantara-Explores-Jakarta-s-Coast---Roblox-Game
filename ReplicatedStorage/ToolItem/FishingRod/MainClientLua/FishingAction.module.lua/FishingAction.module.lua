@@ -193,8 +193,9 @@ function FA:StartCast(AFKPOWER)
 	power = AFKPOWER or 0
 	local direction = 1
 	local startCastTrack = CAM:LoadAnimation(StartCastAnimation)
-	startCastTrack:Play()
+	startCastTrack:Play(0)
 	startCastTrack:AdjustSpeed(0) -- Stop automatic progression
+	startCastTrack.TimePosition = 0
 	local animationProgress = 0
 	while self:IsCasting() do
 		local dt = task.wait(0.03)
@@ -292,6 +293,19 @@ function FA:OnEquipped()
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then self:ReleaseCast() end
 	end)
 	self:SetupEventListener()
+	--- preload animation for first time.
+	for _, anim in pairs({
+		ReelingAnimation,
+		CatchAnimation,
+		StartCastAnimation,
+		ReleaseCastAnimation,
+		IdleFishingAnimation
+	}) do
+		local preload = CAM:LoadAnimation(anim)
+		preload:Play()
+		preload:Stop()
+		preload:Destroy()
+	end
 end
 
 
@@ -369,8 +383,10 @@ function FA:SetupEventListener()
     end)
 end
 
+
 -- DEBUG
 local LOGGER = require(RS:WaitForChild("GlobalModules"):WaitForChild("Logger"))
 LOGGER:WrapModule(FA, "Client_FishingAction")
+
 
 return FA

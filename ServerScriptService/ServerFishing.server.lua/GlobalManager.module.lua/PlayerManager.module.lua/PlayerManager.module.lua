@@ -70,6 +70,35 @@ end
 
 
 -- MAIN FUNCTIONS
+--- Proximity
+function PM:ToggleFishShopUI(GRM, ...)
+    local isShown = self.PUI.FishShopTab.Visible
+    self.PUI:ToggleFishShopUI(not isShown, ...)
+    if self.PUI.FishShopTab.Visible then
+        -- just do sorting
+        -- local FishList = {}
+        -- for id, weights in pairs(self.Data.FishInventory) do
+        --     local FishName, FishInfo = c.FISHING.FISH_DATA:FindFish(tonumber(id))
+        --     if FishInfo then
+        --         for _, weight in ipairs(weights) do
+        --             table.insert(FishList, {
+        --                 id = tonumber(id),
+        --                 name = FishName,
+        --                 weight = weight,
+        --                 rarity = c.RARITY_ORDER[FishInfo.rarity] or 0,
+        --                 price = GRM:FishValue(weight, FishInfo)
+        --             })
+        --         end
+        --         table.sort(FishList, function(a, b)
+        --             if a.rarity ~= b.rarity then
+        --                 return a.rarity > b.rarity -- rarer first
+        --             end
+        --             return a.id > b.id -- higher ID first,
+        --         end)
+        --     end
+        -- end
+    end
+end
 function PM:updatePlayerZone(zone)
     self.PUI:UpdateZoneUI(zone)
 end
@@ -168,17 +197,33 @@ function PM:_PopulateData()
     self.Money.Value = self.Data.Money
     self.TotalCatch.Value = self.Data.TotalCatch
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
+    
+    -- batching populate fish
+    local fishArray = {}
     for id, fish in pairs(self.Data.FishInventory) do
         for _, weight in pairs(fish) do
-            self.PINV:AddFishToInventory({
+            table.insert(fishArray, {
                 id = id,
-                weight = weight
-            }, false)
+                weight = weight,
+            })
         end
     end
+    local batchSize = 50
+    task.spawn(function()
+        for i = 1, #fishArray, batchSize do
+            for j = i, math.min(i + batchSize - 1, #fishArray) do
+                local fishData = fishArray[j]
+                self.PINV:AddFishToInventory(fishData, false)
+            end
+            task.wait()
+        end
+        self.PUI:SortFishInventoryUI()
+    end)
+    -- end fish batch populating
+
     self:_SetupPlayerAttributes()
     self.PUI:UpdateLevel(self.Data.PlayerLevel)
-    self.PUI:SortFishInventoryUI()
+    
     for _, rod in pairs(self.Data.Equipment.OwnedRods) do -- FIX THIS/NAMING CONVENTION
         local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", rod)
         self.PINV:AddRodToInventory(RodData, false)
