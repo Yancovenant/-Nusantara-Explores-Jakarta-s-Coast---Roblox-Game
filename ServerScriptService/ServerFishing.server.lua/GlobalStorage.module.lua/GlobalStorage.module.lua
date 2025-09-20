@@ -24,6 +24,7 @@ GSM.Data = {}
 
 local Players = game:GetService("Players")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local DSS:DataStoreService = game:GetService("DataStoreService")
 local DB:DataStore = DSS:GetDataStore("pDB_v1")
 
@@ -125,11 +126,14 @@ end
 function GSM:_LoadData(player)
     local success, data, shouldWait
     local retry = 0
-    local maxRetries = 10
+    local maxRetries = 3
     repeat
         retry += 1
         if retry > maxRetries then
             warn("[GSM] Max retries reached for player", player.Name, "using default data")
+            if not RunService:IsStudio() then
+                player:Kick("You're already playing in another server.")
+            end
             return self.DEFAULT_PLAYER_DATA
         end
         WaitForRequestBudget(Enum.DataStoreRequestType.UpdateAsync)

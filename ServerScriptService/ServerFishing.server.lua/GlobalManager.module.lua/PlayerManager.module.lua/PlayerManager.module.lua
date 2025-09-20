@@ -76,6 +76,7 @@ end
 function PM:ToggleRod()
     self.PINV:_CleanHoldingFish()
     self.PINV:_EquipTool("FishingRod")
+    self.PINV:ToggleHolsterRod()
     self.PUI:_UpdateHotBarSelected("FishingRod")
 end
 function PM:ToggleInventory()
@@ -203,74 +204,7 @@ function PM:_UpdateFishingRodModel()
     handle:FindFirstChild("Main").Part1 = Rod
 
     self.PUI.RodHotBar.Icon.Image = RodData.icon
-
-    --- ROD ACCSESSORY
-    local hum = self.player.Character:WaitForChild("Humanoid")
-    local rodAccessory = Instance.new("Accessory")
-    rodAccessory.Name = "FishingRod"
-
-    local rodHandle = RodModel:FindFirstChild("Handle"):Clone()
-    rodHandle.Name = "Handle"
-    rodHandle.Parent = rodAccessory
-    
-    -- Add attachment that matches character hand
-    local gripAttachment = Instance.new("Attachment")
-    gripAttachment.Name = "BodyBackAttachment"
-    -- gripAttachment.CFrame = CFrame.new(0, 0, 0) -- offset from hand
-    gripAttachment.Position = Vector3.new(0.7, 0.2, 0.7)
-    gripAttachment.Orientation = Vector3.new(90, 90, 0)
-    gripAttachment.Parent = rodHandle
-    
-    hum:AddAccessory(rodAccessory)
-
-    -- local handle2 = Instance.new("Part")
-    -- handle2.Name = "Handle"
-    -- handle2.Size = Vector3.new(1, 1.6, 1)
-    -- handle2.Parent = clockworksShades
-
-    -- local mesh = Instance.new("SpecialMesh")
-    -- mesh.Name = "Mesh"
-    -- mesh.Scale = Vector3.new(1, 1.3, 1)
-    -- mesh.MeshId = "rbxassetid://1577360"
-    -- mesh.TextureId = "rbxassetid://1577349"
-    -- mesh.Parent = handle2
-    -- local torso = self.player.Character.UpperTorso or self.player.Character:FindFirstChild("Torso")
-    -- self.HolsterFishingRod = Instance.new("Part")
-    -- hrod.Parent = self.HolsterFishingRod
-    -- self.HolsterFishingRod.Name = "HolsterAttach"
-    -- self.HolsterFishingRod.Transparency = 1
-    -- self.HolsterFishingRod.Size = Vector3.new(0.2, 0.2, 0.2)
-    -- self.HolsterFishingRod.Anchored = false
-    -- self.HolsterFishingRod.CanCollide = false
-    -- self.HolsterFishingRod.Massless = true
-    -- self.HolsterFishingRod.Parent = torso
-    -- self.HolsterFishingRod.CFrame = torso.CFrame * CFrame.new(0, 0.1, 0.45)
-
-    -- -- ensure non-colliding, non-anchored
-    -- for _, inst in ipairs(self.HolsterFishingRod:GetDescendants()) do
-    --     if inst:IsA("BasePart") then
-    --         inst.Anchored = false
-    --         inst.CanCollide = false
-    --         inst.Massless = true
-    --     end
-    -- end
-
-    -- -- Weld attach to torso
-    -- local w0 = Instance.new("WeldConstraint")
-    -- w0.Part0 = self.HolsterFishingRod
-    -- w0.Part1 = torso
-    -- w0.Parent = self.HolsterFishingRod
-    
-    -- local w2 = Instance.new("WeldConstraint")
-    -- w2.Part0 = hrod:FindFirstChild("Handle")
-    -- w2.Part1 = self.HolsterFishingRod
-    -- w2.Parent = self.HolsterFishingRod
-    
-    -- -- rotate to look natural on back (tweak as needed)
-    -- -- slight tilt, point tip upward-right
-    -- hrod.Position = self.HolsterFishingRod.Position
-    -- local pivot = self.HolsterFishingRod.CFrame
-    -- self.HolsterFishingRod:PivotTo(pivot * CFrame.Angles(math.rad(15), math.rad(20), math.rad(10)))
+    self.PINV:CreateHolsterRodAccessory(RodModel)
 end
 
 -- ENTRY POINTS
@@ -284,6 +218,7 @@ function PM:new(player)
     
     self:_PopulateData()
     self:_UpdateFishingRodModel()
+    self.PINV:ToggleHolsterRod()
     return self
 end
 function PM:CleanUp()

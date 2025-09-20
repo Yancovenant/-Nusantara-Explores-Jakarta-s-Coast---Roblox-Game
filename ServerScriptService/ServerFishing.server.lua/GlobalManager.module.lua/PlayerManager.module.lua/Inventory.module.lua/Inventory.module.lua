@@ -106,6 +106,40 @@ function PINV:_HoldFishAboveHead(fishName, Weight)
     ClientAnimationEvent:FireClient(self.player, "HoldFishAboveHead")
 end
 
+function PINV:CreateHolsterRodAccessory(RodModel:Model)
+    if self.RodAccessory then
+        self.RodAccessory:Destroy()
+        self.RodAccessory = nil
+    end
+    local rodAccessory = Instance.new("Accessory")
+    rodAccessory.Name = "FishingRod"
+
+    local rodHandle = RodModel:FindFirstChild("Handle"):Clone()
+    rodHandle.Name = "Handle"
+    rodHandle.Parent = rodAccessory
+    
+    -- Add attachment that matches character hand
+    local gripAttachment = Instance.new("Attachment")
+    gripAttachment.Name = "BodyBackAttachment"
+    -- gripAttachment.CFrame = CFrame.new(0, 0, 0) -- offset from hand
+    gripAttachment.Position = Vector3.new(0.7, 0.2, 0.7)
+    gripAttachment.Orientation = Vector3.new(90, 90, 0)
+    gripAttachment.Parent = rodHandle
+    self.RodAccessory = rodAccessory
+end
+function PINV:ToggleHolsterRod()
+    local hum = self.player.Character:WaitForChild("Humanoid")
+    if not self.IsHolsterEquip then
+        self.HolsterRod = self.RodAccessory:Clone()
+        hum:AddAccessory(self.HolsterRod)
+        self.IsHolsterEquip = true
+    else
+        self.HolsterRod:Destroy()
+        self.IsHolsterEquip = false
+    end
+end
+
+
 -- MAIN FUNCTIONS
 function PINV:GetEquipmentData(type:string, params)
     return c.EQUIPMENT.GED[type](c.EQUIPMENT.GED, params)
