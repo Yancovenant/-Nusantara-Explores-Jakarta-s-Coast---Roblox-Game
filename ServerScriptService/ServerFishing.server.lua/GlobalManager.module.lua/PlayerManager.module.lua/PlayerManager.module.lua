@@ -75,28 +75,13 @@ function PM:ToggleFishShopUI(GRM, ...)
     local isShown = self.PUI.FishShopTab.Visible
     self.PUI:ToggleFishShopUI(not isShown, ...)
     if self.PUI.FishShopTab.Visible then
-        -- just do sorting
-        -- local FishList = {}
-        -- for id, weights in pairs(self.Data.FishInventory) do
-        --     local FishName, FishInfo = c.FISHING.FISH_DATA:FindFish(tonumber(id))
-        --     if FishInfo then
-        --         for _, weight in ipairs(weights) do
-        --             table.insert(FishList, {
-        --                 id = tonumber(id),
-        --                 name = FishName,
-        --                 weight = weight,
-        --                 rarity = c.RARITY_ORDER[FishInfo.rarity] or 0,
-        --                 price = GRM:FishValue(weight, FishInfo)
-        --             })
-        --         end
-        --         table.sort(FishList, function(a, b)
-        --             if a.rarity ~= b.rarity then
-        --                 return a.rarity > b.rarity -- rarer first
-        --             end
-        --             return a.id > b.id -- higher ID first,
-        --         end)
-        --     end
-        -- end
+        ClientUIEvent:FireClient(self.player, "SortFishShopUI")
+        -- calculate price
+        for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
+            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+                fish:SetAttribute("price", GRM:FishValue(fish))
+            end
+        end
     end
 end
 function PM:updatePlayerZone(zone)

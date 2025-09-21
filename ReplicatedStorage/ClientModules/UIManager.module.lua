@@ -8,32 +8,8 @@ local Lighting = game:GetService("Lighting")
 
 local c = require(RS:WaitForChild("GlobalConfig"))
 
-function CUI:_CreateUI()
-    local PlayerGui = Player:WaitForChild("PlayerGui")
-	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-	self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
-	local fishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
-	local rodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
-	local pageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
-	local fishPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
-	local rodPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
-	fishTabBtn.MouseButton1Click:Connect(function()
-		pageLayout:JumpTo(fishPageFrame)
-	end)
-	rodTabBtn.MouseButton1Click:Connect(function()
-		pageLayout:JumpTo(rodPageFrame)
-	end)
-    self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
-	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
-	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
-	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
-	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
 
-	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
-	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
-	self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
-end
-
+-- MAIN FUNCTIONS
 function CUI:UpdateTime(t)
     if t == nil then
         t = {hour = Lighting:GetAttribute("Hour"), min = Lighting:GetAttribute("Minute")}
@@ -118,11 +94,83 @@ function CUI:SortFishInventoryUI()
         print(string.format("[PUI]: Reparenting Parent takes about %.2fms", durationReparenting))
     end
 end
+function CUI:SortFishShopUI()
+    local FishList = {}
+    for _, fish in pairs(self.FishShopSellPageFrame.ScrollingFrame:GetChildren()) do
+        if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+			table.insert(FishList, {
+				instance = fish,
+				rarity = c.RARITY_ORDER[fish:GetAttribute("rarity")] or 0,
+				id = tonumber(fish:GetAttribute("id")) or 0
+			})
+        end
+    end
+    table.sort(FishList, function(a, b)
+        if a.rarity ~= b.rarity then
+            return a.rarity > b.rarity
+        end
+        return a.id > b.id
+    end)
+    for i, FishData in ipairs(FishList) do
+        FishData.instance.LayoutOrder = i
+    end
+end
+
+
+-- SETUP
+function CUI:_SetupEventListener()
+    self.FishShopBuyBtn.MouseButton1Click:Connect(function()
+        self.FishShopPageLayout:JumpTo(self.FishShopBuyPageFrame)
+        self.FishPagePageTitle.Text = "Buy"
+    end)
+    self.FishShopSellBtn.MouseButton1Click:Connect(function()
+        self.FishShopPageLayout:JumpTo(self.FishShopSellPageFrame)
+        self.FishPagePageTitle.Text = "Sell"
+    end)
+end
+function CUI:_CreateUI()
+    local PlayerGui = Player:WaitForChild("PlayerGui")
+	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
+	self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+	local fishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+	local rodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
+	local pageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
+	local fishPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
+	local rodPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
+	fishTabBtn.MouseButton1Click:Connect(function()
+		pageLayout:JumpTo(fishPageFrame)
+	end)
+	rodTabBtn.MouseButton1Click:Connect(function()
+		pageLayout:JumpTo(rodPageFrame)
+	end)
+    self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
+	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
+	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
+	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
+	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
+
+	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
+	self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
+
+
+    self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
+    self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
+    self.FishShopNavbar = self.FishShopTab.RightPanel.Navbar
+    self.FishShopBuyBtn = self.FishShopNavbar.Buy
+    self.FishShopSellBtn = self.FishShopNavbar.Sell
+    self.FishPagePageTitle = self.FishShopNavbar.PageTitle
+    self.FishShopContentArea = self.FishShopTab.RightPanel.ContentArea
+    self.FishShopPageLayout = self.FishShopContentArea:FindFirstChildWhichIsA("UIPageLayout")
+    self.FishShopBuyPageFrame = self.FishShopContentArea.Buy
+    self.FishShopSellPageFrame = self.FishShopContentArea.Sell
+end
+
 
 -- ENTRY POINTS
 function CUI:main()
     self:_CreateUI()
-	
+	self:_SetupEventListener()
     -- self.UpdateTime()
 end
 

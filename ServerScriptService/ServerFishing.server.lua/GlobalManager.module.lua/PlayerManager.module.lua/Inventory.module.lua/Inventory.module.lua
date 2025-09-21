@@ -215,13 +215,15 @@ function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     template.Label.TextColor3 = c:GetRarityColor(FishInfo.rarity)
     template.Weight.Text = self:_FormatWeight(FishData.weight)
     if FishInfo.icon then
-        print(FishInfo.icon)
         template.Icon.Image = FishInfo.icon
     end
     template.Price.Text = FishData.price or 0
     template.Visible = true
     template.Parent = self.FishShopSellList
+    template:SetAttribute("rarity", FishInfo.rarity)
+    template:SetAttribute("weight", FishInfo.weight)
     template:SetAttribute("price", FishData.price or 0)
+    template:SetAttribute("id", FishData.id)
 end
 function PINV:AddFishToInventory(FishData:table, sort:boolean)
     local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
