@@ -13,6 +13,15 @@ local c = require(RS:WaitForChild("GlobalConfig"))
 
 
 -- HELPER
+local function contains(tbl:table, value)
+    for _, v in ipairs(tbl) do
+        if v == value then
+            return true
+        end
+    end
+    return false
+end
+
 function PM:_FormatChance(ch)
     -- Convert decimal back to fraction format
 	local function gcd(a, b)
@@ -73,7 +82,19 @@ function PM:_UpdateMoney(value)
     self.Money.Value = self.Data.Money
     ClientUIEvent:FireClient(self.player, "UpdateMoney", self.Data.Money, value)
 end
-
+function PM:_RefreshBuyShop()
+    local AllRod = c.EQUIPMENT.GED.RODS
+    for rodName, rodData in pairs(AllRod) do
+        if not contains(self.Data.Equipment.OwnedRods, rodData.id) then
+            local template = self.PUI.BuyTemplateItem:Clone()
+            template.Name = rodName
+            template.Label.Text = rodName
+            template.Icon.Image = rodData.icon
+            template.Price.Text = math.floor(rodData.price)
+            template.Parent = self.PUI.BuyFrame
+        end
+    end
+end
 
 -- MAIN FUNCTIONS
 --- Proximity
@@ -81,6 +102,8 @@ function PM:ToggleFishShopUI(GRM, ...)
     local isShown = self.PUI.FishShopTab.Visible
     self.PUI:ToggleFishShopUI(not isShown, ...)
     if self.PUI.FishShopTab.Visible then
+        -- populate buy tab
+        self:_RefreshBuyShop()
         ClientUIEvent:FireClient(self.player, "SortFishShopUI")
         -- calculate price
         for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
@@ -92,6 +115,7 @@ function PM:ToggleFishShopUI(GRM, ...)
         end
     end
 end
+
 function PM:updatePlayerZone(zone)
     self.PUI:UpdateZoneUI(zone)
 end

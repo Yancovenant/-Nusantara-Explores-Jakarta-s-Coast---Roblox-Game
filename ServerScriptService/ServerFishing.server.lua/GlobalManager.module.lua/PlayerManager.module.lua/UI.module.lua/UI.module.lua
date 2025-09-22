@@ -20,11 +20,35 @@ function PUI:ToggleFishShopUI(bool:boolean, part:Part)
             local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
             if dist > 10 then
                 self.FishShopTab.Visible = false
+                for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+                    if UI.Name == "BackdropUI" then
+                        UI.Enabled = false
+                    else
+                        UI.Enabled = true
+                    end
+                end
                 break
             end
             task.wait(0.5)
         end
     end)
+    if self.FishShopTab.Visible then
+        for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+            if UI.Name == "Freecam" or UI.Name == "FishShopUI" or UI.Name == "BackdropUI" then
+                UI.Enabled = true
+            else
+                UI.Enabled = false
+            end
+        end
+    else
+        for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+            if UI.Name == "BackdropUI" then
+                UI.Enabled = false
+            else
+                UI.Enabled = true
+            end
+        end
+    end
 end
 function PUI:UpdateZoneUI(zoneName)
     self.ZoneUI.ZoneText.Text = zoneName
@@ -232,6 +256,9 @@ function PUI:_CreatePlayerUI()
     self.SellAllBtn = self.FishShopTab.RightPanel.ContentArea.Sell.ActionButton.SellAll
     self.ActionButton = self.InventoryUI.ActionButton
     self.LockBtn = self.ActionButton.LockBtn
+    self.BuyPage = self.FishShopTab.RightPanel.ContentArea.Buy
+    self.BuyFrame = self.BuyPage.ScrollingFrame
+    self.BuyTemplateItem = self.BuyFrame.TemplateItem
 
     self:_SetupTweenAndConnection()
 
