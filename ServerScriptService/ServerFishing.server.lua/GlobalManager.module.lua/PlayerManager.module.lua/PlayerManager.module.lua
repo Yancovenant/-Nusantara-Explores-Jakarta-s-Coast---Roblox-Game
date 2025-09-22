@@ -157,31 +157,34 @@ function PM:_SetupEventListener()
         local totalValue = 0
         for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
             if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
-                local price = fish:GetAttribute("price") or 0
-                local fishId = fish:GetAttribute("id")
-                local weight = fish:GetAttribute("weight")
-                local uniqueId = fish:GetAttribute("uniqueId")
-                totalValue += price
-                local FishInventoryTable = self.Data.FishInventory[tostring(fishId)]
-                if FishInventoryTable ~= nil then
-                    for i, dWeight in ipairs(FishInventoryTable) do
-                        if type(dWeight) == "table" then
-                            if dWeight.uniqueId == uniqueId then
-                                table.remove(FishInventoryTable, i)
-                            end
-                        else
-                            if dWeight == weight then
-                                table.remove(FishInventoryTable, i)
+                local locked = fish:GetAttribute("locked")
+                if not locked then
+                    local price = fish:GetAttribute("price") or 0
+                    local fishId = fish:GetAttribute("id")
+                    local weight = fish:GetAttribute("weight")
+                    local uniqueId = fish:GetAttribute("uniqueId")
+                    totalValue += price
+                    local FishInventoryTable = self.Data.FishInventory[tostring(fishId)]
+                    if FishInventoryTable ~= nil then
+                        for i, dWeight in ipairs(FishInventoryTable) do
+                            if type(dWeight) == "table" then
+                                if dWeight.uniqueId == uniqueId then
+                                    table.remove(FishInventoryTable, i)
+                                end
+                            else
+                                if dWeight == weight then
+                                    table.remove(FishInventoryTable, i)
+                                end
                             end
                         end
+                        if #self.Data.FishInventory[tostring(fishId)] == 0 then
+                            self.Data.FishInventory[tostring(fishId)] = nil
+                        end
                     end
-                    if #self.Data.FishInventory[tostring(fishId)] == 0 then
-                        self.Data.FishInventory[tostring(fishId)] = nil
-                    end
-                end
-                if self.FishFrame[tostring(uniqueId)] ~= nil then
-                    for _, frame in pairs(self.FishFrame[tostring(uniqueId)]) do
-                        frame:Destroy()
+                    if self.FishFrame[tostring(uniqueId)] ~= nil then
+                        for _, frame in pairs(self.FishFrame[tostring(uniqueId)]) do
+                            frame:Destroy()
+                        end
                     end
                 end
             end
@@ -248,7 +251,9 @@ function PM:_PopulateData()
                 table.insert(fishArray, {
                     id = id,
                     weight = weight.weight,
+                    locked = weight.locked
                 })
+                weight.uniqueId = 0
             else
                 table.insert(fishArray, {
                     id = id,
@@ -263,6 +268,15 @@ function PM:_PopulateData()
             for j = i, math.min(i + batchSize - 1, #fishArray) do
                 local fishData = fishArray[j]
                 local FishInvFrame, FishShopFrame = self.PINV:AddFishToInventory(fishData, false)
+                if self.Data.FishInventory[tostring(fishData.id)] then
+                    for _, weight in self.Data.FishInventory[tostring(fishData.id)] do
+                        if type(weight) == "table" then
+                            if fishData.weight == weight.weight and weight.uniqueId == 0 and weight.locked == fishData.locked then
+                                weight.uniqueId = self.PINV.FishCounter
+                            end
+                        end
+                    end
+                end
                 if self.FishFrame[tostring(self.PINV.FishCounter)] == nil then
                     self.FishFrame[tostring(self.PINV.FishCounter)] = {
                         FishInvFrame = FishInvFrame,

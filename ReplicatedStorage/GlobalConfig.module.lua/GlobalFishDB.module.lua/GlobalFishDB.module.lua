@@ -208,7 +208,7 @@ GFD.FISH = {
 		habitat = "Reef",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://136605822194111",
 		baseChance = 1/110 -- 0.%
 	},
 	["Clarkii Clownfish"] = {
@@ -217,7 +217,7 @@ GFD.FISH = {
 		habitat = "Reef",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://140707971544876",
 		baseChance = 1/290 -- 0.%
 	},
 	["Mangrove Snapper"] = {
@@ -226,7 +226,7 @@ GFD.FISH = {
 		habitat = "Mangrove",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://121470171291692",
 		baseChance = 1/800 -- 0.%
 	},
 	-- ===== UNCOMMON FISH =====
@@ -236,7 +236,7 @@ GFD.FISH = {
 		habitat = "Reef",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://134453782788535",
 		baseChance = 1/1100 -- 0.%
 	},
 	["Atlantic Cod"] = {
@@ -245,7 +245,7 @@ GFD.FISH = {
 		habitat = "DeepSea",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://104371830492910",
 		baseChance = 1/1500 -- 0.%
 	},
 	["Jakarta Grouper"] = {
@@ -254,7 +254,7 @@ GFD.FISH = {
 		habitat = "Reef",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://124880192556214",
 		baseChance = 1/1800 -- 0.%
 	},
 	-- ===== RARE FISH =====
@@ -264,7 +264,7 @@ GFD.FISH = {
 		habitat = "Ocean",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://128053705230512",
 		baseChance = 1/2000 -- 0.%
 	},
 	["Cobia"] = {
@@ -273,7 +273,7 @@ GFD.FISH = {
 		habitat = "Ocean",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://109535708082796",
 		baseChance = 1/2500 -- 0.%
 	},
 	["Sailfish"] = {
@@ -282,7 +282,7 @@ GFD.FISH = {
 		habitat = "Ocean",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://74696099524487",
 		baseChance = 1/2500 -- 0.%
 	},
 	-- ===== EPIC FISH =====
@@ -292,7 +292,7 @@ GFD.FISH = {
 		habitat = "Ocean",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://117922865617212",
 		baseChance = 1/2500 -- 0.%
 	},
 	["Ikan Napoleon"] = {
@@ -301,7 +301,7 @@ GFD.FISH = {
 		habitat = "Reef",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://97098907772459",
 		baseChance = 1/2500 -- 0.%
 	},
 	-- ===== LEGENDARY FISH =====
@@ -311,7 +311,7 @@ GFD.FISH = {
 		habitat = "Ocean",
 		minWeight = 0.1,
 		maxWeight = 100000, -- in kg
-		icon = "rbxassetid://xxxxxx",
+		icon = "rbxassetid://73022152020014",
 		baseChance = 1/2500 -- 0.%
 	},
 	-- ===== MYTHICAL FISH =====

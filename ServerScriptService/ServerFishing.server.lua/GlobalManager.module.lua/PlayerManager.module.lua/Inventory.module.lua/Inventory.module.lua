@@ -3,7 +3,7 @@
 local PINV = {}
 PINV.__index = PINV
 
-local PUI = require(script.Parent.UI)
+local DBM = require(script.Parent.Parent.Parent.GlobalStorage)
 
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TS:TweenService = game:GetService("TweenService")
@@ -165,7 +165,21 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
         template.Container.Icon.Image = FishInfo.icon
     end
     template.Visible = true
+    if FishData.locked then
+        template.Locked.Visible = FishData.locked
+    end
     template.Parent = self.FishInventoryTab
+
+    template:SetAttribute("rarity", FishInfo.rarity)
+    template:SetAttribute("weight", FishData.weight)
+    template:SetAttribute("id", FishData.id)
+    template:SetAttribute("uniqueId", self.FishCounter)
+    if sort == nil then
+        sort = true
+    end
+    if sort then
+        self.PUI:SortFishInventoryUI()
+    end
 
     if self.InventoryFishTween == nil then self.InventoryFishTween = {} end
     local isPressed = false
@@ -190,24 +204,27 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
             isPressed = false
             tween:Destroy()
         end)
-        if isActive and self.HoldingFish then
-            self:_CleanHoldingFish()
+        if self.PUI.IsLocking then
+            template.Locked.Visible = not template.Locked.Visible
+            if self.Data.FishInventory[tostring(FishData.id)] then
+                for _, weight in self.Data.FishInventory[tostring(FishData.id)] do
+                    if type(weight) == "table" then
+                        if weight.uniqueId == template:GetAttribute("uniqueId") then
+                            weight.locked = template.Locked.Visible
+                        end
+                    end
+                end
+            end
         else
-            self:_HoldFishAboveHead(FishName, FishData.weight)
-            isActive = true
+            if isActive and self.HoldingFish then
+                self:_CleanHoldingFish()
+            else
+                self:_HoldFishAboveHead(FishName, FishData.weight)
+                isActive = true
+            end
         end
     end)
 
-    template:SetAttribute("rarity", FishInfo.rarity)
-    template:SetAttribute("weight", FishData.weight)
-    template:SetAttribute("id", FishData.id)
-    template:SetAttribute("uniqueId", self.FishCounter)
-    if sort == nil then
-        sort = true
-    end
-    if sort then
-        self.PUI:SortFishInventoryUI()
-    end
     return template
 end
 function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
@@ -219,6 +236,9 @@ function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     if FishInfo.icon then
         template.Icon.Image = FishInfo.icon
     end
+    if FishData.locked then
+        template.Locked.Visible = FishData.locked
+    end
     template.Price.Text = FishData.price or 0
     template.Visible = true
     template.Parent = self.FishShopSellList
@@ -227,6 +247,7 @@ function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     template:SetAttribute("price", FishData.price or 0)
     template:SetAttribute("id", FishData.id)
     template:SetAttribute("uniqueId", self.FishCounter)
+    template:SetAttribute("locked", FishData.locked)
     return template
 end
 function PINV:AddFishToInventory(FishData:table, sort:boolean)
@@ -282,6 +303,7 @@ end
 function PINV:new(player:Player, PUI:Instance)
     local self = setmetatable({}, PINV)
     self.player = player
+    self.Data = DBM:LoadDataPlayer(self.player)
     self.PUI = PUI
     self.FishCounter = 0
     self:_CreateInventory()

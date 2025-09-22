@@ -33,6 +33,7 @@ function PUI:ToggleInventory()
     local isShown = self.TabContainer.Visible
     if isShown then
         self.TabContainer.Visible = not isShown
+        self.ActionButton.Visible = self.TabContainer.Visible
         self.ClosedInventoryTween:Play()
         self.ShownHotbarTween:Play()
         self.ShownPlayerInfoTween:Play()
@@ -51,6 +52,7 @@ function PUI:ToggleInventory()
         self.ClosedPlayerInfoTween:Play()
         self.ShownInventoryTween.Completed:Connect(function()
             self.TabContainer.Visible = not isShown
+            self.ActionButton.Visible = self.TabContainer.Visible
         end)
     end
 end
@@ -138,7 +140,7 @@ function PUI:_SetupTweenAndConnection()
     self.ShownInventoryTween = TS:Create(
         self.MockTabContainer,
         TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Size = UDim2.new(0.8, 0, 0.8, 0)}
+        {Size = UDim2.new(0.8, 0, 0.75, 0)}
     )
     self.ClosedInventoryTween = TS:Create(
         self.MockTabContainer,
@@ -197,6 +199,18 @@ function PUI:_SetupTweenAndConnection()
     self.FishShopCloseBtn.MouseButton1Click:Connect(function()
         self:ToggleFishShopUI()
     end)
+
+    self.IsLocking = false
+    self.LockBtnClickConnection = self.LockBtn.MouseButton1Click:Connect(function()
+        self.IsLocking = not self.IsLocking
+        if self.IsLocking then
+            self.LockBtn.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+            self.LockBtn.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
+        else
+            self.LockBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+            self.LockBtn.Frame.BackgroundColor3 = Color3.fromRGB(195, 0, 0)
+        end
+    end)
 end
 function PUI:_CreatePlayerUI()
     local PlayerGui = self.player:WaitForChild("PlayerGui")
@@ -216,7 +230,9 @@ function PUI:_CreatePlayerUI()
     self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
     self.FishShopCloseBtn = self.FishShopTab:WaitForChild("CloseButton")
     self.SellAllBtn = self.FishShopTab.RightPanel.ContentArea.Sell.ActionButton.SellAll
-    
+    self.ActionButton = self.InventoryUI.ActionButton
+    self.LockBtn = self.ActionButton.LockBtn
+
     self:_SetupTweenAndConnection()
 
     local BaitUI = RS:WaitForChild("Template"):WaitForChild("FishingBaitUI"):Clone()
@@ -316,6 +332,10 @@ function PUI:CleanUp()
     if self.BackpackBtnClickConnection then
         self.BackpackBtnClickConnection:Disconnect()
         self.BackpackBtnClickConnection = nil
+    end
+    if self.LockBtnClickConnection then
+        self.LockBtnClickConnection:Disconnect()
+        self.LockBtnClickConnection = nil
     end
     self.player = nil
 end
