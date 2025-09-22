@@ -67,6 +67,12 @@ function PM:_UpdateXP(GainedXp)
     end
     ClientUIEvent:FireClient(self.player, "UpdateXP", self.Data.PlayerLevel, CurrentXP, RequiredXP, GainedXp)
 end
+function PM:_UpdateMoney(value)
+    value = value or 0
+    self.Data.Money += value
+    self.Money.Value = self.Data.Money
+    ClientUIEvent:FireClient(self.player, "UpdateMoney", self.Data.Money, value)
+end
 
 
 -- MAIN FUNCTIONS
@@ -81,7 +87,7 @@ function PM:ToggleFishShopUI(GRM, ...)
             if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
                 local finalPrice = GRM:FishValue(fish)
                 fish:SetAttribute("price", finalPrice)
-                fish.Price.Text = finalPrice
+                fish.Price.Text = math.floor(finalPrice)
             end
         end
     end
@@ -108,17 +114,24 @@ function PM:ShowPowerCategoryUI(power)
     self.PUI:ShowPowerCategoryUI(power)
 end
 function PM:CatchResultSuccess(info)
-    self.PINV:AddFishToInventory({
+    local FishInvFrame, FishShopFrame = self.PINV:AddFishToInventory({
         id = info.fishData.id,
         weight = info.weight,
     }, true)
     if self.Data.FishInventory[tostring(info.fishData.id)] == nil then
         self.Data.FishInventory[tostring(info.fishData.id)] = {}
     end
-    table.insert(
-        self.Data.FishInventory[tostring(info.fishData.id)],
-        info.weight
-    )
+    table.insert(self.Data.FishInventory[tostring(info.fishData.id)], {
+        weight = info.weight,
+        locked = false,
+        uniqueId = self.PINV.FishCounter
+    })
+    if self.FishFrame[tostring(self.PINV.FishCounter)] == nil then
+        self.FishFrame[tostring(self.PINV.FishCounter)] = {
+            FishInvFrame = FishInvFrame,
+            FishShopFrame = FishShopFrame
+        }
+    end
     -- loop wrapper leaderstats + data
     self.TotalCatch.Value = self.TotalCatch.Value + 1
     self.Data.TotalCatch = self.TotalCatch.Value
@@ -129,6 +142,58 @@ function PM:CatchResultSuccess(info)
     end
     local GainedXp = self:_CalculateXP(info)
     self:_UpdateXP(GainedXp)
+end
+
+function PM:SaveData(locksession, force)
+    DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
+end
+
+-- SETUP FUNCTIONS
+function PM:_SetupEventListener()
+    self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
+        self:ToggleRod()
+    end)
+    self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
+        local totalValue = 0
+        for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
+            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+                local price = fish:GetAttribute("price") or 0
+                local fishId = fish:GetAttribute("id")
+                local weight = fish:GetAttribute("weight")
+                local uniqueId = fish:GetAttribute("uniqueId")
+                totalValue += price
+                local FishInventoryTable = self.Data.FishInventory[tostring(fishId)]
+                if FishInventoryTable ~= nil then
+                    for i, dWeight in ipairs(FishInventoryTable) do
+                        if type(dWeight) == "table" then
+                            if dWeight.uniqueId == uniqueId then
+                                table.remove(FishInventoryTable, i)
+                            end
+                        else
+                            if dWeight == weight then
+                                table.remove(FishInventoryTable, i)
+                            end
+                        end
+                    end
+                    if #self.Data.FishInventory[tostring(fishId)] == 0 then
+                        self.Data.FishInventory[tostring(fishId)] = nil
+                    end
+                end
+                if self.FishFrame[tostring(uniqueId)] ~= nil then
+                    for _, frame in pairs(self.FishFrame[tostring(uniqueId)]) do
+                        frame:Destroy()
+                    end
+                end
+            end
+        end
+        
+        -- Update player money
+        self:_UpdateMoney(totalValue)
+        
+        -- Update UI counts
+        self.PUI:SortFishInventoryUI()
+        
+    end)
 end
 function PM:_CreateLeaderstats()
     local leaderstats
@@ -160,71 +225,6 @@ function PM:_CreateLeaderstats()
     -- end)
     return leaderstats
 end
-function PM:SaveData(locksession, force)
-    DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
-end
-
--- SETUP FUNCTIONS
-function PM:_SetupEventListener()
-    self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
-        self:ToggleRod()
-    end)
-    self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
-        local totalValue = 0
-        local fishToRemove = {}
-        for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
-            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
-                local price = fish:GetAttribute("price") or 0
-                local fishId = fish:GetAttribute("id")
-                local weight = fish:GetAttribute("weight")
-                if price > 0 and fishId and weight then
-                    totalValue += price
-                    table.insert(fishToRemove, {
-                        id = fishId,
-                        weight = weight,
-                        frame = fish
-                    })
-                end
-            end
-        end
-        
-        -- Update player money
-        self.Data.Money += totalValue
-        self.Money.Value = self.Data.Money
-        
-        -- Remove fish from inventory and UI
-        for _, fishData in ipairs(fishToRemove) do
-            local fishIdStr = tostring(fishData.id)
-            if self.Data.FishInventory[fishIdStr] then
-                -- Remove the specific weight from inventory
-                for i, invWeight in ipairs(self.Data.FishInventory[fishIdStr]) do
-                    if invWeight == fishData.weight then
-                        table.remove(self.Data.FishInventory[fishIdStr], i)
-                        break
-                    end
-                end
-                -- If no more fish of this type, remove the entry
-                if #self.Data.FishInventory[fishIdStr] == 0 then
-                    self.Data.FishInventory[fishIdStr] = nil
-                end
-            end
-            -- Remove from UI
-            fishData.frame:Destroy()
-        end
-        
-        -- Update UI counts
-        self.PUI:SortFishInventoryUI()
-        
-        -- Show confirmation
-        -- ClientUIEvent:FireClient(self.player, "ShowPopup", {
-        --     Text = {
-        --         Text = "Sold all fish for: " .. totalValue .. " coins!",
-        --         TextColor3 = Color3.fromRGB(50, 255, 50),
-        --         Visible = true,
-        --     },
-        -- })
-    end)
-end
 function PM:_SetupPlayerAttributes()
     local GED = c.EQUIPMENT.GED
     local EquippedRod = self.Data.Equipment.EquippedRod
@@ -236,18 +236,25 @@ end
 function PM:_PopulateData()
     self.Leaderstats = self:_CreateLeaderstats()
     self.Data = DBM:LoadDataPlayer(self.player)
-    self.Money.Value = self.Data.Money
+    
     self.TotalCatch.Value = self.Data.TotalCatch
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
     
     -- batching populate fish
     local fishArray = {}
-    for id, fish in pairs(self.Data.FishInventory) do
-        for _, weight in pairs(fish) do
-            table.insert(fishArray, {
-                id = id,
-                weight = weight,
-            })
+    for id, weights in pairs(self.Data.FishInventory) do
+        for _, weight in pairs(weights) do
+            if type(weight) == "table" then
+                table.insert(fishArray, {
+                    id = id,
+                    weight = weight.weight,
+                })
+            else
+                table.insert(fishArray, {
+                    id = id,
+                    weight = weight,
+                })
+            end
         end
     end
     local batchSize = 50
@@ -255,7 +262,13 @@ function PM:_PopulateData()
         for i = 1, #fishArray, batchSize do
             for j = i, math.min(i + batchSize - 1, #fishArray) do
                 local fishData = fishArray[j]
-                self.PINV:AddFishToInventory(fishData, false)
+                local FishInvFrame, FishShopFrame = self.PINV:AddFishToInventory(fishData, false)
+                if self.FishFrame[tostring(self.PINV.FishCounter)] == nil then
+                    self.FishFrame[tostring(self.PINV.FishCounter)] = {
+                        FishInvFrame = FishInvFrame,
+                        FishShopFrame = FishShopFrame
+                    }
+                end
             end
             task.wait()
         end
@@ -265,8 +278,10 @@ function PM:_PopulateData()
 
     self:_SetupPlayerAttributes()
     self.PUI:UpdateLevel(self.Data.PlayerLevel)
+    self:_UpdateXP(0)
+    self:_UpdateMoney(0)
     
-    for _, rod in pairs(self.Data.Equipment.OwnedRods) do -- FIX THIS/NAMING CONVENTION
+    for _, rod in pairs(self.Data.Equipment.OwnedRods) do
         local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", rod)
         self.PINV:AddRodToInventory(RodData, false)
     end
@@ -303,6 +318,14 @@ function PM:new(player)
     self.PINV = PINV:new(player, self.PUI)
     self:_SetupEventListener()
     
+    self.FishFrame = {
+        -- EXAMPLE
+        -- uniqueId = {
+        --     FishInvFrame = nil,
+        --     FishShopFrame = nil,
+        --     fish = nil
+        -- }
+    }
     self:_PopulateData()
     self:_UpdateFishingRodModel()
     self.PINV:ToggleHolsterRod()

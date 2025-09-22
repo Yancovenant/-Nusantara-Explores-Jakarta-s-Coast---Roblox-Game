@@ -201,12 +201,14 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
     template:SetAttribute("rarity", FishInfo.rarity)
     template:SetAttribute("weight", FishData.weight)
     template:SetAttribute("id", FishData.id)
+    template:SetAttribute("uniqueId", self.FishCounter)
     if sort == nil then
         sort = true
     end
     if sort then
         self.PUI:SortFishInventoryUI()
     end
+    return template
 end
 function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     local template = self.FishShopTemplate:Clone()
@@ -224,11 +226,15 @@ function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     template:SetAttribute("weight", FishData.weight)
     template:SetAttribute("price", FishData.price or 0)
     template:SetAttribute("id", FishData.id)
+    template:SetAttribute("uniqueId", self.FishCounter)
+    return template
 end
 function PINV:AddFishToInventory(FishData:table, sort:boolean)
+    self.FishCounter += 1
     local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(FishData.id)
-    self:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
-    self:_AddFishToFishShopTab(FishData, FishName, FishInfo)
+    local FishInvFrame = self:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
+    local FishShopFrame = self:_AddFishToFishShopTab(FishData, FishName, FishInfo)
+    return FishInvFrame, FishShopFrame
 end
 
 function PINV:UnEquippedReady(bool:boolean)
@@ -277,6 +283,7 @@ function PINV:new(player:Player, PUI:Instance)
     local self = setmetatable({}, PINV)
     self.player = player
     self.PUI = PUI
+    self.FishCounter = 0
     self:_CreateInventory()
     self:_CreateBackpack()
     return self

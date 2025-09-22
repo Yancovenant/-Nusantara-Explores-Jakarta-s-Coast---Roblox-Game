@@ -20,7 +20,9 @@ function CUI:UpdateTime(t)
 end
 
 function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
-	self.ExpUI.Text.Text = math.floor(CurrentXp) .. " / " .. math.floor(RequiredXp)
+    local expText = math.floor(CurrentXp) .. " / " .. math.floor(RequiredXp)
+	self.ExpUI.Text.Text = expText
+    self.ExpUITooltip.Text = expText
 	TS:Create(
 		self.ExpUI.Fill,
 		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
@@ -39,6 +41,10 @@ function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
         self.GainedXpText.Visible = false
     end)
 end
+function CUI:UpdateMoney(Money, GainedMoney)
+    self.MoneyUI.Text.Text = math.floor(Money)
+end
+
 
 function CUI:SortFishInventoryUI()
 	local startTimeReparenting = tick()
@@ -147,7 +153,15 @@ function CUI:_CreateUI()
 	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
 	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
 	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
+    self.ExpUITooltip = self.LevelUI:WaitForChild("LevelContainer").Tooltip
+    self.ExpUI.MouseEnter:Connect(function()
+        self.ExpUITooltip.Visible = true
+    end)
+    self.ExpUI.MouseLeave:Connect(function()
+        self.ExpUITooltip.Visible = false
+    end)
 	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
+    self.MoneyUI = self.PlayerInfoUI.Money
 
 	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
 	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
