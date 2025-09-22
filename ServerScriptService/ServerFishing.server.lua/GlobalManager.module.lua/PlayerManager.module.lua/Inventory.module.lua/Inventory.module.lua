@@ -221,7 +221,7 @@ function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
     template.Visible = true
     template.Parent = self.FishShopSellList
     template:SetAttribute("rarity", FishInfo.rarity)
-    template:SetAttribute("weight", FishInfo.weight)
+    template:SetAttribute("weight", FishData.weight)
     template:SetAttribute("price", FishData.price or 0)
     template:SetAttribute("id", FishData.id)
 end

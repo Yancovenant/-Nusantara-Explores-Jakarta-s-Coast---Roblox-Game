@@ -79,7 +79,9 @@ function PM:ToggleFishShopUI(GRM, ...)
         -- calculate price
         for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
             if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
-                fish:SetAttribute("price", GRM:FishValue(fish))
+                local finalPrice = GRM:FishValue(fish)
+                fish:SetAttribute("price", finalPrice)
+                fish.Price.Text = finalPrice
             end
         end
     end
@@ -166,6 +168,61 @@ end
 function PM:_SetupEventListener()
     self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
         self:ToggleRod()
+    end)
+    self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
+        local totalValue = 0
+        local fishToRemove = {}
+        for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
+            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+                local price = fish:GetAttribute("price") or 0
+                local fishId = fish:GetAttribute("id")
+                local weight = fish:GetAttribute("weight")
+                if price > 0 and fishId and weight then
+                    totalValue += price
+                    table.insert(fishToRemove, {
+                        id = fishId,
+                        weight = weight,
+                        frame = fish
+                    })
+                end
+            end
+        end
+        
+        -- Update player money
+        self.Data.Money += totalValue
+        self.Money.Value = self.Data.Money
+        
+        -- Remove fish from inventory and UI
+        for _, fishData in ipairs(fishToRemove) do
+            local fishIdStr = tostring(fishData.id)
+            if self.Data.FishInventory[fishIdStr] then
+                -- Remove the specific weight from inventory
+                for i, invWeight in ipairs(self.Data.FishInventory[fishIdStr]) do
+                    if invWeight == fishData.weight then
+                        table.remove(self.Data.FishInventory[fishIdStr], i)
+                        break
+                    end
+                end
+                -- If no more fish of this type, remove the entry
+                if #self.Data.FishInventory[fishIdStr] == 0 then
+                    self.Data.FishInventory[fishIdStr] = nil
+                end
+            end
+            -- Remove from UI
+            fishData.frame:Destroy()
+        end
+        
+        -- Update UI counts
+        self.PUI:SortFishInventoryUI()
+        
+        -- Show confirmation
+        -- ClientUIEvent:FireClient(self.player, "ShowPopup", {
+        --     Text = {
+        --         Text = "Sold all fish for: " .. totalValue .. " coins!",
+        --         TextColor3 = Color3.fromRGB(50, 255, 50),
+        --         Visible = true,
+        --     },
+        -- })
     end)
 end
 function PM:_SetupPlayerAttributes()

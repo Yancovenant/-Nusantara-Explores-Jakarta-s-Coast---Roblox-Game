@@ -79,7 +79,9 @@ function GRM:FishValue(fishFrame)
     -- 2. weight.
     --
     local FishName:string, FishInfo:table = c.FISHING.FISH_DATA:FindFish(fishFrame:GetAttribute("id"))
-    print("[GRM] Received", FishName, FishInfo)
+    -- print("[GRM] Received", FishName, FishInfo)
+    local rarityMultiplier = c.RARITY_MULTIXP[FishInfo.rarity]
+    return (fishFrame:GetAttribute("weight") ^ 0.8) * rarityMultiplier * (1 + (1/FishInfo.baseChance) ^ 0.25)
 end
 
 

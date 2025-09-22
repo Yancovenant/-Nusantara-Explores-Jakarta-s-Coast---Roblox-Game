@@ -77,6 +77,15 @@ GC.RARITY_MULTIXP = {
 	["Uncommon"] = 1.25,
 	["Common"] = 1
 }
+GC.RARITY_MULTIPRICE = {
+    ["Classified"] = 70,
+	["Mythical"] = 40,
+	["Legendary"] = 20,
+	["Epic"] = 10,
+	["Rare"] = 5,
+	["Uncommon"] = 2,
+	["Common"] = 1
+}
 
 -- STATIC FUNCTIONS
 function GC:GetRarityColor(rarity)

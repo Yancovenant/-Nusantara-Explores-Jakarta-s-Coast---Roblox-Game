@@ -215,6 +215,7 @@ function PUI:_CreatePlayerUI()
     self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
     self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
     self.FishShopCloseBtn = self.FishShopTab:WaitForChild("CloseButton")
+    self.SellAllBtn = self.FishShopTab.RightPanel.ContentArea.Sell.ActionButton.SellAll
     
     self:_SetupTweenAndConnection()
 
