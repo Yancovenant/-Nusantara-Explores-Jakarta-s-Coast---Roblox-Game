@@ -91,6 +91,7 @@ function PM:_RefreshBuyShop()
             template.Label.Text = rodName
             template.Icon.Image = rodData.icon
             template.Price.Text = math.floor(rodData.price)
+            template.Visible = true
             template.Parent = self.PUI.BuyFrame
         end
     end
