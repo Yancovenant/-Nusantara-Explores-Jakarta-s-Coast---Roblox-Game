@@ -83,16 +83,24 @@ function PM:_UpdateMoney(value)
     ClientUIEvent:FireClient(self.player, "UpdateMoney", self.Data.Money, value)
 end
 function PM:_RefreshBuyShop()
+    for _, frame in pairs(self.PUI.BuyFrame:GetChildren()) do
+        if frame:IsA("Frame") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
+            frame:Destroy()
+        end
+    end
     local AllRod = c.EQUIPMENT.GED.RODS
     for rodName, rodData in pairs(AllRod) do
         if not contains(self.Data.Equipment.OwnedRods, rodData.id) then
             local template = self.PUI.BuyTemplateItem:Clone()
             template.Name = rodName
             template.Label.Text = rodName
+            template.Label.TextColor3 = c:GetRarityColor(rodData.rarity)
             template.Icon.Image = rodData.icon
             template.Price.Text = math.floor(rodData.price)
+            template.LayoutOrder = rodData.id
             template.Visible = true
             template.Parent = self.PUI.BuyFrame
+            template:SetAttribute("itemType", "Rod")
         end
     end
 end
