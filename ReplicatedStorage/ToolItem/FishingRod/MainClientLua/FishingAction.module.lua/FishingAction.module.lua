@@ -28,6 +28,8 @@ local FishingRemotes = RS:WaitForChild("Remotes"):WaitForChild("FishingEvents")
 local ReelComplete = FishingRemotes:WaitForChild("ReelComplete")
 local StartCast = FishingRemotes:WaitForChild("StartCast")
 
+local FishBaitSound:Sound = ROD:WaitForChild("Sounds"):WaitForChild("FishBait")
+
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 local power = 0
@@ -64,8 +66,8 @@ function FA:_OnCatchResult(CatchInfo:table)
     local connection
     connection = CatchAnimTrack:GetMarkerReachedSignal("CatchPoint"):Connect(function()
         connection:Disconnect()
-        GlobalEvent:FireServer("PlayFishingSound", {"Splash", ROD})
-        GlobalEvent:FireServer("PlayFishingSound", {"StartCast", ROD})
+        GlobalEvent:FireServer("PlayFishingSound", "Splash", ROD)
+        GlobalEvent:FireServer("PlayFishingSound", "StartCast", ROD)
         if CatchInfo.success then
             GlobalEvent:FireServer("CatchResultSuccess", {CatchInfo, ROD})
             FUI:ShowFishPopup(CatchInfo)
@@ -98,19 +100,24 @@ function FA:_OnCatchResult(CatchInfo:table)
 end
 function FA:_OnBite()
     GlobalEvent:FireServer("ShowFishBiteUI", true)
-    GlobalEvent:FireServer("PlayFishingSound", {"Chime", ROD})
+    GlobalEvent:FireServer("PlayFishingSound", "Chime", ROD)
     local reelingAnimationTrack = CAM:LoadAnimation(ReelingAnimation)
     reelingAnimationTrack:Play()
     reelingAnimationTrack:AdjustSpeed(1)
-    GlobalEvent:FireServer("PlayFishingSound", {"Reel", ROD})
-    task.wait(0.8) -- THIS PART RESPONSIBLE FOR PLAYING MINIGAME.
+	FishBaitSound:Play()
+	FishBaitSound.Ended:Wait()
+    GlobalEvent:FireServer("PlayFishingSound", "Reel", ROD, true, true)
+	FUI:ToggleMinigameUI(true)
+    task.wait(5) -- THIS PART RESPONSIBLE FOR PLAYING MINIGAME.
+	FUI:ToggleMinigameUI(false)
+	GlobalEvent:FireServer("CleanFishingSounds")
     GlobalEvent:FireServer("ShowFishBiteUI", false)
     ReelComplete:FireServer(true)
 end
 function FA:_OnCastApproved(success:boolean, result)
     if success then
         self:_setAttr("IsFishing", true)
-        GlobalEvent:FireServer("PlayFishingSound", {"Splash", ROD})
+        GlobalEvent:FireServer("PlayFishingSound", "Splash", ROD)
     else
         FUI:ShowPopup({
             Text = {
@@ -120,7 +127,7 @@ function FA:_OnCastApproved(success:boolean, result)
 			},
         })
         GlobalEvent:FireServer("CleanFishingSounds")
-        GlobalEvent:FireServer("PlayFishingSound", {"Error", ROD})
+        GlobalEvent:FireServer("PlayFishingSound", "Error", ROD)
         GlobalEvent:FireServer("CleanBobber")
         CAM:CleanAnimations()
         self:SetFishingWalkSpeed(false)
@@ -178,7 +185,7 @@ function FA:ReleaseCast()
 	local connection
 	connection = releaseCastTrack:GetMarkerReachedSignal("ReleasePoint"):Connect(function(keyframe)
 		connection:Disconnect()
-		GlobalEvent:FireServer("PlayFishingSound", {"ReleaseCast", ROD})
+		GlobalEvent:FireServer("PlayFishingSound", "ReleaseCast", ROD)
 		local rootPart = Player.Character.HumanoidRootPart
 		local charCFrame = rootPart.CFrame
 		local forwardDirection = charCFrame.LookVector

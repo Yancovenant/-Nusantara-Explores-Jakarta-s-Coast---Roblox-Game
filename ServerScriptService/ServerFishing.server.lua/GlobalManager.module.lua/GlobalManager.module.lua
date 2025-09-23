@@ -211,23 +211,28 @@ end
 
 
 -- STATIC METHOD
-function GM:PlaySound(player, sound:Sound, cleanable:boolean)
+function GM:PlaySound(player, sound:Sound, cleanable:boolean, looped:boolean)
     if cleanable then
         table.insert(self.PlayerData[player].CleanableSounds, sound)
     end
     sound:Play()
-    sound.Ended:Connect(function()
-        for i,strack in ipairs(self.PlayerData[player].CleanableSounds) do
-            if sound == strack then
-                table.remove(self.PlayerData[player].CleanableSounds, i)
-                break
-            end
+    if cleanable then
+        if not looped then
+            sound.Ended:Connect(function()
+                for i,strack in ipairs(self.PlayerData[player].CleanableSounds) do
+                    if sound == strack then
+                        table.remove(self.PlayerData[player].CleanableSounds, i)
+                        break
+                    end
+                end
+            end)
         end
-    end)
+    end
 end
 function GM:CleanSounds(player)
-    for _,sound in self.PlayerData[player].CleanableSounds do
+    for i,sound in ipairs(self.PlayerData[player].CleanableSounds) do
         sound:Stop()
+        table.remove(self.PlayerData[player].CleanableSounds, i)
     end
 end
 
@@ -256,11 +261,9 @@ function GM:UnEquippedReady(player, bool)
     self.PlayerManagers[player]:UnEquippedReady(bool)
 end
 -- FishingEvent
-function GM:PlayFishingSound(player, params)
-    local sound = params[1]
-    local tool = params[2]
+function GM:PlayFishingSound(player, sound, tool, cleanable, looped)
     local strack = tool:WaitForChild("Sounds"):FindFirstChild(sound)
-    self:PlaySound(player, strack, true)
+    self:PlaySound(player, strack, cleanable or true, looped or false)
 end
 function GM:CleanFishingSounds(player)
     self:CleanSounds(player)

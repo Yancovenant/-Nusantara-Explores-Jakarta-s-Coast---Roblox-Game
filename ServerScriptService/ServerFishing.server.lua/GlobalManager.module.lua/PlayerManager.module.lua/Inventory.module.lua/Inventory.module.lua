@@ -149,6 +149,8 @@ function PINV:AddRodToInventory(RodData:table, sort:boolean)
     local template = self.RodTemplate:Clone()
     template.Name = RodData.name
     -- template.UIGradient.Transparency = 1 -- add gradient later TODO
+    template.Label.Text = RodData.name
+    template.Label.TextColor3 = c:GetRarityColor(RodData.rarity)
     template.Icon.Image = RodData.icon
     template.Visible = true
     template.Parent = self.RodInventoryTab

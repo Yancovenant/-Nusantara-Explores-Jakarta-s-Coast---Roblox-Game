@@ -98,6 +98,64 @@ function LUIC:ShowFishPopup(CatchInfo:table)
 	self.FishPopupTweenEnd.Completed:Wait()
 	self.PopupFish.Visible = false
 end
+function LUIC:ToggleMinigameUI(shown:boolean)
+	if shown then
+		self.MinigameUI.Size = UDim2.new(0,0,0,0)
+		self.MinigameUI.Visible = true
+		self.AutoFishButton.Visible = false
+		self.ShownMinigameTween:Play()
+        self.ClosedHotbarTween:Play()
+        self.ClosedPlayerInfoTween:Play()
+		self.ShownMinigameTween.Completed:Connect(function()
+			-- do something on shown
+        end)
+	else
+		self.ClosedMinigameTween:Play()
+        self.ShownHotbarTween:Play()
+        self.ShownPlayerInfoTween:Play()
+		self.ClosedMinigameTween.Completed:Connect(function()
+            self.MinigameUI.Visible = false
+			self.AutoFishButton.Visible = true
+        end)
+	end
+end
+
+
+-- SETUP
+function LUIC:SetupTween()
+	self.ShownHotbarTween = TS:Create(
+        self.HotBar,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.5, 0, 0.875, 0)}
+    )
+    self.ClosedHotbarTween = TS:Create(
+        self.HotBar,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.5, 0, 1.375, 0)}
+    )
+	self.ShownPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.025, 0, 0.775, 0)}
+    )
+    self.ClosedPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.025, 0, 1.375, 0)}
+    )
+	self.ShownMinigameTween = TS:Create(
+        self.MinigameUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Size = UDim2.new(0.7, 0, 0.15, 0)}
+    )
+    self.ClosedMinigameTween = TS:Create(
+        self.MinigameUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
+        ),
+        {Size = UDim2.new(0, 0, 0, 0)}
+    )
+end
+
 
 -- CLEANUP
 function LUIC:CleanUp()
@@ -119,12 +177,19 @@ end
 
 -- ENTRY POINTS
 function LUIC:CreateFishingUI()
+	local PlayerGui = Player:WaitForChild("PlayerGui")
     local fishingUI = Player:WaitForChild("PlayerGui"):WaitForChild("FishingUI")
     self.AutoFishButton =  fishingUI:WaitForChild("AutoFishButton")
     self.PowerBar = fishingUI:WaitForChild("PowerBar")
 	self.PopupFrame = fishingUI:WaitForChild("PopupFrame")
 	self.PopupFish = fishingUI:WaitForChild("PopupFish")
 	self.messagePopup = {}
+
+	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
+	self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
+    self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
+	self.MinigameUI = fishingUI.ReelUI
+	self:SetupTween()
 end
 
 return LUIC

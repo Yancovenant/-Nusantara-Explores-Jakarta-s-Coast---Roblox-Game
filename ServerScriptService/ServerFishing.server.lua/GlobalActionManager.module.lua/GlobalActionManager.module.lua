@@ -75,12 +75,12 @@ function GAM:OnToolEvent()
     end)
 end
 function GAM:OnGlobalEvent()
-    GlobalEvent.OnServerEvent:Connect(function(player, method, params)
+    GlobalEvent.OnServerEvent:Connect(function(player, method, ...)
         if not table.find(GM.ALLOWED_METHOD, method) then
             warn("[GlobalEvent] Invalid method: " .. method)
             return
         end
-        GM[method](GM, player, params)
+        GM[method](GM, player, ...)
     end)
 end
 

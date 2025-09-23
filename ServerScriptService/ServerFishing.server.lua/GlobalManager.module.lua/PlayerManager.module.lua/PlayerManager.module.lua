@@ -455,6 +455,8 @@ function PM:_SetupInvRodEventListener(template:Instance)
     template.MouseButton1Click:Connect(function()
         if template:GetAttribute("id") <= 0 then return end
         if self.player:GetAttribute("IsFishing") then return end
+        if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
+        print(self.player)
         self.Data.Equipment.EquippedRod = template:GetAttribute("id")
         self:_UpdateFishingRodModel()
         if self.PINV.IsHolsterEquip then
