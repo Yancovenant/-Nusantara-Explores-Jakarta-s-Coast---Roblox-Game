@@ -17,6 +17,9 @@ function PUI:ToggleFishShopUI(bool:boolean, part:Part)
     self.FishShopTab.Visible = bool
     task.spawn(function()
         while self.FishShopTab.Visible do
+            if not self.player or not self.player.Character or not self.player.Character:FindFirstChild("HumanoidRootPart") then
+                break
+            end
             local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
             if dist > 10 then
                 self.FishShopTab.Visible = false
@@ -259,6 +262,8 @@ function PUI:_CreatePlayerUI()
     self.BuyPage = self.FishShopTab.RightPanel.ContentArea.Buy
     self.BuyFrame = self.BuyPage.ScrollingFrame
     self.BuyTemplateItem = self.BuyFrame.TemplateItem
+    self.BuySelectedButton = self.BuyPage.ActionButton.BuySelected
+    self.BuySelectedTotalLabel = self.BuyPage.ActionButton.Total.Label
 
     self:_SetupTweenAndConnection()
 

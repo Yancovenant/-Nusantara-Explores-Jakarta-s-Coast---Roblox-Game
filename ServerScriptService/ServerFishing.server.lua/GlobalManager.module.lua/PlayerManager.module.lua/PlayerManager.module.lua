@@ -7,6 +7,7 @@ local PUI = require(script.UI)
 local DBM = require(script.Parent.Parent.GlobalStorage)
 
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TS:TweenService = game:GetService("TweenService")
 local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
 
 local c = require(RS:WaitForChild("GlobalConfig"))
@@ -83,8 +84,10 @@ function PM:_UpdateMoney(value)
     ClientUIEvent:FireClient(self.player, "UpdateMoney", self.Data.Money, value)
 end
 function PM:_RefreshBuyShop()
+    self.SelectedBuy = nil
+    self.PUI.BuySelectedTotalLabel.Visible = false
     for _, frame in pairs(self.PUI.BuyFrame:GetChildren()) do
-        if frame:IsA("Frame") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
+        if frame:IsA("TextButton") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
             frame:Destroy()
         end
     end
@@ -101,6 +104,18 @@ function PM:_RefreshBuyShop()
             template.Visible = true
             template.Parent = self.PUI.BuyFrame
             template:SetAttribute("itemType", "Rod")
+            template:SetAttribute("price", rodData.price)
+            template:SetAttribute("id", rodData.id)
+            template.MouseButton1Click:Connect(function()
+                if self.SelectedBuy == template then return end
+                if self.SelectedBuy and self.SelectedBuy ~= template then
+                    self.SelectedBuy.Select.Visible = false
+                end
+                self.SelectedBuy = template
+                template.Select.Visible = true
+                self.PUI.BuySelectedTotalLabel.Text = "Total : " .. template:GetAttribute("price")
+                self.PUI.BuySelectedTotalLabel.Visible = true
+            end)
         end
     end
 end
@@ -122,6 +137,7 @@ function PM:ToggleFishShopUI(GRM, ...)
                 fish.Price.Text = math.floor(finalPrice)
             end
         end
+        self:_CleanUpFishingShopBuyPage()
     end
 end
 
@@ -182,6 +198,19 @@ function PM:SaveData(locksession, force)
 end
 
 -- SETUP FUNCTIONS
+function PM:_CleanUpFishingShopBuyPage()
+    if self.FailedBuyTween then
+        self.FailedBuyTween:Cancel()
+        self.FailedBuyTween = nil
+    end
+    if self.FailedBuyTween2 then
+        self.FailedBuyTween2:Cancel()
+        self.FailedBuyTween2 = nil
+    end
+    self.PUI.BuySelectedButton.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+    self.PUI.BuySelectedButton.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
+    self.PUI.BuySelectedButton.Frame.TextLabel.Text = "Buy Selected"
+end
 function PM:_SetupEventListener()
     self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
         self:ToggleRod()
@@ -229,6 +258,35 @@ function PM:_SetupEventListener()
         -- Update UI counts
         self.PUI:SortFishInventoryUI()
         
+    end)
+    self.PUI.BuySelectedButton.MouseButton1Click:Connect(function()
+        if not self.SelectedBuy then return end
+        self:_CleanUpFishingShopBuyPage()
+        if self.Data.Money < self.SelectedBuy:GetAttribute("price") then
+            self.FailedBuyTween = TS:Create(
+                self.PUI.BuySelectedButton,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
+                {BackgroundColor3 = Color3.fromRGB(170, 0, 0)}
+            )
+            self.FailedBuyTween:Play()
+            self.FailedBuyTween2 = TS:Create(
+                self.PUI.BuySelectedButton.Frame,
+                TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
+                {BackgroundColor3 = Color3.fromRGB(195, 0, 0)}
+            )
+            self.FailedBuyTween2:Play()
+            self.PUI.BuySelectedButton.Frame.TextLabel.Text = "Not Enough Money"
+            self.FailedBuyTween2.Completed:Connect(function()
+                self:_CleanUpFishingShopBuyPage()
+            end)
+        else
+            local id = self.SelectedBuy:GetAttribute("id")
+            local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", id)
+            self.PINV:AddRodToInventory(RodData, false)
+            self.Data.Money -= self.SelectedBuy:GetAttribute("price")
+            table.insert(self.Data.Equipment.OwnedRods, id)
+            self:_RefreshBuyShop()
+        end
     end)
 end
 function PM:_CreateLeaderstats()
