@@ -85,7 +85,9 @@ function PM:_UpdateMoney(value)
 end
 function PM:_RefreshBuyShop()
     self.SelectedBuy = nil
+    self.SelectedFishSell = nil
     self.PUI.BuySelectedTotalLabel.Visible = false
+    self.PUI.SellSelectedTotalLabel.Visible = false
     for _, frame in pairs(self.PUI.BuyFrame:GetChildren()) do
         if frame:IsA("TextButton") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
             frame:Destroy()
@@ -131,9 +133,10 @@ function PM:ToggleFishShopUI(GRM, ...)
         ClientUIEvent:FireClient(self.player, "SortFishShopUI")
         -- calculate price
         for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
-            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+            if fish.Name ~= "TemplateItem" and fish:IsA("TextButton") then
                 local finalPrice = GRM:FishValue(fish)
                 fish:SetAttribute("price", finalPrice)
+                fish.Select.Visible = false
                 fish.Price.Text = math.floor(finalPrice)
             end
         end
@@ -167,6 +170,7 @@ function PM:CatchResultSuccess(info)
         id = info.fishData.id,
         weight = info.weight,
     }, true)
+    self:_SetupFishSellEventListener(FishShopFrame)
     if self.Data.FishInventory[tostring(info.fishData.id)] == nil then
         self.Data.FishInventory[tostring(info.fishData.id)] = {}
     end
@@ -218,7 +222,7 @@ function PM:_SetupEventListener()
     self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
         local totalValue = 0
         for _, fish in pairs(self.PUI.FishShopTab.RightPanel.ContentArea.Sell.ScrollingFrame:GetChildren()) do
-            if fish.Name ~= "TemplateItem" and fish:IsA("Frame") then
+            if fish.Name ~= "TemplateItem" and fish:IsA("TextButton") then
                 local locked = fish:GetAttribute("locked")
                 if not locked then
                     local price = fish:GetAttribute("price") or 0
@@ -282,11 +286,45 @@ function PM:_SetupEventListener()
         else
             local id = self.SelectedBuy:GetAttribute("id")
             local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", id)
-            self.PINV:AddRodToInventory(RodData, false)
+            self:_SetupInvRodEventListener(self.PINV:AddRodToInventory(RodData, true))
             self.Data.Money -= self.SelectedBuy:GetAttribute("price")
             table.insert(self.Data.Equipment.OwnedRods, id)
             self:_RefreshBuyShop()
         end
+    end)
+    self.PUI.SellSelectedButton.MouseButton1Click:Connect(function()
+        if not self.SelectedFishSell then return end
+        local price = self.SelectedFishSell:GetAttribute("price") or 0
+        local fishId = self.SelectedFishSell:GetAttribute("id")
+        local weight = self.SelectedFishSell:GetAttribute("weight")
+        local uniqueId = self.SelectedFishSell:GetAttribute("uniqueId")
+        local FishInventoryTable = self.Data.FishInventory[tostring(fishId)]
+        if FishInventoryTable ~= nil then
+            for i, dWeight in ipairs(FishInventoryTable) do
+                if type(dWeight) == "table" then
+                    if dWeight.uniqueId == uniqueId then
+                        table.remove(FishInventoryTable, i)
+                        break
+                    end
+                else
+                    if dWeight == weight then
+                        table.remove(FishInventoryTable, i)
+                        break
+                    end
+                end
+            end
+            if #self.Data.FishInventory[tostring(fishId)] == 0 then
+                self.Data.FishInventory[tostring(fishId)] = nil
+            end
+        end
+        if self.FishFrame[tostring(uniqueId)] ~= nil then
+            for _, frame in pairs(self.FishFrame[tostring(uniqueId)]) do
+                frame:Destroy()
+            end
+        end
+        self:_UpdateMoney(price)
+        self.PUI:SortFishInventoryUI()
+        self:_RefreshBuyShop()
     end)
 end
 function PM:_CreateLeaderstats()
@@ -359,6 +397,7 @@ function PM:_PopulateData()
             for j = i, math.min(i + batchSize - 1, #fishArray) do
                 local fishData = fishArray[j]
                 local FishInvFrame, FishShopFrame = self.PINV:AddFishToInventory(fishData, false)
+                self:_SetupFishSellEventListener(FishShopFrame)
                 if self.Data.FishInventory[tostring(fishData.id)] then
                     for _, weight in self.Data.FishInventory[tostring(fishData.id)] do
                         if type(weight) == "table" then
@@ -381,15 +420,15 @@ function PM:_PopulateData()
     end)
     -- end fish batch populating
 
-    self:_SetupPlayerAttributes()
     self.PUI:UpdateLevel(self.Data.PlayerLevel)
     self:_UpdateXP(0)
     self:_UpdateMoney(0)
     
     for _, rod in pairs(self.Data.Equipment.OwnedRods) do
         local RodData:table, RodModel:Model = self.PINV:GetEquipmentData("GetRod", rod)
-        self.PINV:AddRodToInventory(RodData, false)
+        self:_SetupInvRodEventListener(self.PINV:AddRodToInventory(RodData, false))
     end
+    self.PUI:SortRodInventoryUI()
     self._AutoSaveRunning = true
     task.spawn(function()
         while self._AutoSaveRunning do
@@ -397,6 +436,33 @@ function PM:_PopulateData()
             if not self._AutoSaveRunning then break end
             self:SaveData(true)
         end
+    end)
+end
+function PM:_SetupFishSellEventListener(template:Instance)
+    template.MouseButton1Click:Connect(function()
+        if self.SelectedFishSell == template then return end
+        if template:GetAttribute("locked") then return end
+        if self.SelectedFishSell and self.SelectedFishSell ~= template then
+            self.SelectedFishSell.Select.Visible = false
+        end
+        self.SelectedFishSell = template
+        template.Select.Visible = true
+        self.PUI.SellSelectedTotalLabel.Text = "Total : " .. math.floor(template:GetAttribute("price"))
+        self.PUI.SellSelectedTotalLabel.Visible = true
+    end)
+end
+function PM:_SetupInvRodEventListener(template:Instance)
+    template.MouseButton1Click:Connect(function()
+        if template:GetAttribute("id") <= 0 then return end
+        if self.player:GetAttribute("IsFishing") then return end
+        self.Data.Equipment.EquippedRod = template:GetAttribute("id")
+        self:_UpdateFishingRodModel()
+        if self.PINV.IsHolsterEquip then
+            self.PINV.HolsterRod:Destroy()
+            self.PINV.HolsterRod = self.PINV.RodAccessory:Clone()
+            self.player.Character:WaitForChild("Humanoid"):AddAccessory(self.PINV.HolsterRod)
+        end
+        self.PUI:SortRodInventoryUI()
     end)
 end
 function PM:_UpdateFishingRodModel()
@@ -412,6 +478,7 @@ function PM:_UpdateFishingRodModel()
 
     self.PUI.RodHotBar.Icon.Image = RodData.icon
     self.PINV:CreateHolsterRodAccessory(RodModel)
+    self:_SetupPlayerAttributes()
 end
 
 -- ENTRY POINTS

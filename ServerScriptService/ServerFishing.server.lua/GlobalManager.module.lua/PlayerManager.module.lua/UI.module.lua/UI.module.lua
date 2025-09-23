@@ -83,6 +83,18 @@ function PUI:ToggleInventory()
         end)
     end
 end
+function PUI:SortRodInventoryUI()
+    for _, Rod in pairs(self.RodInventoryTab:GetChildren()) do
+        if Rod.Name ~= "TemplateFishingRod" and Rod:IsA("TextButton") then
+            if Rod:GetAttribute("id") == self.Data.Equipment.EquippedRod then
+                Rod.SelectedFrame.Visible = true
+            else
+                Rod.SelectedFrame.Visible = false
+            end
+        end
+    end
+    ClientUIEvent:FireClient(self.player, "SortRodInventoryUI")
+end
 function PUI:SortFishInventoryUI()
     ClientUIEvent:FireClient(self.player, "SortFishInventoryUI")
 end
@@ -247,6 +259,7 @@ function PUI:_CreatePlayerUI()
     self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
     self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
     self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+    self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Rod')
     self.CloseInvButton = self.TabContainer:WaitForChild("CloseButton")
     self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
     self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
@@ -264,6 +277,10 @@ function PUI:_CreatePlayerUI()
     self.BuyTemplateItem = self.BuyFrame.TemplateItem
     self.BuySelectedButton = self.BuyPage.ActionButton.BuySelected
     self.BuySelectedTotalLabel = self.BuyPage.ActionButton.Total.Label
+    self.SellPage = self.FishShopTab.RightPanel.ContentArea.Sell
+    self.SellFrame = self.SellPage.ScrollingFrame
+    self.SellSelectedButton = self.SellPage.ActionButton.SellSelected
+    self.SellSelectedTotalLabel = self.SellPage.ActionButton.Total.Label
 
     self:_SetupTweenAndConnection()
 

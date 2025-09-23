@@ -152,7 +152,15 @@ function PINV:AddRodToInventory(RodData:table, sort:boolean)
     template.Icon.Image = RodData.icon
     template.Visible = true
     template.Parent = self.RodInventoryTab
-    -- TODO: Add Sort
+    template:SetAttribute("id", RodData.id)
+    template:SetAttribute("rarity", RodData.rarity)
+    if sort == nil then
+        sort = true
+    end
+    if sort then
+        self.PUI:SortRodInventoryUI()
+    end
+    return template
 end
 
 function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)

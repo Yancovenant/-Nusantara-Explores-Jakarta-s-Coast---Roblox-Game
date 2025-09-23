@@ -46,6 +46,27 @@ function CUI:UpdateMoney(Money, GainedMoney)
 end
 
 
+function CUI:SortRodInventoryUI()
+    local RodList = {}
+    for _, rod in pairs(self.RodInventoryTab:GetChildren()) do
+        if rod.Name ~= "TemplateFishingRod" and rod:IsA("TextButton") then
+            table.insert(RodList,{
+                instance = rod,
+                rarity = c.RARITY_ORDER[rod:GetAttribute("rarity")] or 0,
+                id = tonumber(rod:GetAttribute("id")) or 0
+            })
+        end
+    end
+    table.sort(RodList, function(a, b)
+        if a.rarity ~= b.rarity then
+            return a.rarity > b.rarity
+        end
+        return a.id > b.id
+    end)
+    for i, FishData in ipairs(RodList) do
+        FishData.instance.LayoutOrder = i
+    end
+end
 function CUI:SortFishInventoryUI()
 	local startTimeReparenting = tick()
 	-- self.FishGridLayout.Parent = nil
@@ -165,6 +186,7 @@ function CUI:_CreateUI()
 
 	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
 	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
+    self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Rod')
 	self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
 
 

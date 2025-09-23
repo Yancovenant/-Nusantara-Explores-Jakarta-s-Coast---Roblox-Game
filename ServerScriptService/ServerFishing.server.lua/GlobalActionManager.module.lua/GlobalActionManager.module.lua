@@ -33,6 +33,10 @@ function GAM:OnFishingCastEvent()
         local biteDelay = math.random(c.FISHING.BITE_DELAY_MIN, c.FISHING.BITE_DELAY_MAX)
         task.delay(biteDelay, function()
             if not s.isFishing then return end
+            -- minigame data.
+            local baseFillRate -- + strength
+            local baseGreenWidth -- + strength
+            local reelSpeedPercent -- rod + strength
             BiteEvent:FireClient(player)
         end)
     end)

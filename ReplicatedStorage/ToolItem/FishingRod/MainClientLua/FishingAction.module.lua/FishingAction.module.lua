@@ -103,7 +103,7 @@ function FA:_OnBite()
     reelingAnimationTrack:Play()
     reelingAnimationTrack:AdjustSpeed(1)
     GlobalEvent:FireServer("PlayFishingSound", {"Reel", ROD})
-    task.wait(0.8)
+    task.wait(0.8) -- THIS PART RESPONSIBLE FOR PLAYING MINIGAME.
     GlobalEvent:FireServer("ShowFishBiteUI", false)
     ReelComplete:FireServer(true)
 end

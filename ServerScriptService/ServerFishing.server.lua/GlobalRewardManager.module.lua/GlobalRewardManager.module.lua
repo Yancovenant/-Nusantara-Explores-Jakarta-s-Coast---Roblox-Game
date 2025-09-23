@@ -1,6 +1,27 @@
 -- Global Reward Manager
 -- STATIC module
 
+--[[
+    Multiplier,
+    This module will be responsible for any reward calculation,
+    we will take into account:
+        - PLAYER:
+            - LUCK,
+            - LEVEL,
+        - ROD:
+            - WEIGHT CAP,
+            - LUCK,
+            - REEL SPEED,
+            - CONTROL,
+    where:
+        - Luck + Level → affects fish selection chance (used in FishReward)
+        - Weight Cap + Player Strength → affects weight roll (used in FishWeightReward)
+        - Reel Speed → affects minigame speed only (client)
+        - Control → skip for now
+        - Zone → filters fish table to the current zone in GetFishTable
+        - Weather/Event/Environment → later we can add additive percents into the same places above
+]]--
+
 local RS = game:GetService("ReplicatedStorage")
 
 local c = require(RS:WaitForChild("GlobalConfig"))
