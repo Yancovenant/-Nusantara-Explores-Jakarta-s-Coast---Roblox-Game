@@ -152,6 +152,23 @@ function PINV:AddRodToInventory(RodData:table, sort:boolean)
     template.Icon.Image = RodData.icon
     template.Visible = true
     template.Parent = self.RodInventoryTab
+    local attributeContainer = template.Container
+    if RodData.maxWeight > 1.0 then
+        attributeContainer.MaxWeight.Text = "🔩 " .. RodData.maxWeight .. "Kg"
+        attributeContainer.MaxWeight.Visible = true
+    end
+    if RodData.luck > 1.0 then
+        attributeContainer.Luck.Text = "☘️ " .. RodData.luck .. "%"
+        attributeContainer.Luck.Visible = true
+    end
+    if RodData.attraction > 1.0 then
+        attributeContainer.Attractive.Text = "💕 " .. RodData.attraction .. "%"
+        attributeContainer.Attractive.Visible = true
+    end
+    if RodData.strength > 1.0 then
+        attributeContainer.Strength.Text = "💪🏻 " .. RodData.strength
+        attributeContainer.Strength.Visible = true
+    end
     template:SetAttribute("id", RodData.id)
     template:SetAttribute("rarity", RodData.rarity)
     if sort == nil then
