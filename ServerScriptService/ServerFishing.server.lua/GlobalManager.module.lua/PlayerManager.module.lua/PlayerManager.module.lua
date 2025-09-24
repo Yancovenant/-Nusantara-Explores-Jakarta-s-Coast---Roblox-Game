@@ -138,6 +138,17 @@ function PM:ToggleFishShopUI(GRM, ...)
                 fish:SetAttribute("price", finalPrice)
                 fish.Select.Visible = false
                 fish.Price.Text = math.floor(finalPrice)
+
+                local list = self.Data.FishInventory[tostring(fish:GetAttribute("id"))]
+                if list then
+                    for _, weight in ipairs(list) do
+                        if type(weight) == "table" and weight.uniqueId == fish:GetAttribute("uniqueId") then
+                            fish:SetAttribute("locked", weight.locked == true)
+                            fish.Locked.Visible = weight.locked == true
+                            break
+                        end
+                    end
+                end
             end
         end
         self:_CleanUpFishingShopBuyPage()
