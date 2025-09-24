@@ -174,6 +174,10 @@ function FA:Fishing(target)
 	idleFishingAnimation:Play()
 	idleFishingAnimation:AdjustSpeed(1)
 	StartCast:FireServer(isWater(), power)
+	
+	
+	self._ClickReady = true
+	self._IsMouseDown = false
 end
 function FA:ReleaseCast()
     if self:IsFishing() or not self:CanFish() then return end
@@ -291,13 +295,22 @@ function FA:OnEquipped()
     self.AFBConnection = FUI.AutoFishButton.MouseButton1Click:Connect(function()
         self:ToggleAfk()
     end)
+	self._isMouseDown = false
+	self._ClickReady = true
 	self.FishingIBConnection = UIS.InputBegan:Connect(function(input, gp)
 		if gp then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then self:StartCast() end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		if not self._ClickReady then return end
+		self._ClickReady = false
+		if self._IsMouseDown then return end
+		self._IsMouseDown = true
+		self:StartCast()
 	end)
 	self.FishingIEConnection = UIS.InputEnded:Connect(function(input, gp)
 		if gp then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then self:ReleaseCast() end
+		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		if not self._IsMouseDown then return end
+		self:ReleaseCast()
 	end)
 	self:SetupEventListener()
 	--- preload animation for first time.

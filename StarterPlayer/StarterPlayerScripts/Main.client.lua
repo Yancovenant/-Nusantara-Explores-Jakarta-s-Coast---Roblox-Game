@@ -32,11 +32,11 @@ local rodKey: Enum.KeyCode = Enum.KeyCode.One
 
 -- ENTRY POINTS
 function CPM:_SetUIS()
-	local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 	if UIS.TouchEnabled and not UIS.GyroscopeEnabled then
 		-- mobile
 	else
 		UIS.InputBegan:Connect(function(input: InputObject, gp: boolean)
+			local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 			if gp then return end
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				if input.KeyCode == runKey then
@@ -53,6 +53,7 @@ function CPM:_SetUIS()
 		end)
 		UIS.InputEnded:Connect(function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.Keyboard then
+				local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 				if input.KeyCode == runKey then
 					if not self.isRunning then return end
 					if cantRun then return end
