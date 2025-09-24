@@ -268,10 +268,8 @@ end
 function GM:CleanFishingSounds(player)
     self:CleanSounds(player)
 end
-function GM:CatchResultSuccess(player:Player, params)
-    local info = params[1]
-    local ROD = params[2]
 
+function GM:CatchResultSuccess(player:Player, success, ROD, info)
     local target = ROD:FindFirstChild("Rod"):FindFirstChild("RodTip").WorldPosition
     local tween = TS:Create( -- roll bobber from water to tip
         self.PlayerData[player].bobber,
@@ -279,27 +277,32 @@ function GM:CatchResultSuccess(player:Player, params)
         {Position = target}
     )
     tween:Play()
-    local fish, struggleTween, jumpTween = self:_CreateFishAnimation(info.fishName, info.weight, self.PlayerData[player].bobber.Position)
-    local FFConnection = RunService.Heartbeat:Connect(function()
-        if fish and self.PlayerData[player].bobber then
-            fish:SetPrimaryPartCFrame(CFrame.new(self.PlayerData[player].bobber.Position))
-            jumpTween:Cancel()
-            jumpTween = TS:Create(
-                fish.Body,
-                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
-                {Position = self.PlayerData[player].bobber.Position + Vector3.new(0, 0.5, 0)}
-            )
-            jumpTween:Play()
-        end
-    end)
+    local fish, struggleTween, jumpTween
+    local FFConnection
+    if success then
+        fish, struggleTween, jumpTween = self:_CreateFishAnimation(info.fishName, info.weight, self.PlayerData[player].bobber.Position)
+        FFConnection = RunService.Heartbeat:Connect(function()
+            if fish and self.PlayerData[player].bobber then
+                fish:SetPrimaryPartCFrame(CFrame.new(self.PlayerData[player].bobber.Position))
+                jumpTween:Cancel()
+                jumpTween = TS:Create(
+                    fish.Body,
+                    TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true),
+                    {Position = self.PlayerData[player].bobber.Position + Vector3.new(0, 0.5, 0)}
+                )
+                jumpTween:Play()
+            end
+        end)
+    end
     tween.Completed:Connect(function()
-        struggleTween:Cancel()
-        jumpTween:Cancel()
-        FFConnection:Disconnect()
-        self:_CreateFishSlungTween(player, fish)
-
-        self.PlayerManagers[player]:CatchResultSuccess(info)
-
+        if struggleTween then struggleTween:Cancel() end
+        if jumpTween then jumpTween:Cancel() end
+        if FFConnection then FFConnection:Disconnect() end
+        if success then
+            self:_CreateFishSlungTween(player, fish)
+            self.PlayerManagers[player]:CatchResultSuccess(info)
+        end
+        
         self:CleanBobber(player)
         CatchTweenFinishEvent:FireClient(player)
     end)

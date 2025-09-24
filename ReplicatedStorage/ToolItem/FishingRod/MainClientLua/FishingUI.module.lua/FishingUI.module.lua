@@ -8,6 +8,8 @@ local Player = game:GetService("Players").LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
 
+local camera: Camera = workspace.CurrentCamera
+local DEFAULT_CAMFOV = camera.FieldOfView
 
 -- HELPERS
 local function FormatWeight(w)
@@ -103,6 +105,7 @@ function LUIC:ToggleMinigameUI(shown:boolean)
 		self.MinigameUI.Size = UDim2.new(0,0,0,0)
 		self.MinigameUI.Visible = true
 		self.AutoFishButton.Visible = false
+		self.ReelingTween:Play()
 		self.ShownMinigameTween:Play()
         self.ClosedHotbarTween:Play()
         self.ClosedPlayerInfoTween:Play()
@@ -110,6 +113,7 @@ function LUIC:ToggleMinigameUI(shown:boolean)
 			-- do something on shown
         end)
 	else
+		self.StopReelingTween:Play()
 		self.ClosedMinigameTween:Play()
         self.ShownHotbarTween:Play()
         self.ShownPlayerInfoTween:Play()
@@ -118,6 +122,10 @@ function LUIC:ToggleMinigameUI(shown:boolean)
 			self.AutoFishButton.Visible = true
         end)
 	end
+end
+function LUIC:SetMinigameProgress(percent:number)
+	local p = math.clamp(percent or 0.2, 0.1, 1.0)
+	self.ReelZone.Size = UDim2.new(p, 0, 1, 0)
 end
 
 
@@ -154,6 +162,8 @@ function LUIC:SetupTween()
         ),
         {Size = UDim2.new(0, 0, 0, 0)}
     )
+	self.ReelingTween = TS:Create(camera,TweenInfo.new(0.3),{FieldOfView = DEFAULT_CAMFOV - ( 24 / 5 )})
+	self.StopReelingTween = TS:Create(camera,TweenInfo.new(0.3),{FieldOfView = DEFAULT_CAMFOV})
 end
 
 
@@ -189,6 +199,8 @@ function LUIC:CreateFishingUI()
 	self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
     self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
 	self.MinigameUI = fishingUI.ReelUI
+	self.ReelNeedle = self.MinigameUI.Bar.Needle.ImageLabel
+	self.ReelZone = self.MinigameUI.Bar.GreenZone
 	self:SetupTween()
 end
 

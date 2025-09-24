@@ -6,6 +6,7 @@ local ROD = script.Parent.Parent
 
 
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
 local CollectionService = game:GetService("CollectionService")
 
@@ -53,6 +54,56 @@ function FA:SetFishingWalkSpeed(bool:boolean)
 	end
 end
 
+-- MINIGAME
+function FA:_RunReelMinigame()
+	self._inMinigame = true
+	local config = {
+		maxDuration = 5.0,
+		fillRate = 0.15,
+		decayRate = 0.02,
+		greenZoneWidth = 0.2,
+	}
+	local progress = 0
+	local clickCount = 0
+	local startTime = tick()
+	FUI:ToggleMinigameUI(true)
+	local resultEvent = Instance.new("BindableEvent")
+
+	local clickConnection
+	clickConnection = UIS.InputBegan:Connect(function(input, gp)
+		if gp or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
+		local greenLeft = 0.5 - (config.greenZoneWidth / 2)
+		local greenRight = 0.5 + (config.greenZoneWidth / 2)
+		progress = math.min(1.0, progress + config.fillRate)
+		FUI:SetMinigameProgress(progress)
+		print(progress, "good click ?")
+		clickCount += 1
+	end)
+	local heartbeatConnection
+	heartbeatConnection = RunService.Heartbeat:Connect(function()
+		local elapsed = tick() - startTime
+		if progress >= 1.0 then
+			clickConnection:Disconnect()
+			heartbeatConnection:Disconnect()
+			FUI:ToggleMinigameUI(false)
+			resultEvent:Fire(true)
+		elseif elapsed >= config.maxDuration then
+			clickConnection:Disconnect()
+			heartbeatConnection:Disconnect()
+			FUI:ToggleMinigameUI(false)
+			resultEvent:Fire(false)
+		end
+	end)
+	task.spawn(function()
+		task.wait(config.maxDuration + 1)
+		if clickConnection then clickConnection:Disconnect() end
+		if heartbeatConnection then heartbeatConnection:Disconnect() end
+	end)
+	local result = resultEvent.Event:Wait()
+	self._inMinigame = false
+	return result
+end
+
 -- FISHING EVENTS
 function FA:_OnCatchTweenFinish()
     CAM:CleanAnimations()
@@ -69,7 +120,7 @@ function FA:_OnCatchResult(CatchInfo:table)
         GlobalEvent:FireServer("PlayFishingSound", "Splash", ROD)
         GlobalEvent:FireServer("PlayFishingSound", "StartCast", ROD)
         if CatchInfo.success then
-            GlobalEvent:FireServer("CatchResultSuccess", {CatchInfo, ROD})
+            GlobalEvent:FireServer("CatchResultSuccess", true, ROD, CatchInfo)
             FUI:ShowFishPopup(CatchInfo)
 			FUI:ShowPopup({
 				Text = {
@@ -88,6 +139,7 @@ function FA:_OnCatchResult(CatchInfo:table)
 				},
 			})
         else
+			GlobalEvent:FireServer('CatchResultSuccess', false, ROD)
             FUI:ShowPopup({
                 Text = {
                     Text = "Fish not caught",
@@ -107,12 +159,12 @@ function FA:_OnBite()
 	FishBaitSound:Play()
 	FishBaitSound.Ended:Wait()
     GlobalEvent:FireServer("PlayFishingSound", "Reel", ROD, true, true)
-	FUI:ToggleMinigameUI(true)
-    task.wait(5) -- THIS PART RESPONSIBLE FOR PLAYING MINIGAME.
-	FUI:ToggleMinigameUI(false)
+	
+	local success = self:_RunReelMinigame()
+
 	GlobalEvent:FireServer("CleanFishingSounds")
     GlobalEvent:FireServer("ShowFishBiteUI", false)
-    ReelComplete:FireServer(true)
+    ReelComplete:FireServer(success)
 end
 function FA:_OnCastApproved(success:boolean, result)
     if success then
@@ -298,16 +350,18 @@ function FA:OnEquipped()
 	self._isMouseDown = false
 	self._ClickReady = true
 	self.FishingIBConnection = UIS.InputBegan:Connect(function(input, gp)
-		if gp then return end
+		print("[Fishing Input Began]", self._inMinigame, self._ClickReady, self._IsMouseDown)
+		if gp or self._inMinigame then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 		if not self._ClickReady then return end
+		if self:IsFishing() or self:IsCasting() or not self:CanFish() then return end
 		self._ClickReady = false
 		if self._IsMouseDown then return end
 		self._IsMouseDown = true
 		self:StartCast()
 	end)
 	self.FishingIEConnection = UIS.InputEnded:Connect(function(input, gp)
-		if gp then return end
+		if gp or self._inMinigame then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 		if not self._IsMouseDown then return end
 		self:ReleaseCast()
