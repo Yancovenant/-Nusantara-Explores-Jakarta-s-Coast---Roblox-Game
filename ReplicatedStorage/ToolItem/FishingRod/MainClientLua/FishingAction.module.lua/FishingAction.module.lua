@@ -55,33 +55,54 @@ function FA:SetFishingWalkSpeed(bool:boolean)
 end
 
 -- MINIGAME
-function FA:_RunReelMinigame()
+function FA:_RunReelMinigame(str)
 	self._inMinigame = true
+	local s = 0.3 * math.log(1 + str)
 	local config = {
 		maxDuration = 5.0,
-		fillRate = 0.15,
-		decayRate = 0.02,
-		greenZoneWidth = 0.2,
+		fillRate = math.clamp(0.15 * (1 + 0.25 * s), 0.05, 0.60), -- 25% fill boost/ 1s
+		decayRate = math.clamp(0.02 * (1 - 0.20 * s), 0.0025, 0.02), -- 20% decay reduction / 1s
+		greenZoneWidth = math.clamp(0.2 + (0.10 * s), 0.15, 0.85), -- +10% bar width / 1s
 	}
+	FUI.ReelZone.Size = UDim2.new(config.greenZoneWidth, 0, 1, 0)
 	local progress = 0
 	local clickCount = 0
 	local startTime = tick()
+
+	-- afk section
+	local autoAccumulator = 0
+	local autoMultiplier = 0.275
+	local autoFill = config.fillRate * autoMultiplier
+	local T_target = config.maxDuration * 0.85
+	local I = (T_target * autoFill) / (1 + T_target * config.decayRate)
+	local I_stall = autoFill / math.max(1e-6, config.decayRate)
+	local autoClickInterval = math.min(I, I_stall - 0.05)
+
+	FUI:SetMinigameProgress(progress, config.greenZoneWidth)
 	FUI:ToggleMinigameUI(true)
 	local resultEvent = Instance.new("BindableEvent")
 
 	local clickConnection
 	clickConnection = UIS.InputBegan:Connect(function(input, gp)
 		if gp or input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
-		local greenLeft = 0.5 - (config.greenZoneWidth / 2)
-		local greenRight = 0.5 + (config.greenZoneWidth / 2)
 		progress = math.min(1.0, progress + config.fillRate)
-		FUI:SetMinigameProgress(progress)
-		print(progress, "good click ?")
-		clickCount += 1
+		FUI:SetMinigameProgress(progress, config.greenZoneWidth)
+		clickCount += 1 -- currently not being used
 	end)
 	local heartbeatConnection
-	heartbeatConnection = RunService.Heartbeat:Connect(function()
+	heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 		local elapsed = tick() - startTime
+		FUI:UpdateMinigameTimeProgress(elapsed, config.maxDuration)
+
+		if self.IsAFK then
+			autoAccumulator += dt
+			if autoAccumulator >= autoClickInterval then
+				autoAccumulator = 0
+				progress = math.min(1.0, progress + autoFill)
+				FUI:SetMinigameProgress(progress, config.greenZoneWidth)
+			end
+		end
+
 		if progress >= 1.0 then
 			clickConnection:Disconnect()
 			heartbeatConnection:Disconnect()
@@ -91,8 +112,11 @@ function FA:_RunReelMinigame()
 			clickConnection:Disconnect()
 			heartbeatConnection:Disconnect()
 			FUI:ToggleMinigameUI(false)
-			resultEvent:Fire(false)
+			resultEvent:Fire(self.IsAFK == true)
 		end
+
+		progress = math.max(0, progress - (config.decayRate * dt))
+		FUI:SetMinigameProgress(progress, config.greenZoneWidth)
 	end)
 	task.spawn(function()
 		task.wait(config.maxDuration + 1)
@@ -150,7 +174,7 @@ function FA:_OnCatchResult(CatchInfo:table)
         end
     end)
 end
-function FA:_OnBite()
+function FA:_OnBite(strengthAttribute:number)
     GlobalEvent:FireServer("ShowFishBiteUI", true)
     GlobalEvent:FireServer("PlayFishingSound", "Chime", ROD)
     local reelingAnimationTrack = CAM:LoadAnimation(ReelingAnimation)
@@ -160,7 +184,7 @@ function FA:_OnBite()
 	FishBaitSound.Ended:Wait()
     GlobalEvent:FireServer("PlayFishingSound", "Reel", ROD, true, true)
 	
-	local success = self:_RunReelMinigame()
+	local success = self:_RunReelMinigame(strengthAttribute)
 
 	GlobalEvent:FireServer("CleanFishingSounds")
     GlobalEvent:FireServer("ShowFishBiteUI", false)
@@ -350,7 +374,6 @@ function FA:OnEquipped()
 	self._isMouseDown = false
 	self._ClickReady = true
 	self.FishingIBConnection = UIS.InputBegan:Connect(function(input, gp)
-		print("[Fishing Input Began]", self._inMinigame, self._ClickReady, self._IsMouseDown)
 		if gp or self._inMinigame then return end
 		if input.UserInputType ~= Enum.UserInputType.MouseButton1 then return end
 		if not self._ClickReady then return end
@@ -442,8 +465,8 @@ function FA:SetupEventListener()
     self.CAConnection = CastApproved.OnClientEvent:Connect(function(success: boolean, result)
         self:_OnCastApproved(success, result)
     end)
-    self.BEConnection = BiteEvent.OnClientEvent:Connect(function()
-        self:_OnBite()
+    self.BEConnection = BiteEvent.OnClientEvent:Connect(function(...)
+        self:_OnBite(...)
     end)
     self.CRConnection = CatchResult.OnClientEvent:Connect(function(fishInfo:table)
         self:_OnCatchResult(fishInfo)

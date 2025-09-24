@@ -20,33 +20,29 @@ local ReelComplete = Remotes:WaitForChild("FishingEvents"):WaitForChild("ReelCom
 
 function GAM:OnFishingCastEvent()
     StartCast.OnServerEvent:Connect(function(player:Player, isWater:boolean, power)
-        local s = self.state[player] or {}
-        self.state[player] = s
         local function sendClientEvt(sc:boolean, msg:string)
             CastApproved:FireClient(player, sc, msg)
-            s.isFishing = sc
+            player:SetAttribute("IsFishingServer", sc)
         end
-        if s.isFishing then return sendClientEvt(false, "Already Fishing") end
+        if player:GetAttribute("IsFishingServer") then return sendClientEvt(false, "Already Fishing") end
         if not isWater then return sendClientEvt(false, "Aim at Water") end
-        s.power = power
+        player:SetAttribute("PowerServer", power)
         sendClientEvt(true, "CastApproved") --
         local biteDelay = math.random(c.FISHING.BITE_DELAY_MIN, c.FISHING.BITE_DELAY_MAX)
+        print(player:GetAttribute("IsFishingServer"))
         task.delay(biteDelay, function()
-            if not s.isFishing then return end
+            if not player:GetAttribute("IsFishingServer") then return end
             -- minigame data.
-            local baseFillRate -- + strength
-            local baseGreenWidth -- + strength
-            local reelSpeedPercent -- rod + strength
-            BiteEvent:FireClient(player)
+            local attr = GM.PlayerManagers[player] and GM.PlayerManagers[player].Data.Attributes
+            BiteEvent:FireClient(player, attr and attr.strength or 0)
         end)
     end)
 end
 function GAM:OnReelingCompleteEvent()
     ReelComplete.OnServerEvent:Connect(function(player:Player, sc:boolean)
-        local s = self.state[player]
-        if not s or not s.isFishing then return end
+        if not player:GetAttribute("IsFishingServer") then return end
         if sc then
-            local fn, fd, w = GRM:FishReward(player, s.power)
+            local fn, fd, w = GRM:FishReward(player, player:GetAttribute("PowerServer"))
             CatchResult:FireClient(player, {
                 success = true,
                 fishName = fn,

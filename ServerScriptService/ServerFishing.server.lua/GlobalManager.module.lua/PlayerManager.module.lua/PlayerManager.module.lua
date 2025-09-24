@@ -158,6 +158,7 @@ function PM:ToggleInventory()
 end
 function PM:UnEquippedReady(bool)
     self.PINV:UnEquippedReady(bool)
+    self.player:SetAttribute("IsFishingServer", not bool)
 end
 function PM:ShowFishBiteUI(visible)
     self.PUI:ShowFishBiteUI(visible)
@@ -362,7 +363,8 @@ function PM:_SetupPlayerAttributes()
     local EquippedRod = self.Data.Equipment.EquippedRod
     local dataRod, modelRod = self.PINV:GetEquipmentData("GetRod", EquippedRod)
     self.Data.Attributes = {
-        maxWeight = dataRod.maxWeight
+        maxWeight = dataRod.maxWeight,
+        strength = dataRod.strength + (self.Data.PlayerStrength or 0)
     }
 end
 function PM:_PopulateData()

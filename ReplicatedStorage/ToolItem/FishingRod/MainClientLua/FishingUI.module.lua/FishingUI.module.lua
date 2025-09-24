@@ -1,6 +1,7 @@
 -- Fishing UI Client
 
 local LUIC = {}
+LUIC.__index = LUIC
 
 local TS = game:GetService("TweenService")
 
@@ -123,9 +124,22 @@ function LUIC:ToggleMinigameUI(shown:boolean)
         end)
 	end
 end
-function LUIC:SetMinigameProgress(percent:number)
-	local p = math.clamp(percent or 0.2, 0.1, 1.0)
-	self.ReelZone.Size = UDim2.new(p, 0, 1, 0)
+function LUIC:SetMinigameProgress(percent:number, baseWidth: number)
+	local p = math.clamp(percent or 0.2, 0.0, 1.0) -- 0 - 1
+	local remaining = 1 - baseWidth
+	local size = baseWidth + (remaining * p)
+	self.ReelZone.Size = UDim2.new(size, 0, 1, 0)
+end
+function LUIC:UpdateMinigameTimeProgress(elapsed, maxDuration:number)
+	local ratio = math.max(0, maxDuration - elapsed) / maxDuration
+	self.TimeProgress.Fill.Size = UDim2.new(ratio, 0, 1, 0)
+	if ratio > 0.5 then
+		self.TimeProgress.Fill.BackgroundColor3 = Color3.fromRGB(80,210,120)
+	elseif ratio > 0.25 then
+		self.TimeProgress.Fill.BackgroundColor3 = Color3.fromRGB(255,200,50)
+	else
+		self.TimeProgress.Fill.BackgroundColor3 = Color3.fromRGB(255,100,100)
+	end
 end
 
 
@@ -201,6 +215,7 @@ function LUIC:CreateFishingUI()
 	self.MinigameUI = fishingUI.ReelUI
 	self.ReelNeedle = self.MinigameUI.Bar.Needle.ImageLabel
 	self.ReelZone = self.MinigameUI.Bar.GreenZone
+	self.TimeProgress = self.MinigameUI.Progress
 	self:SetupTween()
 end
 

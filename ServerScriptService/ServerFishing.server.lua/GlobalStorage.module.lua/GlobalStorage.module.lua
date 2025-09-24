@@ -9,6 +9,7 @@ GSM.DEFAULT_PLAYER_DATA = {
 	FishInventory = {},
 	PlayerLevel = 1,
 	PlayerXP = 0,
+    PlayerStrength = 0,
 	Equipment = {
 		OwnedRods = {1}, -- Start with Basic Rod
 		OwnedBobbers = {1}, -- Start with Cork Bobber
