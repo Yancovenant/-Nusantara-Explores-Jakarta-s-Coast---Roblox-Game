@@ -28,6 +28,7 @@ local DEFAULT_CAMFOV = camera.FieldOfView
 local runKey: Enum.KeyCode = Enum.KeyCode.LeftShift
 local invKey: Enum.KeyCode = Enum.KeyCode.E
 local rodKey: Enum.KeyCode = Enum.KeyCode.One
+local statKey: Enum.KeyCode = Enum.KeyCode.Two
 
 
 -- ENTRY POINTS
@@ -48,6 +49,8 @@ function CPM:_SetUIS()
 					ToolEvent:FireServer("ToggleInventory")
 				elseif input.KeyCode == rodKey then
 					ToolEvent:FireServer("ToggleRod")
+				elseif input.KeyCode == statKey then
+					ToolEvent:FireServer("TogglePlayerModal")
 				end
 			end
 		end)

@@ -172,6 +172,9 @@ function PM:UnEquippedReady(bool)
     self.player:SetAttribute("IsFishingServer", not bool)
     self.player:SetAttribute("PowerServer", 0)
 end
+function PM:TogglePlayerModal()
+    self.PUI:TogglePlayerModal(self.Data.Attributes)
+end
 function PM:ShowFishBiteUI(visible)
     self.PUI:ShowFishBiteUI(visible)
 end

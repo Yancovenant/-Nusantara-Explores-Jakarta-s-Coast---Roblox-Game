@@ -173,6 +173,9 @@ end
 function PUI:UpdateLevel(Level)
     self.globalUI.LevelUI.Frame.Text.Text = "Lv. " .. tostring(Level)
 end
+function PUI:TogglePlayerModal(...)
+    ClientUIEvent:FireClient(self.player, "TogglePlayerModal")
+end
 
 -- SETUP
 function PUI:_SetupTweenAndConnection()

@@ -260,6 +260,9 @@ end
 function GM:UnEquippedReady(player, bool)
     self.PlayerManagers[player]:UnEquippedReady(bool)
 end
+function GM:TogglePlayerModal(player)
+    self.PlayerManagers[player]:TogglePlayerModal()
+end
 -- FishingEvent
 function GM:PlayFishingSound(player, sound, tool, cleanable, looped)
     local strack = tool:WaitForChild("Sounds"):FindFirstChild(sound)
@@ -362,6 +365,7 @@ end
 GM.ALLOWED_METHOD = {
     "ToggleRod",
     "ToggleInventory",
+    "TogglePlayerModal",
 
     "UnEquippedReady",
 

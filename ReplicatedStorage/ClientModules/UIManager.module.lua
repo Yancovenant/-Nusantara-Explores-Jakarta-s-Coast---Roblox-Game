@@ -142,6 +142,15 @@ function CUI:SortFishShopUI()
         FishData.instance.LayoutOrder = i
     end
 end
+function CUI:_UpdatePlayerModalData(data)
+    
+end
+function CUI:TogglePlayerModal(attrs:table)
+    self:_UpdatePlayerModalData(attrs)
+    local shown = self.PlayerModalUI.Visible
+    self.PlayerModalUI.Visible = not shown
+end
+
 
 
 -- SETUP
@@ -200,6 +209,14 @@ function CUI:_CreateUI()
     self.FishShopPageLayout = self.FishShopContentArea:FindFirstChildWhichIsA("UIPageLayout")
     self.FishShopBuyPageFrame = self.FishShopContentArea.Buy
     self.FishShopSellPageFrame = self.FishShopContentArea.Sell
+
+    -- PLAYER MODAL
+    self.PlayerModalUI = self.InventoryUI.PlayerModal
+    self.PMDisplayName = self.PlayerModalUI.LeftPanel.PlayerName
+    self.PMAvatar = self.PlayerModalUI.LeftPanel.Avatar.ImageLabel
+    self.PMAttractiveUI = self.PlayerModalUI.RightPanel.ATTRACTIVE
+    self.PMStrengthUI = self.PlayerModalUI.RightPanel.STR
+    self.PMLuckUI = self.PlayerModalUI.RightPanel.LUCK
 end
 
 
