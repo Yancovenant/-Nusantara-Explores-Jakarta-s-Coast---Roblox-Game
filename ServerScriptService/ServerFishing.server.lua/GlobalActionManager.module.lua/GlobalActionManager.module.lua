@@ -29,7 +29,6 @@ function GAM:OnFishingCastEvent()
         player:SetAttribute("PowerServer", power)
         sendClientEvt(true, "CastApproved") --
         local biteDelay = math.random(c.FISHING.BITE_DELAY_MIN, c.FISHING.BITE_DELAY_MAX)
-        print(player:GetAttribute("IsFishingServer"))
         task.delay(biteDelay, function()
             if not player:GetAttribute("IsFishingServer") then return end
             -- minigame data.
@@ -53,6 +52,8 @@ function GAM:OnReelingCompleteEvent()
             CatchResult:FireClient(player, {success = false})
         end
         self.state[player] = nil
+        player:SetAttribute("IsFishingServer", false)
+        player:SetAttribute("PowerServer", 0)
     end)
 end
 
