@@ -342,6 +342,9 @@ function PM:_SetupEventListener()
         self.PUI:SortFishInventoryUI()
         self:_RefreshBuyShop()
     end)
+    self.StatHotBarBtnClickConnection = self.PUI.StatBarBtn.MouseButton1Click:Connect(function()
+        self:TogglePlayerModal()
+    end)
 end
 function PM:_CreateLeaderstats()
     local leaderstats

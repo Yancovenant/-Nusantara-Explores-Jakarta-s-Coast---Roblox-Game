@@ -7,6 +7,8 @@ local TS:TweenService = game:GetService("TweenService")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
 
+local ToolEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 
@@ -158,12 +160,58 @@ end
 function CUI:TogglePlayerModal(attrs:table)
     self:_UpdatePlayerModalData(attrs)
     local shown = self.PlayerModalUI.Visible
-    self.PlayerModalUI.Visible = not shown
+    if not shown then
+        self.PlayerModalUI.Size = UDim2.new(0,0,0,0)
+		self.PlayerModalUI.Visible = true
+        self.ShownPlayerModalTween:Play()
+        self.ClosedHotbarTween:Play()
+        self.ClosedPlayerInfoTween:Play()
+    else
+        self.ClosedPlayerModalTween:Play()
+        self.ShownHotbarTween:Play()
+        self.ShownPlayerInfoTween:Play()
+        self.ClosedPlayerModalTween.Completed:Connect(function()
+            self.PlayerModalUI.Visible = false
+        end)
+    end
 end
 
 
 
 -- SETUP
+function CUI:_CreateTweens()
+    self.ShownHotbarTween = TS:Create(
+        self.HotBar,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.5, 0, 0.875, 0)}
+    )
+    self.ClosedHotbarTween = TS:Create(
+        self.HotBar,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.5, 0, 1.375, 0)}
+    )
+	self.ShownPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.025, 0, 0.775, 0)}
+    )
+    self.ClosedPlayerInfoTween = TS:Create(
+        self.PlayerInfoUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Position = UDim2.new(0.025, 0, 1.375, 0)}
+    )
+    self.ShownPlayerModalTween = TS:Create(
+        self.PlayerModalUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Size = UDim2.new(0.8, 0, 0.75, 0)}
+    )
+    self.ClosedPlayerModalTween = TS:Create(
+        self.PlayerModalUI,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
+        ),
+        {Size = UDim2.new(0, 0, 0, 0)}
+    )
+end
 function CUI:_SetupEventListener()
     self.FishShopBuyBtn.MouseButton1Click:Connect(function()
         self.FishShopPageLayout:JumpTo(self.FishShopBuyPageFrame)
@@ -172,6 +220,9 @@ function CUI:_SetupEventListener()
     self.FishShopSellBtn.MouseButton1Click:Connect(function()
         self.FishShopPageLayout:JumpTo(self.FishShopSellPageFrame)
         self.FishPagePageTitle.Text = "Sell"
+    end)
+    self.PMCloseButton.MouseButton1Click:Connect(function()
+        ToolEvent:FireServer("TogglePlayerModal")
     end)
 end
 function CUI:_CreateUI()
@@ -189,6 +240,7 @@ function CUI:_CreateUI()
 	rodTabBtn.MouseButton1Click:Connect(function()
 		pageLayout:JumpTo(rodPageFrame)
 	end)
+    self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
     self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
 	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
 	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
@@ -227,6 +279,7 @@ function CUI:_CreateUI()
     self.PMAttractiveUI = self.PlayerModalUI.RightPanel.ATTRACTIVE
     self.PMStrengthUI = self.PlayerModalUI.RightPanel.STR
     self.PMLuckUI = self.PlayerModalUI.RightPanel.LUCK
+    self.PMCloseButton = self.PlayerModalUI.CloseButton
 end
 
 
@@ -234,6 +287,7 @@ end
 function CUI:main()
     self:_CreateUI()
 	self:_SetupEventListener()
+    self:_CreateTweens()
     -- self.UpdateTime()
 end
 

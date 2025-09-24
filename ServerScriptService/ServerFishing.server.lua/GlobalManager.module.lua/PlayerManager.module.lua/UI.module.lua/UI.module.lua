@@ -267,6 +267,7 @@ function PUI:_CreatePlayerUI()
     self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
     self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
     self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
+    self.StatBarBtn = self.HotBar.Player
     self.FishingUI = PlayerGui:WaitForChild("FishingUI")
 
     self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
