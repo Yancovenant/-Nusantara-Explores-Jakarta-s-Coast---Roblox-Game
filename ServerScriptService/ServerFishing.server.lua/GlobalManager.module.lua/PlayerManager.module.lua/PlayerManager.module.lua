@@ -379,7 +379,9 @@ function PM:_SetupPlayerAttributes()
     local dataRod, modelRod = self.PINV:GetEquipmentData("GetRod", EquippedRod)
     self.Data.Attributes = {
         maxWeight = dataRod.maxWeight,
-        strength = dataRod.strength + (self.Data.PlayerStrength or 0)
+        strength = dataRod.strength + (self.Data.PlayerStrength or 0),
+        luck = dataRod.luck + (self.Data.playerLuck or 0),
+        attraction = dataRod.attraction + (self.Data.playerAttraction or 0)
     }
 end
 function PM:_PopulateData()

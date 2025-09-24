@@ -1,7 +1,8 @@
 -- Client UI Manager
 
 local CUI = {}
-local Player = game:GetService("Players").LocalPlayer
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
 local TS:TweenService = game:GetService("TweenService")
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Lighting = game:GetService("Lighting")
@@ -143,7 +144,16 @@ function CUI:SortFishShopUI()
     end
 end
 function CUI:_UpdatePlayerModalData(data)
-    
+    self.PMDisplayName.Text = Player.DisplayName
+    local success, content, isReady = pcall(function()
+        return Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.AvatarThumbnail, Enum.ThumbnailSize.Size420x420)
+    end)
+    if success and isReady then
+        self.PMAvatar.Image = content
+    end
+    self.PMStrengthUI.Value.Text = data.strength
+    self.PMLuckUI.Value.Text = data.luck .. "%"
+    self.PMAttractiveUI.Value.Text = data.attraction
 end
 function CUI:TogglePlayerModal(attrs:table)
     self:_UpdatePlayerModalData(attrs)
