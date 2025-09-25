@@ -211,6 +211,22 @@ function PM:CatchResultSuccess(info)
     end
     local GainedXp = self:_CalculateXP(info)
     self:_UpdateXP(GainedXp)
+
+    if not self.Data.FishIndex[tostring(info.fishData.id)] then
+        self.Data.FishIndex[tostring(info.fishData.id)] = {
+            firstCaught = info.weight,
+            bestWeight = info.weight,
+            totalCaught = 1,
+            lastCaught = os.time()
+        }
+    else
+        local FishIndex = self.Data.FishIndex[tostring(info.fishData.id)]
+        FishIndex.totalCaught += 1
+        FishIndex.lastCaught = os.time()
+        if info.weight > FishIndex.bestWeight then
+            FishIndex.bestWeight = info.weight
+        end
+    end
 end
 
 function PM:SaveData(locksession, force)

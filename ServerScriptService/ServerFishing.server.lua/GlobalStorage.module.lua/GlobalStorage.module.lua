@@ -6,6 +6,7 @@ GSM.DEFAULT_PLAYER_DATA = {
     Money = 0,
 	TotalCatch = 0,
 	RarestCatch = 0,
+    FishIndex = {},
 	FishInventory = {},
 	PlayerLevel = 1,
 	PlayerXP = 0,

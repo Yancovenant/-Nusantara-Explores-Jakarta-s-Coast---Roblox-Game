@@ -349,11 +349,14 @@ function CUI:_CreateUI()
 
     -- PLAYER MODAL
     self.PlayerModalUI = self.InventoryUI.PlayerModal
-    self.PMDisplayName = self.PlayerModalUI.LeftPanel.PlayerName
-    self.PMAvatar = self.PlayerModalUI.LeftPanel.Avatar.ImageLabel
-    self.PMAttractiveUI = self.PlayerModalUI.RightPanel.ATTRACTIVE
-    self.PMStrengthUI = self.PlayerModalUI.RightPanel.STR
-    self.PMLuckUI = self.PlayerModalUI.RightPanel.LUCK
+    self.PMPage = self.PlayerModalUI.Page
+    self.PMPageLayout = self.PMPage:FindFirstChildWhichIsA("UIPageLayout")
+    self.PMPageStat = self.PMPage.PageStat -- page stat
+    self.PMDisplayName = self.PMPageStat.LeftPanel.PlayerName
+    self.PMAvatar = self.PMPageStat.LeftPanel.Avatar.ImageLabel
+    self.PMAttractiveUI = self.PMPageStat.RightPanel.ATTRACTIVE
+    self.PMStrengthUI = self.PMPageStat.RightPanel.STR
+    self.PMLuckUI = self.PMPageStat.RightPanel.LUCK
     self.PMCloseButton = self.PlayerModalUI.CloseButton
 
     
