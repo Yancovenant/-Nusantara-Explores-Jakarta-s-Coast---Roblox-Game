@@ -48,6 +48,7 @@ function CPM:_SetUIS()
 				elseif input.KeyCode == invKey then
 					ToolEvent:FireServer("ToggleInventory")
 				elseif input.KeyCode == rodKey then
+					if Player:GetAttribute("InMinigame") then return end
 					ToolEvent:FireServer("ToggleRod")
 				elseif input.KeyCode == statKey then
 					ToolEvent:FireServer("TogglePlayerModal")
