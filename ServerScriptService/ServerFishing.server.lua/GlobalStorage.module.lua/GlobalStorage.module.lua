@@ -16,6 +16,7 @@ GSM.DEFAULT_PLAYER_DATA = {
 		OwnedBobbers = {1}, -- Start with Cork Bobber
 		OwnedBait = {1}, -- Start with Worm
 		OwnedLines = {1}, -- Start with Cotton Line
+        OwnedBoats = {}, -- empty boats
 		EquippedRod = 1,
 		EquippedBobber = 1,
 		EquippedBait = 1,

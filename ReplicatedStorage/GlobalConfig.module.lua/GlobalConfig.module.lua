@@ -31,6 +31,9 @@ GC.EQUIPMENT = {
     GED = require(script.GlobalEquipmentDB)
 }
 
+-- BOATS --
+GC.BOATS = require(script.GlobalBoatDB)
+
 -- PLAYER --
 GC.PLAYER = {
     DEFAULT_ATTRS = {
