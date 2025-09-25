@@ -78,18 +78,25 @@ end
 function PINV:_HoldFishAboveHead(fishName, Weight)
     if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
     self:_CleanHoldingFish()
-    local fish = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
-    if not fish then
-        fish = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
+    local template = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
+    if not template then
+        template = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
     end
-    fish = fish:Clone()
+    local fish = template:Clone()
+    local originalOrientation = template.Body.Orientation
     self.HoldingFish = fish
     fish.Body.Anchored = false
     fish.Body.CanCollide = false
     fish.Body.Massless = true
     fish:ScaleTo(self:_ScaleWeight(Weight))
     fish.Parent = self.player.Character.Head
-    fish:SetPrimaryPartCFrame(self.player.Character.Head.CFrame * CFrame.new(0, 2, 0))
+    fish:SetPrimaryPartCFrame(
+        self.player.Character.Head.CFrame * CFrame.new(0, 2, 0) * CFrame.Angles(
+            math.rad(originalOrientation.X),
+            math.rad(originalOrientation.Y),
+            math.rad(originalOrientation.Z)
+        )
+    )
     local head2FishAttachment
     if not self.player.Character.Head:FindFirstChild("Head2FishAttachment") then
         head2FishAttachment = Instance.new("Attachment")
