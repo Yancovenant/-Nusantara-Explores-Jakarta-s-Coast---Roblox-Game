@@ -152,6 +152,9 @@ end
 function PUI:TogglePlayerModal(...)
     ClientUIEvent:FireClient(self.player, "TogglePlayerModal", ...)
 end
+function PUI:PopulateFishIndex(...)
+    ClientUIEvent:FireClient(self.player, "PopulateFishIndex", ...)
+end
 
 -- SETUP
 function PUI:_SetupTweenAndConnection()

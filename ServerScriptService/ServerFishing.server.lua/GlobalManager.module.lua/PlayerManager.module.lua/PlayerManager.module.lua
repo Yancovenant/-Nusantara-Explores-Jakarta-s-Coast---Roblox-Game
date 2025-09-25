@@ -467,6 +467,10 @@ function PM:_PopulateData()
         self:_SetupInvRodEventListener(self.PINV:AddRodToInventory(RodData, false))
     end
     self.PUI:SortRodInventoryUI()
+
+    -- Populate Fish Index
+    self.PUI:PopulateFishIndex(self.Data.FishIndex)
+
     self._AutoSaveRunning = true
     task.spawn(function()
         while self._AutoSaveRunning do
