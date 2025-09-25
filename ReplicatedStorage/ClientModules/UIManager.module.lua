@@ -178,6 +178,7 @@ function CUI:TogglePlayerModal(attrs:table)
     local shown = self.PlayerModalUI.Visible
     if not shown then
         Player:SetAttribute("ModalShown", "PlayerModal")
+        self.FishingUI.Enabled = false
         self.PlayerModalUI.Size = UDim2.new(0,0,0,0)
 		self.PlayerModalUI.Visible = true
         self.ShownPlayerModalTween:Play()
@@ -190,7 +191,9 @@ function CUI:TogglePlayerModal(attrs:table)
         self.ShownPlayerInfoTween:Play()
         self.ClosedPlayerModalTween.Completed:Connect(function()
             self.PlayerModalUI.Visible = false
-            
+        end)
+        self.ShownHotbarTween.Completed:Connect(function()
+            self.FishingUI.Enabled = true
         end)
     end
 end
@@ -247,6 +250,7 @@ function CUI:_UpdateFishIndex(template:Instance, FishIndex:table)
     frame.Rarity.Text = IsDiscovered and '"' .. rarity .. '"' or '"???"'
     frame.Rarity.TextColor3 = IsDiscovered and c:GetRarityColor(rarity) or Color3.fromRGB(100,100,100)
     frame.Habitat.Text = '"' .. habitat .. '"'
+    frame.Habitat.TextColor3 = c:GetHabitatColor(habitat)
     frame.Stat.Text = IsDiscovered and string.format("Best: %.1fkg\nCaught: %d",
         FishIndexFish.bestWeight,
         FishIndexFish.totalCaught

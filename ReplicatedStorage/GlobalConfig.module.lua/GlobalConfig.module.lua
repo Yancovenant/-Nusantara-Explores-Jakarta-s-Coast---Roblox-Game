@@ -128,6 +128,20 @@ local ZONEVIBES_CONFIG = {
 }
 
 
+-- HABITAT COLORS (for Fish Index UI)
+GC.HABITAT_COLORS = {
+    Coastal = Color3.fromRGB(120, 200, 255),
+    Mangrove = Color3.fromRGB(120, 255, 180),
+    Reef = Color3.fromRGB(255, 160, 120),
+    Ocean = Color3.fromRGB(100, 160, 255),
+    DeepSea = Color3.fromRGB(60, 80, 140),
+}
+
+function GC:GetHabitatColor(habitat)
+    return self.HABITAT_COLORS[habitat] or Color3.fromRGB(180, 180, 180)
+end
+
+
 return GC
 
 
