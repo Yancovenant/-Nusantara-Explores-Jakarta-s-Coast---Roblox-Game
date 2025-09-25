@@ -12,6 +12,16 @@ local ToolEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventor
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 
+-- HELPER
+local function countKeys(t)
+    local n = 0
+    for _ in pairs(t) do
+        n += 1
+    end
+    return n
+end
+
+
 -- MAIN FUNCTIONS
 function CUI:UpdateTime(t)
     if t == nil then
@@ -219,6 +229,43 @@ function CUI:ToggleInventory()
         end)
     end
 end
+
+function CUI:_UpdateFishIndex(template:Instance, FishIndex:table)
+    local id = template:GetAttribute("id")
+    local name = template:GetAttribute("name")
+    local rarity = template:GetAttribute("rarity")
+    local habitat = template:GetAttribute("habitat")
+    local FishIndexFish = FishIndex[tostring(id)]
+    local IsDiscovered = FishIndexFish ~= nil
+
+    template.BackgroundColor3 = IsDiscovered and Color3.fromRGB(40,40,40) or Color3.fromRGB(20,20,30)
+    local frame = template.Frame
+    frame.BackgroundColor3 = IsDiscovered and Color3.fromRGB(60,60,60) or Color3.fromRGB(40,40,40)
+    frame.Icon.ImageColor3 = IsDiscovered and Color3.fromRGB(255,255,255) or Color3.fromRGB(0,0,0)
+    frame.FishName.Text = IsDiscovered and name or "???"
+    frame.FishName.TextColor3 = IsDiscovered and Color3.fromRGB(255,255,255) or Color3.fromRGB(100,100,100)
+    frame.Rarity.Text = IsDiscovered and '"' .. rarity .. '"' or '"???"'
+    frame.Rarity.TextColor3 = IsDiscovered and c:GetRarityColor(rarity) or Color3.fromRGB(100,100,100)
+    frame.Habitat.Text = '"' .. habitat .. '"'
+    frame.Stat.Text = IsDiscovered and string.format("Best: %.1fkg\nCaught: %d",
+        FishIndexFish.bestWeight,
+        FishIndexFish.totalCaught
+    ) or "???"
+    frame.Stat.TextColor3 = IsDiscovered and Color3.fromRGB(180,180,180) or Color3.fromRGB(100,100,100)
+end
+function CUI:UpdateFishIndex(FishIndex:table)
+    local FishFrames = {}
+    for _, template in ipairs(self.PMFishIndexFrame:GetChildren()) do
+        if template:IsA("Frame") and template.Name ~= "TemplateItem" then
+            table.insert(FishFrames, template)
+            self:_UpdateFishIndex(template, FishIndex)
+        end
+    end
+    local Discovered = countKeys(FishIndex)
+    local Total = #FishFrames
+    self.PMFishIndexDiscoveredBar.Label.Text = string.format("Discovered: %d/%d", Discovered, Total)
+    self.PMFishIndexDiscoveredBar.Fill.Size = UDim2.new(Total > 0 and Discovered / Total or 0,0,1,0)
+end
 function CUI:PopulateFishIndex(FishIndex:table)
     local FishList = {}
     for FishName, FishData in pairs(c.FISHING.FISH_DATA.FISH) do
@@ -226,41 +273,35 @@ function CUI:PopulateFishIndex(FishIndex:table)
             id = FishData.id,
             name = FishName,
             rarity = FishData.rarity,
+            rarityOrder = c.RARITY_ORDER[FishData.rarity] or 0,
             habitat = FishData.habitat,
             icon = FishData.icon
         })
     end
     table.sort(FishList, function(a,b)
-        if a.rarity ~= b.rarity then
-            return a.rarity < b.rarity
+        if a.rarityOrder ~= b.rarityOrder then
+            return a.rarityOrder < b.rarityOrder
         end
         return a.id < b.id
     end)
     for i, FD in ipairs(FishList) do
-        local FishIndexFish = FishIndex[tostring(FD.id)]
-        local IsDiscovered = FishIndexFish ~= nil
         local template = self.PMFishIndexTemplate:Clone()
+        template:SetAttribute("id", FD.id)
+        template:SetAttribute("name", FD.name)
+        template:SetAttribute("rarity", FD.rarity)
+        template:SetAttribute("habitat", FD.habitat)
         template.Parent = self.PMFishIndexFrame
         template.Name = FD.name
-        template.BackgroundColor3 = IsDiscovered and Color3.fromRGB(40,40,40) or Color3.fromRGB(20,20,30)
-        local frame = template.Frame
-        frame.BackgroundColor3 = IsDiscovered and Color3.fromRGB(60,60,60) or Color3.fromRGB(40,40,40)
-        frame.Icon.Image = FD.icon
-        frame.Icon.ImageColor3 = IsDiscovered and Color3.fromRGB(255,255,255) or Color3.fromRGB(0,0,0)
-        frame.FishName.Text = IsDiscovered and FD.name or "???"
-        frame.FishName.TextColor3 = IsDiscovered and Color3.fromRGB(255,255,255) or Color3.fromRGB(100,100,100)
-        frame.Rarity.Text = IsDiscovered and '"' .. FD.rarity .. '"' or '"???"'
-        frame.Rarity.TextColor3 = IsDiscovered and c:GetRarityColor(FD.rarity) or Color3.fromRGB(100,100,100)
-        frame.Habitat.Text = '"' .. FD.habitat .. '"'
-        frame.Stat.Text = IsDiscovered and string.format("Best: %.1fkg\nCaught: %d",
-            FishIndexFish.bestWeight,
-            FishIndexFish.totalCaught
-        ) or "???"
-        frame.Stat.TextColor3 = IsDiscovered and Color3.fromRGB(180,180,180) or Color3.fromRGB(100,100,100)
+        template.Frame.Icon.Image = FD.icon
+        template.LayoutOrder = i
+        self:_UpdateFishIndex(template, FishIndex)
+        
         template.Visible = true
     end
-    self.PMFishIndexDiscoveredBar.Label.Text = "Discovered: " .. #FishIndex .. "/" .. #FishList
-    self.PMFishIndexDiscoveredBar.Fill.Size = UDim2.new(#FishIndex/#FishList,0,1,0)
+    local Discovered = countKeys(FishIndex)
+    local Total = #FishList
+    self.PMFishIndexDiscoveredBar.Label.Text = string.format("Discovered: %d/%d", Discovered, Total)
+    self.PMFishIndexDiscoveredBar.Fill.Size = UDim2.new(Total > 0 and Discovered / Total or 0,0,1,0)
 end
 
 
@@ -337,6 +378,13 @@ function CUI:_SetupEventListener()
     self.CloseInvButton.MouseButton1Click:Connect(function()
         ToolEvent:FireServer("ToggleInventory")
     end)
+
+    self.PMPageStatBtn.MouseButton1Click:Connect(function()
+        self.PMPageLayout:JumpTo(self.PMPageStat)
+    end)
+    self.PMPageFishIndexBtn.MouseButton1Click:Connect(function()
+        self.PMPageLayout:JumpTo(self.PMFishIndex)
+    end)
 end
 function CUI:_CreateUI()
     local PlayerGui = Player:WaitForChild("PlayerGui")
@@ -394,6 +442,8 @@ function CUI:_CreateUI()
     self.PlayerModalUI = self.InventoryUI.PlayerModal
     self.PMPage = self.PlayerModalUI.Page
     self.PMPageLayout = self.PMPage:FindFirstChildWhichIsA("UIPageLayout")
+    self.PMPageStatBtn = self.PlayerModalUI.TopBar.Stat
+    self.PMPageFishIndexBtn = self.PlayerModalUI.TopBar.FishIndex
 
     self.PMPageStat = self.PMPage.PageStat -- page stat
     self.PMDisplayName = self.PMPageStat.LeftPanel.PlayerName
@@ -403,7 +453,7 @@ function CUI:_CreateUI()
     self.PMLuckUI = self.PMPageStat.RightPanel.LUCK
     self.PMCloseButton = self.PlayerModalUI.CloseButton
 
-    self.PMFishIndex = self.PMPage.PageFishIndex
+    self.PMFishIndex = self.PMPage.PageFishIndex -- page fish index
     self.PMFishIndexFrame = self.PMFishIndex.FishIndexFrame
     self.PMFishIndexTemplate = self.PMFishIndexFrame.TemplateItem
     self.PMFishIndexDiscoveredBar = self.PMFishIndex.StatBar

@@ -227,6 +227,7 @@ function PM:CatchResultSuccess(info)
             FishIndex.bestWeight = info.weight
         end
     end
+    self.PUI:UpdateFishIndex(self.Data.FishIndex)
 end
 
 function PM:SaveData(locksession, force)
