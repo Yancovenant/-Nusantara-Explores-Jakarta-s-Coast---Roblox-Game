@@ -158,20 +158,64 @@ function CUI:_UpdatePlayerModalData(data)
     self.PMAttractiveUI.Value.Text = data.attraction
 end
 function CUI:TogglePlayerModal(attrs:table)
+    if Player:GetAttribute("InMinigame") then return end
+    if Player:GetAttribute("ModalShown") and Player:GetAttribute("ModalShown") ~= "PlayerModal" then
+        -- return -- could close other modal and then show this.
+        self:ToggleInventory()
+    end
+    self._tempAttrs = attrs
     self:_UpdatePlayerModalData(attrs)
     local shown = self.PlayerModalUI.Visible
     if not shown then
+        Player:SetAttribute("ModalShown", "PlayerModal")
         self.PlayerModalUI.Size = UDim2.new(0,0,0,0)
 		self.PlayerModalUI.Visible = true
         self.ShownPlayerModalTween:Play()
         self.ClosedHotbarTween:Play()
         self.ClosedPlayerInfoTween:Play()
     else
+        Player:SetAttribute("ModalShown", nil)
         self.ClosedPlayerModalTween:Play()
         self.ShownHotbarTween:Play()
         self.ShownPlayerInfoTween:Play()
         self.ClosedPlayerModalTween.Completed:Connect(function()
             self.PlayerModalUI.Visible = false
+            
+        end)
+    end
+end
+function CUI:ToggleInventory()
+    if Player:GetAttribute("InMinigame") then return end
+    if Player:GetAttribute("ModalShown") and Player:GetAttribute("ModalShown") ~= "Inventory" then
+        -- return -- could close other modal and then show this.
+        self:TogglePlayerModal(self._tempAttrs)
+    end
+    local isShown = self.TabContainer.Visible
+    if isShown then
+        Player:SetAttribute("ModalShown", nil)
+        self.TabContainer.Visible = not isShown
+        self.ActionButton.Visible = self.TabContainer.Visible
+        self.ClosedInventoryTween:Play()
+        self.ShownHotbarTween:Play()
+        self.ShownPlayerInfoTween:Play()
+        self.ClosedInventoryTween.Completed:Connect(function()
+            self.MockTabContainer.Visible = not isShown
+            
+        end)
+        self.ShownHotbarTween.Completed:Connect(function()
+            self.FishingUI.Enabled = true
+        end)
+    else
+        Player:SetAttribute("ModalShown", "Inventory")
+        self.FishingUI.Enabled = false
+        self.MockTabContainer.Size = UDim2.new(0,0,0,0)
+        self.MockTabContainer.Visible = not isShown
+        self.ShownInventoryTween:Play()
+        self.ClosedHotbarTween:Play()
+        self.ClosedPlayerInfoTween:Play()
+        self.ShownInventoryTween.Completed:Connect(function()
+            self.TabContainer.Visible = not isShown
+            self.ActionButton.Visible = self.TabContainer.Visible
         end)
     end
 end
@@ -211,6 +255,18 @@ function CUI:_CreateTweens()
         ),
         {Size = UDim2.new(0, 0, 0, 0)}
     )
+
+    self.ShownInventoryTween = TS:Create(
+        self.MockTabContainer,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
+        {Size = UDim2.new(0.8, 0, 0.75, 0)}
+    )
+    self.ClosedInventoryTween = TS:Create(
+        self.MockTabContainer,
+        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
+        ),
+        {Size = UDim2.new(0, 0, 0, 0)}
+    )
 end
 function CUI:_SetupEventListener()
     self.FishShopBuyBtn.MouseButton1Click:Connect(function()
@@ -224,11 +280,30 @@ function CUI:_SetupEventListener()
     self.PMCloseButton.MouseButton1Click:Connect(function()
         ToolEvent:FireServer("TogglePlayerModal")
     end)
+
+    self.BackpackBtn.MouseEnter:Connect(function()
+		self.BackpackToolTip.Visible = true
+	end)
+	self.BackpackBtn.MouseLeave:Connect(function()
+		self.BackpackToolTip.Visible = false
+	end)
+	self.BackpackBtn.MouseButton1Click:Connect(function()
+        ToolEvent:FireServer("ToggleInventory")
+	end)
+
+    self.CloseInvButton.MouseButton1Click:Connect(function()
+        ToolEvent:FireServer("ToggleInventory")
+    end)
 end
 function CUI:_CreateUI()
     local PlayerGui = Player:WaitForChild("PlayerGui")
 	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
 	self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+    self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
+    self.FishingUI = PlayerGui:WaitForChild("FishingUI")
+    self.ActionButton = self.InventoryUI.ActionButton
+    self.CloseInvButton = self.TabContainer:WaitForChild("CloseButton")
+
 	local fishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
 	local rodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
 	local pageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
@@ -280,6 +355,10 @@ function CUI:_CreateUI()
     self.PMStrengthUI = self.PlayerModalUI.RightPanel.STR
     self.PMLuckUI = self.PlayerModalUI.RightPanel.LUCK
     self.PMCloseButton = self.PlayerModalUI.CloseButton
+
+    
+    self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
+    self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
 end
 
 

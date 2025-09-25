@@ -103,6 +103,7 @@ function LUIC:ShowFishPopup(CatchInfo:table)
 end
 function LUIC:ToggleMinigameUI(shown:boolean)
 	if shown then
+		Player:SetAttribute("InMinigame", true)
 		self.MinigameUI.Size = UDim2.new(0,0,0,0)
 		self.MinigameUI.Visible = true
 		self.AutoFishButton.Visible = false
@@ -114,6 +115,7 @@ function LUIC:ToggleMinigameUI(shown:boolean)
 			-- do something on shown
         end)
 	else
+		Player:SetAttribute("InMinigame", false)
 		self.StopReelingTween:Play()
 		self.ClosedMinigameTween:Play()
         self.ShownHotbarTween:Play()

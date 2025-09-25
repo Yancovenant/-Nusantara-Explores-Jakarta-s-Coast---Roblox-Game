@@ -57,31 +57,7 @@ function PUI:UpdateZoneUI(zoneName)
     self.ZoneUI.ZoneText.Text = zoneName
 end
 function PUI:ToggleInventory()
-    local isShown = self.TabContainer.Visible
-    if isShown then
-        self.TabContainer.Visible = not isShown
-        self.ActionButton.Visible = self.TabContainer.Visible
-        self.ClosedInventoryTween:Play()
-        self.ShownHotbarTween:Play()
-        self.ShownPlayerInfoTween:Play()
-        self.ClosedInventoryTween.Completed:Connect(function()
-            self.MockTabContainer.Visible = not isShown
-        end)
-        self.ShownHotbarTween.Completed:Connect(function()
-            self.FishingUI.Enabled = true
-        end)
-    else
-        self.FishingUI.Enabled = false
-        self.MockTabContainer.Size = UDim2.new(0,0,0,0)
-        self.MockTabContainer.Visible = not isShown
-        self.ShownInventoryTween:Play()
-        self.ClosedHotbarTween:Play()
-        self.ClosedPlayerInfoTween:Play()
-        self.ShownInventoryTween.Completed:Connect(function()
-            self.TabContainer.Visible = not isShown
-            self.ActionButton.Visible = self.TabContainer.Visible
-        end)
-    end
+    ClientUIEvent:FireClient(self.player, "ToggleInventory")
 end
 function PUI:SortRodInventoryUI()
     for _, Rod in pairs(self.RodInventoryTab:GetChildren()) do
@@ -179,65 +155,6 @@ end
 
 -- SETUP
 function PUI:_SetupTweenAndConnection()
-    self.ShownInventoryTween = TS:Create(
-        self.MockTabContainer,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Size = UDim2.new(0.8, 0, 0.75, 0)}
-    )
-    self.ClosedInventoryTween = TS:Create(
-        self.MockTabContainer,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
-        ),
-        {Size = UDim2.new(0, 0, 0, 0)}
-    )
-    self.ShownHotbarTween = TS:Create(
-        self.HotBar,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.5, 0, 0.875, 0)}
-    )
-    self.ClosedHotbarTween = TS:Create(
-        self.HotBar,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.5, 0, 1.375, 0)}
-    )
-    -- playerInfo
-    self.ShownPlayerInfoTween = TS:Create(
-        self.PlayerInfoUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.025, 0, 0.775, 0)}
-    )
-    self.ClosedPlayerInfoTween = TS:Create(
-        self.PlayerInfoUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.025, 0, 1.375, 0)}
-    )
-
-    self.CloseButtonTween = TS:Create(
-        self.CloseInvButton,
-        TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.InOut, 0, true, 0),
-        {Size = UDim2.new(.9, 0, .9, 0)}
-    )
-    local isPressed
-    self.CloseInvButton.MouseButton1Click:Connect(function()
-        if isPressed then return end
-        isPressed = true
-        self.CloseButtonTween:Play()
-        self:ToggleInventory()
-        self.CloseButtonTween.Completed:Connect(function()
-            isPressed = false
-        end)
-    end)
-
-    self.BackpackBtnEnterConnection = self.BackpackBtn.MouseEnter:Connect(function()
-		self.BackpackToolTip.Visible = true
-	end)
-	self.BackpackBtnLeaveConnection = self.BackpackBtn.MouseLeave:Connect(function()
-		self.BackpackToolTip.Visible = false
-	end)
-	self.BackpackBtnClickConnection = self.BackpackBtn.MouseButton1Click:Connect(function()
-        self:ToggleInventory()
-	end)
-
     self.FishShopCloseBtn.MouseButton1Click:Connect(function()
         self:ToggleFishShopUI()
     end)
@@ -263,12 +180,8 @@ function PUI:_CreatePlayerUI()
     self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
     self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
     self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Rod')
-    self.CloseInvButton = self.TabContainer:WaitForChild("CloseButton")
-    self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
-    self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
-    self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
+
     self.StatBarBtn = self.HotBar.Player
-    self.FishingUI = PlayerGui:WaitForChild("FishingUI")
 
     self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
     self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
@@ -327,35 +240,6 @@ function PUI:CleanUp()
         self.globalUI = nil
     end
 
-    if self.ShownInventoryTween then
-        self.ShownInventoryTween:Cancel()
-        self.ShownInventoryTween = nil
-    end
-    if self.ClosedInventoryTween then
-        self.ClosedInventoryTween:Cancel()
-        self.ClosedInventoryTween = nil
-    end
-    if self.ShownHotbarTween then
-        self.ShownHotbarTween:Cancel()
-        self.ShownHotbarTween = nil
-    end
-    if self.ClosedHotbarTween then
-        self.ClosedHotbarTween:Cancel()
-        self.ClosedHotbarTween = nil
-    end
-    if self.ShownPlayerInfoTween then
-        self.ShownPlayerInfoTween:Cancel()
-        self.ShownPlayerInfoTween = nil
-    end
-    if self.ClosedPlayerInfoTween then
-        self.ClosedPlayerInfoTween:Cancel()
-        self.ClosedPlayerInfoTween = nil
-    end
-
-    if self.CloseButtonTween then
-        self.CloseButtonTween:Cancel()
-        self.CloseButtonTween = nil
-    end
     if self.BaitPulseTween then
         self.BaitPulseTween:Cancel()
         self.BaitPulseTween = nil
@@ -374,18 +258,6 @@ function PUI:CleanUp()
         self.PowerCategoryTask = nil
     end
 
-    if self.BackpackBtnEnterConnection then
-        self.BackpackBtnEnterConnection:Disconnect()
-        self.BackpackBtnEnterConnection = nil
-    end
-    if self.BackpackBtnLeaveConnection then
-        self.BackpackBtnLeaveConnection:Disconnect()
-        self.BackpackBtnLeaveConnection = nil
-    end
-    if self.BackpackBtnClickConnection then
-        self.BackpackBtnClickConnection:Disconnect()
-        self.BackpackBtnClickConnection = nil
-    end
     if self.LockBtnClickConnection then
         self.LockBtnClickConnection:Disconnect()
         self.LockBtnClickConnection = nil
