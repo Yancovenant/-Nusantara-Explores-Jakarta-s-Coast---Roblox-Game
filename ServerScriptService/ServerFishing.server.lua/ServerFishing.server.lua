@@ -105,6 +105,14 @@ LOGGER:WrapModule(SF, "ServerFishing")
 
 Players.PlayerAdded:Connect(function(player)
     GM:playerAdded(player)
+	player.CharacterAdded:Connect(function(char)
+		local manager = GM.PlayerManagers[player]
+		if not manager then return end
+		local inventory = manager.PINV
+		inventory.IsHolsterEquip = false
+		inventory:ToggleHolsterRod()
+		inventory:_CreateBackpack()
+	end)
 end)
 
 Players.PlayerRemoving:Connect(function(player)

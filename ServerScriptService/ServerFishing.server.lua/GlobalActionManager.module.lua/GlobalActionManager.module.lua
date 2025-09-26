@@ -85,6 +85,9 @@ end
 function GAM:OnFishShop(player:Player, ...)
     GM:ToggleFishShopUI(player, GRM, ...)
 end
+function GAM:OnBoatSpawn(player:Player, ...)
+    GM:OnBoatSpawnUI(player, ...)
+end
 
 -- ENTRY POINT
 function GAM:SetupProximityListener()
