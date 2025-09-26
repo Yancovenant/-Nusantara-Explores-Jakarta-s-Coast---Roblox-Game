@@ -250,6 +250,9 @@ end
 function GM:ToggleFishShopUI(player, ...)
     self.PlayerManagers[player]:ToggleFishShopUI(...)
 end
+function GM:OnBoatSpawnUI(player, ...)
+    print(..., "on boatspawn")
+end
 -- ToolEvent
 function GM:ToggleInventory(player)
    self.PlayerManagers[player]:ToggleInventory()
