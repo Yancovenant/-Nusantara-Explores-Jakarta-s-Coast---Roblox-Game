@@ -79,51 +79,126 @@
 -- end
 
 
+--[[
+physics = {
+    engineForce = 8000,     -- forward force (N, Newtons)
+    reverseForce = 3000,    -- reverse force
+    rudderForce = 2500,     -- sideways force rudder can apply
+    rudderOffset = 10,      -- distance (studs) behind center of mass
+    maxSpeed = 60,          -- forward speed cap
+    linearDamping = 0.5,    -- water drag (resists movement)
+    angularDamping = 1.2,   -- rotational drag (resists turning)
+    buoyancyScaler = 1.05,  -- lift force factor (keep it floating)
+}
+]]--
 
----- FINAL SCRIPT FOR BOAT DRIVING.
 
+--- test final v2
 local Seat = script.Parent
 local Hull = Seat.Parent.Hull
-local MaxSpeed = 110
-local RevMaxSpeed = 18
-local BrakeDecel = 48
-local Accel = 42
-local curSpeed = 0
-local turnRate = math.rad(55)
-local turnAccel = math.rad(220)
 
-local curYawRate = 0
+local EngineForce = 110
+local Accel = 42
+local ReverseForce = 18
+local Decel = 48
+local RudderForce = 2500
+local MaxSpeed = 60
+local LinearDamping = 0.5
+local AngularDamping = 1.2
+
+local CurrentSpeed = 0
+
 local Torque = Hull.Torque
 local Thrust = Hull.VectorForce
 
 while task.wait() do
-    local targetSpeed
-    if Seat.Throttle > 0 then
-        targetSpeed = MaxSpeed
-    elseif Seat.Throttle < 0 then
-        targetSpeed = -RevMaxSpeed
-    else
-        targetSpeed = 0
-    end
-    if targetSpeed == 0 then
-        -- no input
-        local s = math.abs(curSpeed)
-        s = math.max(0, s - BrakeDecel)
-        curSpeed = (curSpeed >= 0) and s or -s
-    else
-        -- is moving
-        local toward = (targetSpeed > curSpeed) and Accel or BrakeDecel
-        curSpeed = math.lerp(curSpeed, targetSpeed, math.clamp(toward / math.max(1, math.abs(targetSpeed - curSpeed)), 0, 1))
-    end
-
+    local mass = Hull:GetMass()
     local forward = Hull.CFrame.LookVector
-    -- lv.VectorVelocity = forward * curSpeed
-    Thrust.Force = forward * curSpeed * Hull:GetMass()
+    local right = Hull.CFrame.RightVector
+    local velocity = Hull.AssemblyLinearVelocity
+    local speed = velocity:Dot(forward) -- signed forward speed
 
-    local targetYaw = -Seat.Steer * turnRate
-    local dyaw = math.clamp(targetYaw - curYawRate, -turnAccel, turnAccel)
-    curYawRate = curYawRate + dyaw
-    Torque.Torque = Vector3.new(curYawRate * Hull:GetMass(), 0, 0)
+    local targetForce = 0
+    if Seat.Throttle > 0 then
+        targetForce = EngineForce
+    elseif Seat.Throttle < 0 then
+        targetForce = -ReverseForce
+    else
+        targetForce = 0
+    end
+    if targetForce == 0 then
+        local s = math.abs(CurrentSpeed)
+        s = math.max(0, s - Decel)
+        CurrentSpeed = (CurrentSpeed >= 0) and s or -s
+    else
+        local toward = (targetForce > CurrentSpeed) and Accel or Decel
+        CurrentSpeed = math.lerp(CurrentSpeed, targetForce, math.clamp(toward / math.max(1, math.abs(targetForce - CurrentSpeed)), 0, 1))
+    end
+    Thrust.Force = forward * CurrentSpeed * mass
 
-    Hull.AssemblyAngularVelocity *= 1 - 0.9
+    -- 🌀 Rudder Force (creates torque automatically since offset attachment)
+    local steerInput
+    if targetForce > 0 then
+        steerInput = -Seat.Steer
+    elseif targetForce < 0 then
+        steerInput = Seat.Steer
+    else
+        steerInput = -Seat.Steer
+    end
+    local speedFactor = math.clamp(math.abs(speed) / MaxSpeed, 0, 1)
+    local rudderPush = steerInput * RudderForce * speedFactor
+    Torque.Torque = Vector3.new(rudderPush, 0, 0)
+    
+    -- 🌊 Damping (water resistance)
+    Hull.AssemblyLinearVelocity *= (1 - LinearDamping * 0.01)
+    Hull.AssemblyAngularVelocity *= (1 - AngularDamping * 0.01)
 end
+
+---- FINAL SCRIPT FOR BOAT DRIVING.
+
+-- local Seat = script.Parent
+-- local Hull = Seat.Parent.Hull
+
+-- local MaxSpeed = 110
+-- local RevMaxSpeed = 18
+-- local BrakeDecel = 48
+-- local Accel = 42
+-- local curSpeed = 0
+-- local turnRate = math.rad(55)
+-- local turnAccel = math.rad(220)
+
+-- local curYawRate = 0
+-- local Torque = Hull.Torque
+-- local Thrust = Hull.VectorForce
+
+-- while task.wait() do
+--     local targetSpeed
+--     if Seat.Throttle > 0 then
+--         targetSpeed = MaxSpeed
+--     elseif Seat.Throttle < 0 then
+--         targetSpeed = -RevMaxSpeed
+--     else
+--         targetSpeed = 0
+--     end
+--     if targetSpeed == 0 then
+--         -- no input
+--         local s = math.abs(curSpeed)
+--         s = math.max(0, s - BrakeDecel)
+--         curSpeed = (curSpeed >= 0) and s or -s
+--     else
+--         -- is moving
+--         local toward = (targetSpeed > curSpeed) and Accel or BrakeDecel
+--         curSpeed = math.lerp(curSpeed, targetSpeed, math.clamp(toward / math.max(1, math.abs(targetSpeed - curSpeed)), 0, 1))
+--     end
+
+--     local forward = Hull.CFrame.LookVector
+--     -- lv.VectorVelocity = forward * curSpeed
+--     Thrust.Force = forward * curSpeed * Hull:GetMass()
+
+--     local targetYaw = -Seat.Steer * turnRate
+--     local dyaw = math.clamp(targetYaw - curYawRate, -turnAccel, turnAccel)
+--     curYawRate = curYawRate + dyaw
+--     Torque.Torque = Vector3.new(curYawRate * Hull:GetMass(), 0, 0)
+
+--     Hull.AssemblyAngularVelocity *= 1 - 0.9
+-- end

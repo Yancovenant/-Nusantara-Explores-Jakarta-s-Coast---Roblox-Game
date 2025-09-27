@@ -91,6 +91,9 @@ end
 function GAM:OnBoatShop(player:Player, ...)
     GM:OnBoatSpawnUI(player, ...)
 end
+function GAM:OnBoatDrive(player:Player, ...)
+    GM:OnBoatDrive(player, ...)
+end
 
 -- ENTRY POINT
 function GAM:SetupProximityListener()

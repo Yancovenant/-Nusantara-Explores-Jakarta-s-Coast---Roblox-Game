@@ -7,6 +7,7 @@ local PUI = require(script.UI)
 local DBM = require(script.Parent.Parent.GlobalStorage)
 
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local TS:TweenService = game:GetService("TweenService")
 local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
 
@@ -159,6 +160,101 @@ function PM:ToggleBoatShopUI(...)
     self.PUI:ToggleBoatShopUI(not isShown, ...)
     if isShown then
         -- update ui
+    end
+end
+function PM:_CleanUpBoat()
+    if self.BoatHeartbeat then
+        self.BoatHeartbeat:Disconnect()
+        self.BoatHeartbeat = nil
+    end
+    -- if self.BoatConnection then
+    --     self.BoatConnection:Disconnect()
+    --     self.BoatConnection = nil
+    -- end
+end
+function PM:OnBoatDrive(Seat:Part)
+    local hum = self.player.Character.Humanoid
+    local isSitting = hum.Sit == true and hum.SeatPart == Seat
+    Seat:GetPropertyChangedSignal("Occupant"):Connect(function()
+        local hum = Seat.Occupant
+        if not hum then
+            self:_CleanUpBoat()
+        end
+    end)
+    if isSitting then
+        hum.Sit = false
+        -- do cleanup
+        -- todo it cannot be like this, we need to remove the prompt while sitting and enabling it back.
+        -- we can do cleanup on seat human occupied
+    else
+        Seat:Sit(hum)
+        -- do boat movement
+        self:_CleanUpBoat()
+        local BoatCFG
+        if Seat:FindFirstChild("TAccel") then
+            BoatCFG.physics = {
+                maxSpeed = Seat.TMaxSpeed.Value,
+                reverseMaxSpeed = Seat.TReverseMaxSpeed.Value,
+                acceleration = Seat.TAccel.Value,
+                brakeDecel = Seat.TDecel.Value,
+                turnRate = math.rad(Seat.TTurnRate.Value),
+                linearDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.linearDamping,
+                angularDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.angularDamping,
+            }
+        else
+            BoatCFG = c.BOATS.BOAT_LIST[Seat.Parent.Name]
+        end
+        local Hull = Seat.Parent.Hull
+        local Thrust = Hull.VectorForce
+        local Rudder = Hull.Torque
+        local CurrentForce = 0
+        self.BoatHeartbeat = RunService.Heartbeat:Connect(function(dt)
+            if not Seat or not Hull then self.BoatHeartbeat:Disconnect() end
+            
+            local Forward = Hull.CFrame.LookVector
+            local V = Hull.AssemblyLinearVelocity
+            local Speed = V:Dot(Forward)
+
+            -- THRUST
+            local TargetForce = 0
+            local Steer
+            if Seat.Throttle > 0 then
+                TargetForce = BoatCFG.physics.maxSpeed
+            elseif Seat.Throttle < 0 then 
+                TargetForce = -BoatCFG.physics.reverseMaxSpeed
+            else 
+                TargetForce = 0
+            end
+            if TargetForce == 0 then
+                local s = math.abs(CurrentForce)
+                local Decel = BoatCFG.physics.brakeDecel * dt
+                s = math.max(0, s - Decel)
+                CurrentForce = (CurrentForce >= 0) and s or -s
+            else
+                local Towards = (TargetForce > CurrentForce) and BoatCFG.physics.acceleration or BoatCFG.physics.brakeDecel
+                CurrentForce = math.lerp(CurrentForce, TargetForce, math.clamp((Towards * dt) / math.max(1, math.abs(TargetForce - CurrentForce)), 0, 1))
+            end
+            Thrust.Force = Forward * CurrentForce * Hull:GetMass()
+            if Speed > 0 then
+                Steer = -Seat.Steer
+            elseif Speed < 0 then
+                Steer = Seat.Steer
+            else
+                Steer = -Seat.Steer
+            end
+            local SpeedFactor
+            if math.abs(TargetForce) > 0 then
+                SpeedFactor = math.clamp(math.abs(Speed) / math.abs(TargetForce), 0, 1)
+            else
+                SpeedFactor = 0
+            end
+            local RudderForce = Hull:GetMass() * BoatCFG.physics.turnRate * (math.min(Hull.Size.X, Hull.Size.Z) / 2)
+            local RudderPush = Steer * RudderForce * SpeedFactor
+            Rudder.Torque = Vector3.new(RudderPush, 0, 0)
+
+            Hull.AssemblyLinearVelocity *= (1 - BoatCFG.physics.linearDamping * 0.01)
+            Hull.AssemblyAngularVelocity *= (1 - BoatCFG.physics.angularDamping * 0.01)
+        end)
     end
 end
 
@@ -562,6 +658,7 @@ function PM:CleanUp()
         self.FishingRodBtnClickConnection:Disconnect()
         self.FishingRodBtnClickConnection = nil
     end
+    self:_CleanUpBoat()
     self.PUI:CleanUp()
     self.PINV:CleanUp()
     self.PUI = nil

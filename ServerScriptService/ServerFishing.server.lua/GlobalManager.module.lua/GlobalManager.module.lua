@@ -253,6 +253,10 @@ end
 function GM:OnBoatSpawnUI(player, ...)
     self.PlayerManagers[player]:ToggleBoatShopUI(...)
 end
+function GM:OnBoatDrive(player, ...)
+    self.PlayerManagers[player]:OnBoatDrive(...)
+end
+
 -- ToolEvent
 function GM:ToggleInventory(player)
    self.PlayerManagers[player]:ToggleInventory()
