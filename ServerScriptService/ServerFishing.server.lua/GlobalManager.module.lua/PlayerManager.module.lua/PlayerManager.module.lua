@@ -190,9 +190,9 @@ function PM:OnBoatDrive(Seat:Part)
         Seat:Sit(hum)
         -- do boat movement
         self:_CleanUpBoat()
-        local BoatCFG
+        local BoatCFG = {}
         if Seat:FindFirstChild("TAccel") then
-            BoatCFG.physics = {
+            BoatCFG.physics {
                 maxSpeed = Seat.TMaxSpeed.Value,
                 reverseMaxSpeed = Seat.TReverseMaxSpeed.Value,
                 acceleration = Seat.TAccel.Value,
