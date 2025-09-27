@@ -11,23 +11,23 @@ local ClientUIEvent:RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Clien
 
 local c = require(RS:WaitForChild("GlobalConfig"))
 
--- MAIN FUNCTIONS
---- Proximity
-function PUI:ToggleFishShopUI(bool:boolean, part:Part)
-    self.FishShopTab.Visible = bool
+-- HELPER
+function PUI:_AutoBackdropNWithinZone(proximityPart:Part, UIName:string, SelfUIString:string)
+    local UI = self[SelfUIString]
     task.spawn(function()
-        while self.FishShopTab.Visible do
+        while UI.Visible do
             if not self.player or not self.player.Character or not self.player.Character:FindFirstChild("HumanoidRootPart") then
                 break
             end
-            local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
-            if dist > 10 then
-                self.FishShopTab.Visible = false
-                for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-                    if UI.Name == "BackdropUI" then
-                        UI.Enabled = false
+            local dist = (self.player.Character.HumanoidRootPart.Position - proximityPart.Position).Magnitude
+            local maxDist = proximityPart:FindFirstChildWhichIsA("ProximityPrompt").MaxActivationDistance
+            if dist > maxDist then
+                UI.Visible = false
+                for _, child in pairs(self.player.PlayerGui:GetChildren()) do
+                    if child.Name == "BackdropUI" then
+                        child.Enabled = false
                     else
-                        UI.Enabled = true
+                        child.Enabled = true
                     end
                 end
                 break
@@ -35,24 +35,73 @@ function PUI:ToggleFishShopUI(bool:boolean, part:Part)
             task.wait(0.5)
         end
     end)
-    if self.FishShopTab.Visible then
-        for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-            if UI.Name == "Freecam" or UI.Name == "FishShopUI" or UI.Name == "BackdropUI" then
-                UI.Enabled = true
+    if UI.Visible then
+        for _, child in pairs(self.player.PlayerGui:GetChildren()) do
+            if child.Name == "Freecam" or child.Name == UIName or child.Name == "BackdropUI" then
+                child.Enabled = true
             else
-                UI.Enabled = false
+                child.Enabled = false
             end
         end
     else
-        for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-            if UI.Name == "BackdropUI" then
-                UI.Enabled = false
+        for _, child in pairs(self.player.PlayerGui:GetChildren()) do
+            if child.Name == "BackdropUI" then
+                child.Enabled = false
             else
-                UI.Enabled = true
+                child.Enabled = true
             end
         end
     end
 end
+
+-- MAIN FUNCTIONS
+--- Proximity
+function PUI:ToggleFishShopUI(bool:boolean, part:Part)
+    self.FishShopTab.Visible = bool
+    self:_AutoBackdropNWithinZone(part, "FishShopUI", "FishShopTab")
+    -- task.spawn(function()
+    --     while self.FishShopTab.Visible do
+    --         if not self.player or not self.player.Character or not self.player.Character:FindFirstChild("HumanoidRootPart") then
+    --             break
+    --         end
+    --         local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
+    --         if dist > 10 then
+    --             self.FishShopTab.Visible = false
+    --             for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+    --                 if UI.Name == "BackdropUI" then
+    --                     UI.Enabled = false
+    --                 else
+    --                     UI.Enabled = true
+    --                 end
+    --             end
+    --             break
+    --         end
+    --         task.wait(0.5)
+    --     end
+    -- end)
+    -- if self.FishShopTab.Visible then
+    --     for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+    --         if UI.Name == "Freecam" or UI.Name == "FishShopUI" or UI.Name == "BackdropUI" then
+    --             UI.Enabled = true
+    --         else
+    --             UI.Enabled = false
+    --         end
+    --     end
+    -- else
+    --     for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
+    --         if UI.Name == "BackdropUI" then
+    --             UI.Enabled = false
+    --         else
+    --             UI.Enabled = true
+    --         end
+    --     end
+    -- end
+end
+function PUI:ToggleBoatShopUI(bool:boolean, part:Part)
+    self.BoatShopTab.Visible = bool
+    self:_AutoBackdropNWithinZone(part, "BoatUI", "BoatShopTab")
+end
+
 function PUI:UpdateZoneUI(zoneName)
     self.ZoneUI.ZoneText.Text = zoneName
 end
@@ -204,6 +253,9 @@ function PUI:_CreatePlayerUI()
     self.SellFrame = self.SellPage.ScrollingFrame
     self.SellSelectedButton = self.SellPage.ActionButton.SellSelected
     self.SellSelectedTotalLabel = self.SellPage.ActionButton.Total.Label
+
+    self.BoatUI = PlayerGui:WaitForChild("BoatUI")
+    self.BoatShopTab = self.BoatUI.BoatShop
 
     self:_SetupTweenAndConnection()
 
