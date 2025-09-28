@@ -177,7 +177,7 @@ function PUI:ShowPowerCategoryUI(power)
 		)
 		self.PowerCategShownTween:Play()
 		task.wait(0.6)
-		self.PowerCategShownTween:Cancel()
+		if self.PowerCategShownTween then self.PowerCategShownTween:Cancel() end
         self.PowerCategShownTween = nil
 		self.PowerCategHideTween = TS:Create(
 			self.globalUI.PowerCategoryUI.Frame,
@@ -213,22 +213,24 @@ function PUI:PopulateBoatShop(OwnedBoats:table)
     for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
         local template = self.BoatTemplaeItem:Clone()
         template.Name = BoatName
-        template.Icon.Image = BoatData.Icon
+        template.Icon.Image = BoatData.icon
         template.Parent = self.BoatShopFrame
         local frame = template.Frame
         frame.Label.Text = BoatName
         frame.Price.Text = BoatData.price
-        frame.Description.Text = BoatData.description or "no description yet"
+        frame.Description.Text = BoatData.description or "No Description yet"
         -- if owned, if not owned.
-        local owned = table.find(OwnedBoats, tostring(BoatData.id))
+        local owned = OwnedBoats ~= nil and table.find(OwnedBoats, tostring(BoatData.id)) or false
         if owned then
-            
+
         else
             frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
             frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
             frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
             frame.Buy.Frame.Label.Text = "Buy"
         end
+        template.Visible = true
+        -- ClientUIEvent:SortBoatShop()
     end
 end
 function PUI:_SetupTweenAndConnection()
