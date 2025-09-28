@@ -160,6 +160,11 @@ function PM:ToggleBoatShopUI(...)
     self.PUI:ToggleBoatShopUI(not isShown, ...)
     if isShown then
         -- update ui
+        -- for _, boat in pairs(self.PUI.BoatShopTab.LeftPanel.ScrollingFrame:GetChildren()) do
+        --     if boat:IsA("TextButton") and boat.Name ~= "TemplateItem" then
+        --         -- this is sortin/updating ui
+        --     end
+        -- end
     end
 end
 function PM:_CleanUpBoat()
@@ -167,32 +172,26 @@ function PM:_CleanUpBoat()
         self.BoatHeartbeat:Disconnect()
         self.BoatHeartbeat = nil
     end
-    -- if self.BoatConnection then
-    --     self.BoatConnection:Disconnect()
-    --     self.BoatConnection = nil
-    -- end
 end
 function PM:OnBoatDrive(Seat:Part)
     local hum = self.player.Character.Humanoid
     local isSitting = hum.Sit == true and hum.SeatPart == Seat
     Seat:GetPropertyChangedSignal("Occupant"):Connect(function()
-        local hum = Seat.Occupant
-        if not hum then
+        local SeatHum = Seat.Occupant
+        if not SeatHum then
             self:_CleanUpBoat()
         end
     end)
     if isSitting then
         hum.Sit = false
-        -- do cleanup
-        -- todo it cannot be like this, we need to remove the prompt while sitting and enabling it back.
-        -- we can do cleanup on seat human occupied
     else
         Seat:Sit(hum)
         -- do boat movement
+        Seat:FindFirstChildWhichIsA("ProximityPrompt").Enabled = false
         self:_CleanUpBoat()
         local BoatCFG = {}
         if Seat:FindFirstChild("TAccel") then
-            BoatCFG.physics {
+            BoatCFG.physics = {
                 maxSpeed = Seat.TMaxSpeed.Value,
                 reverseMaxSpeed = Seat.TReverseMaxSpeed.Value,
                 acceleration = Seat.TAccel.Value,
@@ -574,6 +573,9 @@ function PM:_PopulateData()
 
     -- Populate Fish Index
     self.PUI:PopulateFishIndex(self.Data.FishIndex)
+
+    -- Populate Boat Shop
+    self.PUI:PopulateBoatShop(self.Data.Equipment.OwnedBoats)
 
     self._AutoSaveRunning = true
     task.spawn(function()

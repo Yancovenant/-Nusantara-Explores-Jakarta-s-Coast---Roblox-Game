@@ -209,6 +209,28 @@ function PUI:PopulateFishIndex(...)
 end
 
 -- SETUP
+function PUI:PopulateBoatShop(OwnedBoats:table)
+    for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
+        local template = self.BoatTemplaeItem:Clone()
+        template.Name = BoatName
+        template.Icon.Image = BoatData.Icon
+        template.Parent = self.BoatShopFrame
+        local frame = template.Frame
+        frame.Label.Text = BoatName
+        frame.Price.Text = BoatData.price
+        frame.Description.Text = BoatData.description or "no description yet"
+        -- if owned, if not owned.
+        local owned = table.find(OwnedBoats, tostring(BoatData.id))
+        if owned then
+            
+        else
+            frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+            frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
+            frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
+            frame.Buy.Frame.Label.Text = "Buy"
+        end
+    end
+end
 function PUI:_SetupTweenAndConnection()
     self.FishShopCloseBtn.MouseButton1Click:Connect(function()
         self:ToggleFishShopUI()
@@ -256,6 +278,8 @@ function PUI:_CreatePlayerUI()
 
     self.BoatUI = PlayerGui:WaitForChild("BoatUI")
     self.BoatShopTab = self.BoatUI.BoatShop
+    self.BoatShopFrame = self.BoatShopTab.LeftPanel.ScrollingFrame
+    self.BoatTemplaeItem = self.BoatShopFrame.TemplateItem
 
     self:_SetupTweenAndConnection()
 
