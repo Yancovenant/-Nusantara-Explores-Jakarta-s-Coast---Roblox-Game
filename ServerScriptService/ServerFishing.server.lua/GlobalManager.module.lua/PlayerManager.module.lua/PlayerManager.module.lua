@@ -6,7 +6,7 @@ local ClientUIEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):Wa
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 
-
+-- HELPER
 function PM:_FormatChance(ch)
 	local function gcd(a,b) while b~=0 do a,b=b,a%b end return a end
 	local function decimalToFraction(decimal)
@@ -29,6 +29,7 @@ end
 
 
 -- PLAYER PROGRESSION
+-- == Experience XP ==
 function PM:_CalculateXP(info) return (info.weight^.75)*c.RARITY_MULTIXP[info.fishData.rarity] end
 function PM:_XPRequiredForLevel(level) return math.floor(c.PLAYER.XPGROWTH.BASE_XP*(level^c.PLAYER.XPGROWTH.GROWTH)) end
 function PM:_GetLevelFromXP(xp)
@@ -40,55 +41,19 @@ function PM:_UpdateXP(gxp)
 	if self.Data.PlayerLevel < l then self.Data.PlayerLevel = l self.PUI:UpdateLevel(l) end
 	ClientUIEvent:FireClient(self.player,"UpdateXP",self.Data.PlayerLevel,cx,rx,gxp)
 end
+-- == Money ==
 function PM:_UpdateMoney(val)
 	val=val or 0 self.Data.Money += val self.Money.Value=self.Data.Money
 	ClientUIEvent:FireClient(self.player,"UpdateMoney",self.Data.Money,val)
 end
-function PM:_RefreshBuyShop()
-    self.SelectedBuy, self.SelectedFishSell = nil, nil
-    self.PUI.BuySelectedTotalLabel.Visible, self.PUI.SellSelectedTotalLabel.Visible = false, false
-    for _, frame in pairs(self.PUI.BuyFrame:GetChildren()) do
-        if frame:IsA("TextButton") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
-            frame:Destroy()
-        end
-    end
-    local ownedRods = self.Data.Equipment.OwnedRods
-    for rodName, rodData in pairs(c.EQUIPMENT.GED.RODS) do
-         if not table.find(ownedRods, rodData.id) then
-            local template = self.PUI.BuyTemplateItem:Clone()
-            template.Name, template.Label.Text = rodName, rodName
-            template.Label.TextColor3, template.Icon.Image = c:GetRarityColor(rodData.rarity), rodData.icon
-            template.Price.Text, template.LayoutOrder = math.floor(rodData.price), rodData.id
-            template.Visible, template.Parent = true, self.PUI.BuyFrame
-            template:SetAttribute("itemType", "Rod")
-            template:SetAttribute("price", rodData.price)
-            template:SetAttribute("id", rodData.id)
-            template.MouseButton1Click:Connect(function()
-                if self.SelectedBuy == template then return end
-                if self.SelectedBuy then self.SelectedBuy.Select.Visible = false end
-                self.SelectedBuy = template
-                template.Select.Visible = true
-                self.PUI.BuySelectedTotalLabel.Text = "Total : " .. rodData.price
-                self.PUI.BuySelectedTotalLabel.Visible = true
-            end)
-        end
-    end
-end
+
+
 
 -- MAIN FUNCTIONS
 --- Proximity
-function PM:ToggleBoatShopUI(...)
-    local isShown = self.PUI.BoatShopTab.Visible
-    self.PUI:ToggleBoatShopUI(not isShown, ...)
-    if isShown then
-        -- update ui if needed
-    end
-end
+
 function PM:_CleanUpBoat()
-    if self.BoatHeartbeat then
-        self.BoatHeartbeat:Disconnect()
-        self.BoatHeartbeat = nil
-    end
+    if self.BoatHeartbeat then self.BoatHeartbeat:Disconnect() self.BoatHeartbeat = nil end
 end
 function PM:OnBoatDrive(Seat:Part)
     local hum = self.player.Character.Humanoid
@@ -174,25 +139,18 @@ function PM:OnBoatDrive(Seat:Part)
     end
 end
 
+
+
+
+
+
+function PM:SaveData(locksession, force)
+    DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
+end
+
+-- PASSED TO INVENTORY/UI MODULE
 function PM:updatePlayerZone(zone)
     self.PUI:UpdateZoneUI(zone)
-end
-function PM:ToggleRod()
-    self.PINV:_CleanHoldingFish()
-    self.PINV:_EquipTool("FishingRod")
-    self.PINV:ToggleHolsterRod()
-    self.PUI:_UpdateHotBarSelected("FishingRod")
-end
-function PM:ToggleInventory()
-    self.PUI:ToggleInventory()
-end
-function PM:UnEquippedReady(bool)
-    self.PINV:UnEquippedReady(bool)
-    self.player:SetAttribute("IsFishingServer", not bool)
-    self.player:SetAttribute("PowerServer", 0)
-end
-function PM:TogglePlayerModal()
-    self.PUI:TogglePlayerModal(self.Data.Attributes)
 end
 function PM:ShowFishBiteUI(visible)
     self.PUI:ShowFishBiteUI(visible)
@@ -200,78 +158,41 @@ end
 function PM:ShowPowerCategoryUI(power)
     self.PUI:ShowPowerCategoryUI(power)
 end
-function PM:CatchResultSuccess(info)
-    local FishInvFrame, FishShopFrame = self.PINV:AddFishToInventory({
-        id = info.fishData.id,
-        weight = info.weight,
-    }, true)
-    self:_SetupFishSellEventListener(FishShopFrame)
-    if self.Data.FishInventory[tostring(info.fishData.id)] == nil then
-        self.Data.FishInventory[tostring(info.fishData.id)] = {}
-    end
-    table.insert(self.Data.FishInventory[tostring(info.fishData.id)], {
-        weight = info.weight,
-        locked = false,
-        uniqueId = self.PINV.FishCounter
-    })
-    if self.FishFrame[tostring(self.PINV.FishCounter)] == nil then
-        self.FishFrame[tostring(self.PINV.FishCounter)] = {
-            FishInvFrame = FishInvFrame,
-            FishShopFrame = FishShopFrame
-        }
-    end
-    -- loop wrapper leaderstats + data
-    self.TotalCatch.Value = self.TotalCatch.Value + 1
-    self.Data.TotalCatch = self.TotalCatch.Value
-
-    if self.Data.RarestCatch > info.fishData.baseChance or self.Data.RarestCatch == 0 then
-        self.RarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
-        self.Data.RarestCatch = info.fishData.baseChance
-    end
-    local GainedXp = self:_CalculateXP(info)
-    self:_UpdateXP(GainedXp)
-
-    if not self.Data.FishIndex[tostring(info.fishData.id)] then
-        self.Data.FishIndex[tostring(info.fishData.id)] = {
-            firstCaught = info.weight,
-            bestWeight = info.weight,
-            totalCaught = 1,
-            lastCaught = os.time()
-        }
-    else
-        local FishIndex = self.Data.FishIndex[tostring(info.fishData.id)]
-        FishIndex.totalCaught += 1
-        FishIndex.lastCaught = os.time()
-        if info.weight > FishIndex.bestWeight then
-            FishIndex.bestWeight = info.weight
-        end
-    end
-    self.PUI:UpdateFishIndex(self.Data.FishIndex)
+function PM:TogglePlayerModal() -- HOTBAR STATS
+    self.PUI:TogglePlayerModal(self.Data.Attributes)
+end
+function PM:ToggleRod() -- HOTBAR ROD
+    self.PINV:_CleanHoldingFish()
+    self.PINV:_EquipTool("FishingRod")
+    self.PINV:ToggleHolsterRod()
+    self.PUI:_UpdateHotBarSelected("FishingRod")
+end
+function PM:ToggleInventory() -- HOTBAR INVENTORY
+    self.PUI:ToggleInventory()
+end
+function PM:UnEquippedReady(bool)
+    self.PINV:UnEquippedReady(bool)
+    self.player:SetAttribute("IsFishingServer", not bool)
+    self.player:SetAttribute("PowerServer", 0)
 end
 
-function PM:SaveData(locksession, force)
-    DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
-end
 
 -- SETUP FUNCTIONS
+-- == Sell Shop Fish ==
 function PM:_SetupFishSellEventListener(template:Instance)
     template.MouseButton1Click:Connect(function()
-        if self.SelectedFishSell == template then return end
-        if template:GetAttribute("locked") then return end
-        if self.SelectedFishSell and self.SelectedFishSell ~= template then
-            self.SelectedFishSell.Select.Visible = false
-        end
+        if self.SelectedFishSell == template or template:GetAttribute("locked") then return end
+        if self.SelectedFishSell and self.SelectedFishSell ~= template then self.SelectedFishSell.Select.Visible = false end
         self.SelectedFishSell = template
         template.Select.Visible = true
         self.PUI.SellSelectedTotalLabel.Text = "Total : " .. math.floor(template:GetAttribute("price"))
         self.PUI.SellSelectedTotalLabel.Visible = true
     end)
 end
+-- == Inventory Rod ==
 function PM:_SetupInvRodEventListener(template:Instance)
     template.MouseButton1Click:Connect(function()
-        if template:GetAttribute("id") <= 0 then return end
-        if self.player:GetAttribute("IsFishing") then return end
-        if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
+        if template:GetAttribute("id") <= 0 or self.player:GetAttribute("IsFishing") or self.player.Character:FindFirstChildWhichIsA("Tool") then return end
         self.Data.Equipment.EquippedRod = template:GetAttribute("id")
         self:_UpdateFishingRodModel()
         if self.PINV.IsHolsterEquip then
@@ -282,6 +203,7 @@ function PM:_SetupInvRodEventListener(template:Instance)
         self.PUI:SortRodInventoryUI()
     end)
 end
+-- == Rod Holster Accessory
 function PM:_SetupPlayerAttributes()
     local EquippedRod = self.Data.Equipment.EquippedRod
     local dataRod, modelRod = self.PINV:GetEquipmentData("GetRod", EquippedRod)
@@ -299,8 +221,7 @@ function PM:_UpdateFishingRodModel()
     self.PINV.FishingRod:FindFirstChild("Rod"):Destroy()
     local Rod = RodModel:FindFirstChild("Rod"):Clone()
     local handle = RodModel:FindFirstChild("Handle"):Clone()
-    Rod.Parent = self.PINV.FishingRod
-    handle.Parent = self.PINV.FishingRod
+    Rod.Parent, handle.Parent = self.PINV.FishingRod, self.PINV.FishingRod
     handle:FindFirstChild("Main").Part1 = Rod
 
     self.PUI.FishingRodBtn.Icon.Image = RodData.icon
@@ -308,7 +229,13 @@ function PM:_UpdateFishingRodModel()
     self:_SetupPlayerAttributes()
 end
 
+
 -- ENTRY POINTS
+-- == Toggle Boat Shop Page
+function PM:ToggleBoatShopUI(...)
+    local isShown = self.PUI.BoatShopTab.Visible
+    self.PUI:ToggleBoatShopUI(not isShown, ...)
+end
 -- == Clean Tween Shop Page ==
 function PM:_CleanUpFishingShopBuyPage()
     if self.FailedBuyTween then
@@ -322,6 +249,37 @@ function PM:_CleanUpFishingShopBuyPage()
     self.PUI.BuySelectedButton.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
     self.PUI.BuySelectedButton.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
     self.PUI.BuySelectedButton.Frame.TextLabel.Text = "Buy Selected"
+end
+-- == Refresh buy Shop Page ==
+function PM:_RefreshBuyShop()
+    self.SelectedBuy, self.SelectedFishSell = nil, nil
+    self.PUI.BuySelectedTotalLabel.Visible, self.PUI.SellSelectedTotalLabel.Visible = false, false
+    for _, frame in pairs(self.PUI.BuyFrame:GetChildren()) do
+        if frame:IsA("TextButton") and frame.Name ~= "TemplateItem" and frame:GetAttribute("itemType") == "Rod" then
+            frame:Destroy()
+        end
+    end
+    local ownedRods = self.Data.Equipment.OwnedRods
+    for rodName, rodData in pairs(c.EQUIPMENT.GED.RODS) do
+         if not table.find(ownedRods, rodData.id) then
+            local template = self.PUI.BuyTemplateItem:Clone()
+            template.Name, template.Label.Text = rodName, rodName
+            template.Label.TextColor3, template.Icon.Image = c:GetRarityColor(rodData.rarity), rodData.icon
+            template.Price.Text, template.LayoutOrder = math.floor(rodData.price), rodData.id
+            template.Visible, template.Parent = true, self.PUI.BuyFrame
+            template:SetAttribute("itemType", "Rod")
+            template:SetAttribute("price", rodData.price)
+            template:SetAttribute("id", rodData.id)
+            template.MouseButton1Click:Connect(function()
+                if self.SelectedBuy == template then return end
+                if self.SelectedBuy then self.SelectedBuy.Select.Visible = false end
+                self.SelectedBuy = template
+                template.Select.Visible = true
+                self.PUI.BuySelectedTotalLabel.Text = "Total : " .. rodData.price
+                self.PUI.BuySelectedTotalLabel.Visible = true
+            end)
+        end
+    end
 end
 -- == Toggle Fish Shop Page ==
 function PM:ToggleFishShopUI(GRM, ...)
@@ -353,6 +311,48 @@ function PM:ToggleFishShopUI(GRM, ...)
         end
         self:_CleanUpFishingShopBuyPage()
     end
+end
+-- == Fishing Catch Result ==
+function PM:CatchResultSuccess(info)
+    local idStr = tostring(info.fishData.id)
+    local fc = self.PINV.FishCounter
+    local fi, fs = self.PINV:AddFishToInventory({id = info.fishData.id,weight = info.weight,}, true)
+    self.FishFrame[tostring(fc)]={FishInvFrame = fi, FishShopFrame = fs}
+    self:_SetupFishSellEventListener(fs)
+
+    self.Data.FishInventory[idStr] = self.Data.FishInventory[idStr] or {}
+    table.insert(self.Data.FishInventory[idStr], {
+        weight = info.weight,
+        locked = false,
+        uniqueId = fc
+    })
+    -- loop wrapper leaderstats + data
+    self.TotalCatch.Value += 1
+    self.Data.TotalCatch = self.TotalCatch.Value
+
+    if self.Data.RarestCatch > info.fishData.baseChance or self.Data.RarestCatch == 0 then
+        self.RarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
+        self.Data.RarestCatch = info.fishData.baseChance
+    end
+    local GainedXp = self:_CalculateXP(info)
+    self:_UpdateXP(GainedXp)
+
+    if not self.Data.FishIndex[idStr] then
+        self.Data.FishIndex[idStr] = {
+            firstCaught = info.weight,
+            bestWeight = info.weight,
+            totalCaught = 1,
+            lastCaught = os.time()
+        }
+    else
+        local FishIndex = self.Data.FishIndex[idStr]
+        FishIndex.totalCaught += 1
+        FishIndex.lastCaught = os.time()
+        if info.weight > FishIndex.bestWeight then
+            FishIndex.bestWeight = info.weight
+        end
+    end
+    self.PUI:UpdateFishIndex(self.Data.FishIndex)
 end
 -- == Populate Data Stored ==
 function PM:_CreateLeaderstats()

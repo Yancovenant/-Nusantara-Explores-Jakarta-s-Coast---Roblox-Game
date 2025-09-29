@@ -224,20 +224,20 @@ function PINV:_CreateBackpack()
     if not self.ToolFolder:FindFirstChild("FishingRod") then self.FishingRod = ROD:Clone() self.FishingRod.Parent = self.ToolFolder end
 end
 function PINV:_CreateInventory()
-    -- local PlayerGui = self.player:WaitForChild("PlayerGui")
-    -- self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-    -- self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
-    -- self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
-    self.RodInventoryTab = self.PUI.RodInventoryTab
-    self.RodTemplate = self.PUI.RodInventoryTemplateItem
-    -- self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
+    -- -- local PlayerGui = self.player:WaitForChild("PlayerGui")
+    -- -- self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
+    -- -- self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+    -- -- self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
+    -- self.RodInventoryTab = self.PUI.RodInventoryTab
+    -- self.RodTemplate = self.PUI.RodInventoryTemplateItem
+    -- -- self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
 
-    self.FishInventoryTab = self.PUI.FishInventoryTab
-    self.FishTemplate = self.PUI.FishInventoryTemplateItem
+    -- self.FishInventoryTab = self.PUI.FishInventoryTab
+    -- self.FishTemplate = self.PUI.FishInventoryTemplateItem
 
-    -- self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
-    self.FishShopSellList = self.PUI.SellFrame
-    self.FishShopTemplate = self.PUI.SellTemplateItem
+    -- -- self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
+    -- self.FishShopSellList = self.PUI.SellFrame
+    -- self.FishShopTemplate = self.PUI.SellTemplateItem
 end
 function PINV:new(player:Player, PUI:Instance)
     local self = setmetatable({}, PINV)

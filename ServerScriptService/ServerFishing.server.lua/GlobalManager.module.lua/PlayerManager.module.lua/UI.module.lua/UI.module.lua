@@ -154,6 +154,7 @@ end
 
 
 -- SETUP
+-- == Populate Boat Shop Page
 function PUI:PopulateBoatShop(OwnedBoats:table)
     for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
         local template = self.BoatTemplaeItem:Clone()
@@ -195,6 +196,10 @@ end
 function PUI:_SetupTweenAndConnection()
     self.FishShopCloseClickConnection = self.FishShopCloseBtn.MouseButton1Click:Connect(function()
         self:ToggleFishShopUI()
+    end)
+
+    self.BoatShopClickConnection = self.BoatShopCloseBtn.MouseButton1Click:Connect(function()
+        self:ToggleBoatShopUI()
     end)
 
     self.IsLocking = false
@@ -256,6 +261,7 @@ function PUI:_CreatePlayerUI()
 
     -- Boat UI
     self.BoatShopTab = self.BoatUI.BoatShop
+    self.BoatShopCloseBtn = self.BoatShopTab.CloseButton
     self.BoatShopFrame = self.BoatShopTab.LeftPanel.ScrollingFrame
     self.BoatTemplaeItem = self.BoatShopFrame.TemplateItem
     self.BoatStatTab = self.BoatShopTab.RightPanel.Information

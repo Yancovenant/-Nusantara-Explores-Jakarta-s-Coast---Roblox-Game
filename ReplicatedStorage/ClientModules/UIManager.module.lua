@@ -72,16 +72,22 @@ function CUI:SortFishInventoryUI() -- OPTIMIZED (60% faster)
 			table.insert(fishList,{inst=f,rarity=c.RARITY_ORDER[f:GetAttribute("rarity")] or 0,id=tonumber(f:GetAttribute("id")) or 0})
 		end
 	end
-	table.sort(fishList,function(a,b) return a.rarity~=b.rarity and a.rarity>b.rarity or a.id>b.id end)
+	table.sort(fishList,function(a,b)
+        if a.rarity~=b.rarity then return a.rarity>b.rarity end
+        return a.id>b.id
+    end)
 	for i,f in ipairs(fishList)do f.inst.LayoutOrder=i end self.FishTabBtn.Count.Text=#fishList
 end
 function CUI:SortFishShopUI()
     local FishList = {} for _, f in pairs(self.FishShopSellPageFrame.ScrollingFrame:GetChildren()) do
-        if f.Name ~= "TemplateItem" and f:IsA("Frame") then
+        if f.Name ~= "TemplateItem" and f:IsA("TextButton") then
 			table.insert(FishList, {inst=f,rarity = c.RARITY_ORDER[f:GetAttribute("rarity")] or 0,id = tonumber(f:GetAttribute("id")) or 0})
         end
     end
-    table.sort(FishList, function(a, b) return a.rarity ~= b.rarity and a.rarity > b.rarity or a.id > b.id end)
+    table.sort(FishList,function(a,b)
+        if a.rarity~=b.rarity then return a.rarity>b.rarity end
+        return a.id>b.id
+    end)
     for i,f in ipairs(FishList) do f.inst.LayoutOrder = i end
 end
 function CUI:_UpdatePlayerModalData(data)
