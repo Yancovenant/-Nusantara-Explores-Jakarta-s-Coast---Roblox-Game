@@ -1,21 +1,14 @@
--- Main.lua
+-- Main.client.lua - OPTIMIZED
 game:GetService('StarterGui'):SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-local CPM = {}
+local CPM, RS, UIS, TS = {}, game:GetService("ReplicatedStorage"), game:GetService("UserInputService"), game:GetService("TweenService")
+local Player, Character = game:GetService("Players").LocalPlayer, game:GetService("Players").LocalPlayer.Character or game:GetService("Players").LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
 
-local UIS = game:GetService("UserInputService")
-local TS = game:GetService("TweenService")
-local Player = game:GetService("Players").LocalPlayer
-local Character = Player.Character or Player.CharacterAdded:Wait()
-local Humanoid: Humanoid = Character:WaitForChild("Humanoid")
-
-local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local ToolEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
-local TimeEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
-local AnimationEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
-local UIEvent: RemoteEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
-
-local holdingFishAnimation: Animation = RS:WaitForChild("Animations"):WaitForChild("HoldingFish")
+local ToolEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
+local TimeEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
+local AnimationEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClientAnimation")
+local UIEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
+local holdingFishAnimation = game:GetService("ReplicatedStorage"):WaitForChild("Animations"):WaitForChild("HoldingFish")
 
 local CAM = require(RS:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
 local CUI = require(RS:WaitForChild("ClientModules"):WaitForChild("UIManager"))

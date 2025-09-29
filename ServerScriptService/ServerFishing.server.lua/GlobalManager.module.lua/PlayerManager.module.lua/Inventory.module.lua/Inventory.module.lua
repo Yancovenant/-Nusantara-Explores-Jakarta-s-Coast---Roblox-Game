@@ -1,17 +1,10 @@
--- Inventory.module.lua
-
-local PINV = {}
+-- Inventory.module.lua - OPTIMIZED  
+local PINV, RS, TS = {}, game:GetService("ReplicatedStorage"), game:GetService("TweenService")
 PINV.__index = PINV
-
 local DBM = require(script.Parent.Parent.Parent.GlobalStorage)
-
-local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TS:TweenService = game:GetService("TweenService")
 local ClientAnimationEvent = RS:WaitForChild("Remotes"):WaitForChild("ClientAnimation")
 local ToolEvent = RS:WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
-
 local ROD = RS:WaitForChild("ToolItem"):WaitForChild("FishingRod")
-
 local c = require(RS:WaitForChild("GlobalConfig"))
 
 
@@ -151,42 +144,20 @@ end
 function PINV:GetEquipmentData(type:string, params)
     return c.EQUIPMENT.GED[type](c.EQUIPMENT.GED, params)
 end
-function PINV:AddRodToInventory(RodData:table, sort:boolean)
-    -- FIXED: Remove unnecessary task.spawn for better performance
-    local template = self.RodTemplate:Clone()
-    template.Name = RodData.name
-    -- template.UIGradient.Transparency = 1 -- add gradient later TODO
-    template.Label.Text = RodData.name
-    template.Label.TextColor3 = c:GetRarityColor(RodData.rarity)
-    template.Icon.Image = RodData.icon
-    template.Visible = true
-    template.Parent = self.RodInventoryTab
-    local attributeContainer = template.Container
-    if RodData.maxWeight > 1.0 then
-        attributeContainer.MaxWeight.Text = "🔩 " .. RodData.maxWeight .. "Kg"
-        attributeContainer.MaxWeight.Visible = true
-    end
-    if RodData.luck > 1.0 then
-        attributeContainer.Luck.Text = "☘️ " .. RodData.luck .. "%"
-        attributeContainer.Luck.Visible = true
-    end
-    if RodData.attraction > 1.0 then
-        attributeContainer.Attractive.Text = "💕 " .. RodData.attraction .. "%"
-        attributeContainer.Attractive.Visible = true
-    end
-    if RodData.strength > 1.0 then
-        attributeContainer.Strength.Text = "💪🏻 " .. RodData.strength
-        attributeContainer.Strength.Visible = true
-    end
-    template:SetAttribute("id", RodData.id)
-    template:SetAttribute("rarity", RodData.rarity)
-    if sort == nil then
-        sort = true
-    end
-    if sort then
-        self.PUI:SortRodInventoryUI()
-    end
-    return template
+function PINV:AddRodToInventory(RodData,sort) -- OPTIMIZED (50% smaller)
+	local template = self.RodTemplate:Clone()
+	template.Name, template.Label.Text = RodData.name, RodData.name
+	template.Label.TextColor3, template.Icon.Image = c:GetRarityColor(RodData.rarity), RodData.icon
+	template.Visible, template.Parent = true, self.RodInventoryTab
+	
+	local container = template.Container
+	if RodData.maxWeight>1 then container.MaxWeight.Text,container.MaxWeight.Visible="🔩"..RodData.maxWeight.."Kg",true end
+	if RodData.luck>1 then container.Luck.Text,container.Luck.Visible="☘️"..RodData.luck.."%",true end
+	if RodData.attraction>1 then container.Attractive.Text,container.Attractive.Visible="💕"..RodData.attraction.."%",true end
+	if RodData.strength>1 then container.Strength.Text,container.Strength.Visible="💪🏻"..RodData.strength,true end
+	template:SetAttribute("id",RodData.id) template:SetAttribute("rarity",RodData.rarity)
+	if sort then self.PUI:SortRodInventoryUI() end
+	return template
 end
 
 function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)

@@ -1,38 +1,16 @@
--- Main.lua
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Workspace = game:GetService("Workspace")
-local CollectionService = game:GetService("CollectionService")
-
-local remoteEvents = {
-	"StartCast",
-	"CastApproved",
-	"Bite",
-	"ReelComplete",
-	"CatchResult"
-}
+-- Main.server.lua
+local RS, WS, CS = game:GetService("ReplicatedStorage"), game:GetService("Workspace"), game:GetService("CollectionService")
+local remotesEvents = {"StartCast","CastApproved","Bite","ReelComplete","CatchResult"}
 local function setupRemoteEvents()
-	local remotesFolder = ReplicatedStorage:WaitForChild("Remotes")
-	if not remotesFolder then
-		remotesFolder = Instance.new("Folder")
-		remotesFolder.Name = "Remotes"
-		remotesFolder.Parent = ReplicatedStorage
-	end
-	for _, remoteEvent in ipairs(remoteEvents) do
-		local existingEvent = remotesFolder:FindFirstChild(remoteEvent)
-		if not existingEvent then
-			local newEvent = Instance.new("RemoteEvent")
-			newEvent.Name = remoteEvent
-			newEvent.Parent = remotesFolder
-		end
-	end
+	local f=RS:WaitForChild("Remotes") or Instance.new("Folder") f.Name="Remotes" f.Parent=RS
+	for _,n in ipairs(remotesEvents) do if not f:FindFirstChild(n)then local e=Instance.new("RemoteEvent") e.Name=n e.Parent=f end end
 end
 
 local function setupWaterTags()
 	local waterTag = "Water"
 	local potentialWaterParts = {}
 
-	for _, part in ipairs(Workspace:GetDescendants()) do
+	for _, part in ipairs(WS:GetDescendants()) do
 		if part:IsA("BasePart") then
 			local name = part.Name:lower()
 			if name:find("water") or name:find("lake") or name:find("ocean") or name:find("river") or name:find("pond") then
@@ -41,23 +19,11 @@ local function setupWaterTags()
 		end
 	end
 	for _, part in ipairs(potentialWaterParts) do
-		if not CollectionService:HasTag(part, waterTag) then
-			CollectionService:AddTag(part, waterTag)
+		if not CS:HasTag(part, waterTag) then
+			CS:AddTag(part, waterTag)
 		end
 	end
-
-	-- local terrain = Workspace:WaitForChild("Terrain")
-	-- print(terrain)
-	-- if not terrain then return end
-	-- local isWater = terrain:GetMaterial() == Enum.Material.Water
-	-- print(isWater)
-	-- if isWater then
-	-- 	print("Terrain is water")
-	-- end
 end
-
--- local GlobalManager = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("GlobalManager"))
-
 
 local function main()
 	setupRemoteEvents()

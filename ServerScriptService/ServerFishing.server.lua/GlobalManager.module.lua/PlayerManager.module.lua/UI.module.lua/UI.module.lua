@@ -59,43 +59,6 @@ end
 function PUI:ToggleFishShopUI(bool:boolean, part:Part)
     self.FishShopTab.Visible = bool
     self:_AutoBackdropNWithinZone(part, "FishShopUI", "FishShopTab")
-    -- task.spawn(function()
-    --     while self.FishShopTab.Visible do
-    --         if not self.player or not self.player.Character or not self.player.Character:FindFirstChild("HumanoidRootPart") then
-    --             break
-    --         end
-    --         local dist = (self.player.Character.HumanoidRootPart.Position - part.Position).Magnitude
-    --         if dist > 10 then
-    --             self.FishShopTab.Visible = false
-    --             for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-    --                 if UI.Name == "BackdropUI" then
-    --                     UI.Enabled = false
-    --                 else
-    --                     UI.Enabled = true
-    --                 end
-    --             end
-    --             break
-    --         end
-    --         task.wait(0.5)
-    --     end
-    -- end)
-    -- if self.FishShopTab.Visible then
-    --     for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-    --         if UI.Name == "Freecam" or UI.Name == "FishShopUI" or UI.Name == "BackdropUI" then
-    --             UI.Enabled = true
-    --         else
-    --             UI.Enabled = false
-    --         end
-    --     end
-    -- else
-    --     for _, UI in pairs(self.player.PlayerGui:GetChildren()) do
-    --         if UI.Name == "BackdropUI" then
-    --             UI.Enabled = false
-    --         else
-    --             UI.Enabled = true
-    --         end
-    --     end
-    -- end
 end
 function PUI:ToggleBoatShopUI(bool:boolean, part:Part)
     self.BoatShopTab.Visible = bool
@@ -242,7 +205,7 @@ function PUI:PopulateBoatShop(OwnedBoats:table)
         templateStat.Handle.Label.Text = "Handle: " .. tostring(math.clamp(math.floor(math.deg(cfg.turnRate) / 200), 1, 10)) .. "°"
         templateStat.Parent = self.BoatStatTab
     end
-    ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
+    -- ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
 end
 function PUI:_SetupTweenAndConnection()
     self.FishShopCloseBtn.MouseButton1Click:Connect(function()
