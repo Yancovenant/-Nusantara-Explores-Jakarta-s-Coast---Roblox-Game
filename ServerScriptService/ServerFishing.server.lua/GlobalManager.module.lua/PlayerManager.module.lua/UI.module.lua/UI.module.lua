@@ -231,7 +231,18 @@ function PUI:PopulateBoatShop(OwnedBoats:table)
         end
         template.Visible = true
         -- ClientUIEvent:SortBoatShop()
+        local templateStat = self.BoatStatTemplateItem:Clone()
+        templateStat.Name = BoatName
+        templateStat.Category.Text = BoatData.category or "unknown"
+        templateStat.Label.Text = BoatName
+        templateStat.Type.Text = BoatData.boatType or "unknown"
+        local cfg = BoatData.physics
+        templateStat.Accel.Label.Text = "Acceleration: " .. tostring(math.floor((100 / (cfg.acceleration * 3.6)) + 0.5)) .. "s (0–100km/h)"
+        templateStat.TopSpeed.Label.Text = "TopSpeed: " .. tostring(math.floor((cfg.maxSpeed * 3.6))) .. "KmH"
+        templateStat.Handle.Label.Text = "Handle: " .. tostring(math.clamp(math.floor(math.deg(cfg.turnRate) / 200), 1, 10)) .. "°"
+        templateStat.Parent = self.BoatStatTab
     end
+    ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
 end
 function PUI:_SetupTweenAndConnection()
     self.FishShopCloseBtn.MouseButton1Click:Connect(function()
@@ -282,6 +293,8 @@ function PUI:_CreatePlayerUI()
     self.BoatShopTab = self.BoatUI.BoatShop
     self.BoatShopFrame = self.BoatShopTab.LeftPanel.ScrollingFrame
     self.BoatTemplaeItem = self.BoatShopFrame.TemplateItem
+    self.BoatStatTab = self.BoatShopTab.RightPanel.Information
+    self.BoatStatTemplateItem = self.BoatStatTab.StatsTemplate
 
     self:_SetupTweenAndConnection()
 

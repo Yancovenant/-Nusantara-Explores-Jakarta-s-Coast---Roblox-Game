@@ -128,7 +128,7 @@ end
 function PM:ToggleFishShopUI(GRM, ...)
     local isShown = self.PUI.FishShopTab.Visible
     self.PUI:ToggleFishShopUI(not isShown, ...)
-    if isShown then
+    if not isShown then
         -- populate buy tab
         self:_RefreshBuyShop()
         ClientUIEvent:FireClient(self.player, "SortFishShopUI")
