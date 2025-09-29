@@ -351,9 +351,9 @@ function PM:ToggleFishShopUI(GRM, ...)
                 end
             end
         end
-        self:_CleanUpFishingShopBuyPage()
-    end
-end
+                self:_CleanUpFishingShopBuyPage()
+                    end
+                end
 -- == Populate Data Stored ==
 function PM:_CreateLeaderstats()
     local leaderstats
@@ -544,7 +544,7 @@ function PM:new(player)
     self.PUI = PUI:new(player)
     self.PINV = PINV:new(player, self.PUI)
     self:_SetupEventListener()
-
+    
     self.FishFrame = {}
 
     self:_PopulateData()

@@ -16,58 +16,8 @@ function PINV:_CleanHoldingFish()
     end
     ClientAnimationEvent:FireClient(self.player, "Clean")
 end
-function PINV:_RefreshTools()
-    if not self.ToolFolder then return end
-    for _, tool in pairs(self.player.Backpack:GetChildren()) do
-        tool.Parent = self.ToolFolder
-    end
-end
-function PINV:_EquipTool(toolName:string)
-    self:_RefreshTools()
-    local tool = self.ToolFolder:FindFirstChild(toolName)
-    if self.player.Character:FindFirstChildWhichIsA("Tool") then
-        ToolEvent:FireClient(self.player, "OnUnequipped")
-        task.spawn(function()
-            while self._OnUnequippedReady ~= true do
-                task.wait()
-            end
-            self.player.Character.Humanoid:UnequipTools()
-            task.wait()
-            self.player.Character.Humanoid:EquipTool(tool)
-            while self.player and self.player.Character and not self.player.Character:FindFirstChildWhichIsA("Tool") do
-                task.wait()
-            end
-            ToolEvent:FireClient(self.player, "OnEquipped")
-            self:UnEquippedReady(false)
-        end)
-        return -- return earaly here
-    end
-    task.wait()
-    self.player.Character.Humanoid:UnequipTools()
-    task.wait()
-    self.player.Character.Humanoid:EquipTool(tool)
-    while not self.player.Character:FindFirstChildWhichIsA("Tool") do
-        task.wait()
-    end
-    ToolEvent:FireClient(self.player, "OnEquipped")
-end
-function PINV:_FormatWeight(weight)
-    if weight >= 1000 then
-		local tons = weight / 1000
-		if tons >= 1 and tons < 1000 then
-			return string.format("%.1f Ton", tons)
-		else
-			return string.format("%.0f Tons", tons)
-		end
-	else
-		return string.format("%.1f Kg", weight)
-	end
-end
-function PINV:_ScaleWeight(weight)
-    local ratio = weight / 50 -- base weight is 50kg
-    local factor = ratio^(1/3)
-    return 1 * factor
-end
+
+function PINV:_ScaleWeight(w) return 1 * (w / 50)^(1/3) end
 function PINV:_HoldFishAboveHead(fishName, Weight)
     if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
     self:_CleanHoldingFish()
@@ -106,27 +56,9 @@ function PINV:_HoldFishAboveHead(fishName, Weight)
     ClientAnimationEvent:FireClient(self.player, "HoldFishAboveHead")
 end
 
-function PINV:CreateHolsterRodAccessory(RodModel:Model)
-    if self.RodAccessory then
-        self.RodAccessory:Destroy()
-        self.RodAccessory = nil
-    end
-    local rodAccessory = Instance.new("Accessory")
-    rodAccessory.Name = "FishingRod"
 
-    local rodHandle = RodModel:FindFirstChild("Handle"):Clone()
-    rodHandle.Name = "Handle"
-    rodHandle.Parent = rodAccessory
-    
-    -- Add attachment that matches character hand
-    local gripAttachment = Instance.new("Attachment")
-    gripAttachment.Name = "BodyBackAttachment"
-    -- gripAttachment.CFrame = CFrame.new(0, 0, 0) -- offset from hand
-    gripAttachment.Position = Vector3.new(0.7, 0.2, 0.7)
-    gripAttachment.Orientation = Vector3.new(90, 90, 0)
-    gripAttachment.Parent = rodHandle
-    self.RodAccessory = rodAccessory
-end
+-- MAIN FUNCTIONS
+function PINV:GetEquipmentData(type:string, params) return c.EQUIPMENT.GED[type](c.EQUIPMENT.GED, params) end
 function PINV:ToggleHolsterRod()
     local hum = self.player.Character:WaitForChild("Humanoid")
     if not self.IsHolsterEquip then
@@ -135,21 +67,17 @@ function PINV:ToggleHolsterRod()
         self.IsHolsterEquip = true
     else
         self.HolsterRod:Destroy()
+        self.HolsterRod = nil
         self.IsHolsterEquip = false
     end
 end
-
-
--- MAIN FUNCTIONS
-function PINV:GetEquipmentData(type:string, params)
-    return c.EQUIPMENT.GED[type](c.EQUIPMENT.GED, params)
-end
-function PINV:AddRodToInventory(RodData,sort) -- OPTIMIZED (50% smaller)
-	local template = self.RodTemplate:Clone()
+-- == Add Rod To Inv ==
+function PINV:AddRodToInventory(RodData,sort)
+	local template = self.PUI.RodInventoryTemplateItem:Clone()
 	template.Name, template.Label.Text = RodData.name, RodData.name
 	template.Label.TextColor3, template.Icon.Image = c:GetRarityColor(RodData.rarity), RodData.icon
-	template.Visible, template.Parent = true, self.RodInventoryTab
-	
+	template.Visible, template.Parent = true, self.PUI.RodInventoryTab
+
 	local container = template.Container
 	if RodData.maxWeight>1 then container.MaxWeight.Text,container.MaxWeight.Visible="🔩"..RodData.maxWeight.."Kg",true end
 	if RodData.luck>1 then container.Luck.Text,container.Luck.Visible="☘️"..RodData.luck.."%",true end
@@ -159,37 +87,11 @@ function PINV:AddRodToInventory(RodData,sort) -- OPTIMIZED (50% smaller)
 	if sort then self.PUI:SortRodInventoryUI() end
 	return template
 end
-
-function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
-    local template = self.FishTemplate:Clone()
-    template.Name = FishName
-    template.Container.FishText.Text = FishName
-    template.Container.FishText.TextColor3 = c:GetRarityColor(FishInfo.rarity)
-    template.Container.FishWeight.Text = self:_FormatWeight(FishData.weight)
-    if FishInfo.icon then
-        template.Container.Icon.Image = FishInfo.icon
-    end
-    template.Visible = true
-    if FishData.locked then
-        template.Locked.Visible = FishData.locked
-    end
-    template.Parent = self.FishInventoryTab
-
-    template:SetAttribute("rarity", FishInfo.rarity)
-    template:SetAttribute("weight", FishData.weight)
-    template:SetAttribute("id", FishData.id)
-    template:SetAttribute("uniqueId", self.FishCounter)
-    if sort == nil then
-        sort = true
-    end
-    if sort then
-        self.PUI:SortFishInventoryUI()
-    end
-
-    if self.InventoryFishTween == nil then self.InventoryFishTween = {} end
+-- == Add Fish To Inv ==
+function PINV:_FishInventoryEventListener(template, FishName, FishData)
     local isPressed = false
     local isActive = false
-    template.MouseButton1Click:Connect(function()
+    self.FishInventoryClickConnection = template.MouseButton1Click:Connect(function()
         if isPressed then return end
         isPressed = true
         local tween = TS:Create(
@@ -200,12 +102,7 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
         tween:Play()
         table.insert(self.InventoryFishTween, tween)
         tween.Completed:Connect(function()
-            for i, t in ipairs(self.InventoryFishTween) do
-                if t == tween then
-                    table.remove(self.InventoryFishTween, i)
-                    break
-                end
-            end
+            for i, t in ipairs(self.InventoryFishTween) do if t == tween then table.remove(self.InventoryFishTween, i) break end end
             isPressed = false
             tween:Destroy()
         end)
@@ -214,9 +111,7 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
             if self.Data.FishInventory[tostring(FishData.id)] then
                 for _, weight in self.Data.FishInventory[tostring(FishData.id)] do
                     if type(weight) == "table" then
-                        if weight.uniqueId == template:GetAttribute("uniqueId") then
-                            weight.locked = template.Locked.Visible
-                        end
+                        weight.locked = weight.uniqueId == template:GetAttribute("uniqueId") and template.Locked.Visible or template.Locked.Visible
                     end
                 end
             end
@@ -229,24 +124,37 @@ function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
             end
         end
     end)
+end
+function PINV:_FormatWeight(w)
+    return w >= 1000
+           and (w < 1e6 and ("%.1f Ton"):format(w/1000) or ("%.0f Tons"):format(w/1000))
+           or ("%.1f Kg"):format(w)
+end
+function PINV:_AddFishToInventoryTab(FishData, FishName, FishInfo, sort)
+    local template = self.PUI.FishInventoryTemplateItem:Clone()
+    template.Name, template.Container.FishText.Text = FishName, FishName
+    template.Container.FishText.TextColor3 = c:GetRarityColor(FishInfo.rarity)
+    template.Container.FishWeight.Text = self:_FormatWeight(FishData.weight)
+    if FishInfo.icon then template.Container.Icon.Image = FishInfo.icon end
+    if FishData.locked then template.Locked.Visible = FishData.locked end
+    template.Parent, template.Visible = self.PUI.FishInventoryTab, true
 
+    template:SetAttribute("rarity", FishInfo.rarity)
+    template:SetAttribute("weight", FishData.weight)
+    template:SetAttribute("id", FishData.id)
+    template:SetAttribute("uniqueId", self.FishCounter)
+    if sort == nil then sort = true end
+    if sort then self.PUI:SortFishInventoryUI() end
+    self:_FishInventoryEventListener(template, FishName, FishData)
     return template
 end
 function PINV:_AddFishToFishShopTab(FishData, FishName, FishInfo)
-    local template = self.FishShopTemplate:Clone()
-    template.Name = FishName
-    template.Label.Text = FishName
-    template.Label.TextColor3 = c:GetRarityColor(FishInfo.rarity)
-    template.Weight.Text = self:_FormatWeight(FishData.weight)
-    if FishInfo.icon then
-        template.Icon.Image = FishInfo.icon
-    end
-    if FishData.locked then
-        template.Locked.Visible = FishData.locked
-    end
-    template.Price.Text = FishData.price or 0
-    template.Visible = true
-    template.Parent = self.FishShopSellList
+    local template = self.PUI.SellTemplateItem:Clone()
+    template.Name, template.Label.Text = FishName, FishName
+    template.Label.TextColor3, template.Weight.Text = c:GetRarityColor(FishInfo.rarity), self:_FormatWeight(FishData.weight)
+    if FishInfo.icon then template.Icon.Image = FishInfo.icon end
+    if FishData.locked then template.Locked.Visible = FishData.locked end
+    template.Price.Text, template.Visible, template.Parent = FishData.price or 0, true, self.PUI.SellFrame
     template:SetAttribute("rarity", FishInfo.rarity)
     template:SetAttribute("weight", FishData.weight)
     template:SetAttribute("price", FishData.price or 0)
@@ -263,27 +171,53 @@ function PINV:AddFishToInventory(FishData:table, sort:boolean)
     return FishInvFrame, FishShopFrame
 end
 
+
+-- ROD/TOOL TOGGLING
+function PINV:_RefreshTools()
+    if not self.ToolFolder then return end
+    for _, tool in pairs(self.player.Backpack:GetChildren()) do tool.Parent = self.ToolFolder end
+end
+function PINV:_EquipTool(toolName:string)
+    self:_RefreshTools()
+    local tool = self.ToolFolder:FindFirstChild(toolName)
+    if self.player.Character:FindFirstChildWhichIsA("Tool") then
+        ToolEvent:FireClient(self.player, "OnUnequipped")
+        task.spawn(function()
+            while self._OnUnequippedReady ~= true do task.wait() end
+            self.player.Character.Humanoid:UnequipTools()
+            task.wait()
+            self.player.Character.Humanoid:EquipTool(tool)
+            while self.player and self.player.Character and not self.player.Character:FindFirstChildWhichIsA("Tool") do task.wait() end
+            ToolEvent:FireClient(self.player, "OnEquipped")
+            self:UnEquippedReady(false)
+        end)
+        return -- return earaly here
+    end
+    self.player.Character.Humanoid:UnequipTools()
+    task.wait()
+    self.player.Character.Humanoid:EquipTool(tool)
+    while not self.player.Character:FindFirstChildWhichIsA("Tool") do task.wait() end
+    ToolEvent:FireClient(self.player, "OnEquipped")
+end
 function PINV:UnEquippedReady(bool:boolean)
     self._OnUnequippedReady = bool
 end
 
+
 -- SETUP
-function PINV:_CreateInventory()
-    local PlayerGui = self.player:WaitForChild("PlayerGui")
-    self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-    self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
-    self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
-    self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
-    self.RodTemplate = self.RodInventoryTab:WaitForChild("TemplateFishingRod")
-    self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
-
-    self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
-    self.FishTemplate = self.FishInventoryTab:WaitForChild("TemplateFish")
-
-    self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
-    self.FishShopSellList = self.FishShopSellTab.ScrollingFrame
-    self.FishShopTemplate = self.FishShopSellList.TemplateItem
+function PINV:CreateHolsterRodAccessory(RodModel:Model)
+    if self.RodAccessory then self.RodAccessory:Destroy() self.RodAccessory = nil end
+    local rodAccessory = Instance.new("Accessory")
+    rodAccessory.Name = "FishingRod"
+    local rodHandle = RodModel:FindFirstChild("Handle"):Clone()
+    rodHandle.Name, rodHandle.Parent = "Handle", rodAccessory
+    local gripAttachment = Instance.new("Attachment", rodHandle)
+    gripAttachment.Name, gripAttachment.Position, gripAttachment.Orientation = "BodyBackAttachment", Vector3.new(0.7, 0.2, 0.7), Vector3.new(90, 90, 0)
+    self.RodAccessory = rodAccessory
 end
+
+
+-- ENTRY POINTS
 function PINV:_CreateBackpack()
     if not self.player:FindFirstChild("Custom Backpack") then
         self.Backpack = Instance.new("Folder")
@@ -298,19 +232,31 @@ function PINV:_CreateBackpack()
         self.ToolFolder.Name = "Tool"
         self.ToolFolder.Parent = self.Backpack
     end
-    if not self.ToolFolder:FindFirstChild("FishingRod") then
-        self.FishingRod = ROD:Clone()
-        self.FishingRod.Parent = self.ToolFolder
-    end
+    if not self.ToolFolder:FindFirstChild("FishingRod") then self.FishingRod = ROD:Clone() self.FishingRod.Parent = self.ToolFolder end
 end
+function PINV:_CreateInventory()
+    local PlayerGui = self.player:WaitForChild("PlayerGui")
+    self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
+    self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+    self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
+    self.RodInventoryTab = self.PUI.RodInventoryTab
+    self.RodTemplate = self.PUI.RodInventoryTemplateItem
+    self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
 
--- ENTRY POINTS
+    self.FishInventoryTab = self.PUI.FishInventoryTab
+    self.FishTemplate = self.PUI.FishInventoryTemplateItem
+
+    self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
+    self.FishShopSellList = self.PUI.SellFrame
+    self.FishShopTemplate = self.PUI.SellTemplateItem
+end
 function PINV:new(player:Player, PUI:Instance)
     local self = setmetatable({}, PINV)
     self.player = player
     self.Data = DBM:LoadDataPlayer(self.player)
     self.PUI = PUI
     self.FishCounter = 0
+    self.InventoryFishTween = {}
     self:_CreateInventory()
     self:_CreateBackpack()
     return self
@@ -318,27 +264,14 @@ end
 
 -- CLEANING
 function PINV:CleanUp()
-    if self.FishingRod then
-        self.FishingRod:Destroy()
-        self.FishingRod = nil
-    end
-    if self.FishFolder then
-        self.FishFolder:Destroy()
-        self.FishFolder = nil
-    end
-    if self.ToolFolder then
-        self.ToolFolder:Destroy()
-        self.ToolFolder = nil
-    end
-    if self.Backpack then
-        self.Backpack:Destroy()
-        self.Backpack = nil
-    end
+    for k,v in pairs(self) do if typeof(v)=="RBXScriptConnection" then v:Disconnect() end end
+    if self.FishingRod then self.FishingRod:Destroy() self.FishingRod = nil end
+    if self.FishFolder then self.FishFolder:Destroy() self.FishFolder = nil end
+    if self.ToolFolder then self.ToolFolder:Destroy() self.ToolFolder = nil end
+    if self.Backpack then self.Backpack:Destroy() self.Backpack = nil end
     if self.InventoryFishTween then
-        for _, tween in pairs(self.InventoryFishTween) do
-            tween:Cancel()
-            tween:Destroy()
-        end
+        for _, t in pairs(self.InventoryFishTween) do t:Cancel() t:Destroy() t=nil end
+        self.InventoryFishTween = nil
     end
     self:_CleanHoldingFish()
     self.player = nil
