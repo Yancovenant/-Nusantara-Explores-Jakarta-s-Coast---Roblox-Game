@@ -21,7 +21,7 @@ function PUI:_AutoBackdropNWithinZone(proximityPart:Part, UIName:string, SelfUIS
             if not self.player or not self.player.Character or not self.player.Character:FindFirstChild("HumanoidRootPart") then break end
             if (self.player.Character.HumanoidRootPart.Position - proximityPart.Position).Magnitude > proximityPart:FindFirstChildWhichIsA("ProximityPrompt").MaxActivationDistance then
                 UI.Visible = false
-                for _, child in pairs(self.player.PlayerGui:GetChildren()) do child.Enabled = child.Name == "BackdropUI" and false or true end
+                for _, child in pairs(self.player.PlayerGui:GetChildren()) do child.Enabled = child.Name ~= "BackdropUI" end
                 break
             end
             task.wait(0.5)
@@ -29,9 +29,9 @@ function PUI:_AutoBackdropNWithinZone(proximityPart:Part, UIName:string, SelfUIS
     end)
     local UIList = self.player.PlayerGui:GetChildren()
     if UI.Visible then
-        for _, cd in pairs(UIList) do cd.Enabled = (cd.Name == "Freecam" or cd.Name == UIName or cd.Name == "BackdropUI") and true or false end
+        for _, cd in pairs(UIList) do cd.Enabled = (cd.Name == "Freecam" or cd.Name == UIName or cd.Name == "BackdropUI") end
     else
-        for _, cd in pairs(UIList) do cd.Enabled = cd.Name == "BackdropUI" and false or true end
+        for _, cd in pairs(UIList) do print(cd) cd.Enabled = cd.Name ~= "BackdropUI" end
     end
 end
 function PUI:ToggleFishShopUI(bool:boolean, part:Part)
@@ -226,7 +226,7 @@ function PUI:_CreatePlayerUI()
     self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
     self.ActionButton = self.InventoryUI.ActionButton
 
-    self.RodHotBar = self.HotBar:WaitForChild("FishingRod")
+    self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
     self.StatBarBtn = self.HotBar.Player
 
     self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Rod')

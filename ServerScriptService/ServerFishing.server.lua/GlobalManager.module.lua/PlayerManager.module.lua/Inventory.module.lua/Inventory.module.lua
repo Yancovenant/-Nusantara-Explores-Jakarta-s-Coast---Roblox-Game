@@ -10,27 +10,19 @@ local c = require(RS:WaitForChild("GlobalConfig"))
 
 -- HELPER
 function PINV:_CleanHoldingFish()
-    if self.HoldingFish then
-        self.HoldingFish:Destroy()
-        self.HoldingFish = nil
-    end
+    if self.HoldingFish then self.HoldingFish:Destroy() self.HoldingFish = nil end
     ClientAnimationEvent:FireClient(self.player, "Clean")
 end
-
 function PINV:_ScaleWeight(w) return 1 * (w / 50)^(1/3) end
 function PINV:_HoldFishAboveHead(fishName, Weight)
     if self.player.Character:FindFirstChildWhichIsA("Tool") then return end
     self:_CleanHoldingFish()
     local template = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild(fishName)
-    if not template then
-        template = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish")
-    end
+    if not template then template = RS:WaitForChild("Template"):WaitForChild("Fish"):FindFirstChild("TestFish") end
     local fish = template:Clone()
     local originalOrientation = template.Body.Orientation
     self.HoldingFish = fish
-    fish.Body.Anchored = false
-    fish.Body.CanCollide = false
-    fish.Body.Massless = true
+    fish.Body.Anchored, fish.Body.CanCollide, fish.Body.Massless = false, false, true
     fish:ScaleTo(self:_ScaleWeight(Weight))
     fish.Parent = self.player.Character.Head
     fish:SetPrimaryPartCFrame(
@@ -42,17 +34,14 @@ function PINV:_HoldFishAboveHead(fishName, Weight)
     )
     local head2FishAttachment
     if not self.player.Character.Head:FindFirstChild("Head2FishAttachment") then
-        head2FishAttachment = Instance.new("Attachment")
+        head2FishAttachment = Instance.new("Attachment", self.player.Character.Head)
         head2FishAttachment.Name = "Head2FishAttachment"
-        head2FishAttachment.Parent = self.player.Character.Head
     end
     local fish2HeadAttachment = Instance.new("Attachment")
     fish2HeadAttachment.Name = "Fish2HeadAttachment"
     fish2HeadAttachment.Parent = fish.Body
-    local fish2HeadWeld = Instance.new("WeldConstraint")
-    fish2HeadWeld.Part0 = fish.Body
-    fish2HeadWeld.Part1 = self.player.Character.Head
-    fish2HeadWeld.Parent = fish.Body
+    local fish2HeadWeld = Instance.new("WeldConstraint", fish.Body)
+    fish2HeadWeld.Part0, fish2HeadWeld.Part1 = fish.Body, self.player.Character.Head
     ClientAnimationEvent:FireClient(self.player, "HoldFishAboveHead")
 end
 
@@ -235,18 +224,18 @@ function PINV:_CreateBackpack()
     if not self.ToolFolder:FindFirstChild("FishingRod") then self.FishingRod = ROD:Clone() self.FishingRod.Parent = self.ToolFolder end
 end
 function PINV:_CreateInventory()
-    local PlayerGui = self.player:WaitForChild("PlayerGui")
-    self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-    self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
-    self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
+    -- local PlayerGui = self.player:WaitForChild("PlayerGui")
+    -- self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
+    -- self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
+    -- self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
     self.RodInventoryTab = self.PUI.RodInventoryTab
     self.RodTemplate = self.PUI.RodInventoryTemplateItem
-    self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
+    -- self.FishingRodBtn = self.HotBar:WaitForChild("FishingRod")
 
     self.FishInventoryTab = self.PUI.FishInventoryTab
     self.FishTemplate = self.PUI.FishInventoryTemplateItem
 
-    self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
+    -- self.FishShopSellTab = PlayerGui:WaitForChild("FishShopUI").ShopTabContainer.RightPanel.ContentArea.Sell
     self.FishShopSellList = self.PUI.SellFrame
     self.FishShopTemplate = self.PUI.SellTemplateItem
 end

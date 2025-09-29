@@ -303,7 +303,7 @@ function PM:_UpdateFishingRodModel()
     handle.Parent = self.PINV.FishingRod
     handle:FindFirstChild("Main").Part1 = Rod
 
-    self.PUI.RodHotBar.Icon.Image = RodData.icon
+    self.PUI.FishingRodBtn.Icon.Image = RodData.icon
     self.PINV:CreateHolsterRodAccessory(RodModel)
     self:_SetupPlayerAttributes()
 end
@@ -351,9 +351,9 @@ function PM:ToggleFishShopUI(GRM, ...)
                 end
             end
         end
-                self:_CleanUpFishingShopBuyPage()
-                    end
-                end
+        self:_CleanUpFishingShopBuyPage()
+    end
+end
 -- == Populate Data Stored ==
 function PM:_CreateLeaderstats()
     local leaderstats
@@ -425,9 +425,6 @@ function PM:_PopulateData()
     end)
 end
 function PM:_SetupEventListener()
-    self.FishingRodBtnClickConnection = self.PINV.FishingRodBtn.MouseButton1Click:Connect(function()
-        self:ToggleRod()
-    end)
     self.SellAllButtonClickConnection = self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
         local sellableFish = {}
         local totalValue = 0
@@ -535,6 +532,9 @@ function PM:_SetupEventListener()
     end)
     self.StatHotBarBtnClickConnection = self.PUI.StatBarBtn.MouseButton1Click:Connect(function()
         self:TogglePlayerModal()
+    end)
+    self.FishingRodBtnClickConnection = self.PUI.FishingRodBtn.MouseButton1Click:Connect(function()
+        self:ToggleRod()
     end)
 end
 function PM:new(player)
