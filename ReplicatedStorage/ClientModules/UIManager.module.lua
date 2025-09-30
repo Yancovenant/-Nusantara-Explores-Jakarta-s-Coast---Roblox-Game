@@ -9,6 +9,7 @@ local countKeys = function(t) local n=0 for _ in pairs(t) do n+=1 end return n e
 
 
 -- MAIN FUNCTIONS
+-- == TopBar ==
 function CUI:UpdateTime(t)
     if t == nil then
         t = {hour = Lighting:GetAttribute("Hour"), min = Lighting:GetAttribute("Minute")}
@@ -17,20 +18,11 @@ function CUI:UpdateTime(t)
     local nM = string.format("%02d", t.min)    
     self.TopBarUI.Time.TimeText.Text = nH .. ":" .. nM
 end
-
+-- == Player Info ==
 function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
-    local expText = math.floor(CurrentXp) .. " / " .. math.floor(RequiredXp)
-	self.LevelText.Text.Text = expText ---
-    self.ExpUITooltip.Text = expText
-	TS:Create(
-		self.ExpUI.Fill,
-		TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-		{Size = UDim2.new(CurrentXp/RequiredXp,0,1,0)}
-	):Play()
-	self.GainedXpText.Text = "+" .. math.floor(GainedXp) .. " XP!"
-	self.GainedXpText.TextTransparency = 0
-	self.GainedXpText.Position = UDim2.new(0.5, 0, 0.3, 0)
-    self.GainedXpText.Visible = true
+    self.LevelText.Text = "Level " .. Level
+	self.GainedXpText.Text, self.GainedXpText.Position = "+" .. math.floor(GainedXp) .. " XP!", UDim2.new(0.5, 0, 0.3, 0)
+	self.GainedXpText.TextTransparency, self.GainedXpText.Visible = 0, true
 	local tweenUp = TS:Create(self.GainedXpText, TweenInfo.new(1), {
         Position = UDim2.new(0.5, 0, -1, 0),
         TextTransparency = 1
@@ -41,32 +33,27 @@ function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
     end)
 end
 function CUI:UpdateMoney(Money, GainedMoney)
-    self.MoneyUI.Text.Text = math.floor(Money)
+    self.MoneyUI.Label.Text = math.floor(Money)
 end
 
 
+-- SORT
+-- == Inventory Rod ==
 function CUI:SortRodInventoryUI()
     local RodList = {}
-    for _, rod in pairs(self.RodInventoryTab:GetChildren()) do
-        if rod.Name ~= "TemplateFishingRod" and rod:IsA("TextButton") then
-            table.insert(RodList,{
-                instance = rod,
-                rarity = c.RARITY_ORDER[rod:GetAttribute("rarity")] or 0,
-                id = tonumber(rod:GetAttribute("id")) or 0
-            })
+    for _, rd in pairs(self.RodInventoryTab:GetChildren()) do
+        if rd.Name ~= "TemplateFishingRod" and rd:IsA("TextButton") then
+            table.insert(RodList,{inst = rd,rarity = c.RARITY_ORDER[rd:GetAttribute("rarity")] or 0,id = tonumber(rd:GetAttribute("id")) or 0})
         end
     end
     table.sort(RodList, function(a, b)
-        if a.rarity ~= b.rarity then
-            return a.rarity > b.rarity
-        end
+        if a.rarity ~= b.rarity then return a.rarity > b.rarity end
         return a.id > b.id
     end)
-    for i, FishData in ipairs(RodList) do
-        FishData.instance.LayoutOrder = i
-    end
+    for i, fd in ipairs(RodList) do fd.inst.LayoutOrder = i end
 end
-function CUI:SortFishInventoryUI() -- OPTIMIZED (60% faster)
+-- == Inventory Fish ==
+function CUI:SortFishInventoryUI()
 	local fishList={} for _,f in pairs(self.FishInventoryTab:GetChildren()) do
 		if f.Name~="TemplateFish"and f:IsA("TextButton")then
 			table.insert(fishList,{inst=f,rarity=c.RARITY_ORDER[f:GetAttribute("rarity")] or 0,id=tonumber(f:GetAttribute("id")) or 0})
@@ -78,8 +65,9 @@ function CUI:SortFishInventoryUI() -- OPTIMIZED (60% faster)
     end)
 	for i,f in ipairs(fishList)do f.inst.LayoutOrder=i end self.FishTabBtn.Count.Text=#fishList
 end
+-- == Shop Fish ==
 function CUI:SortFishShopUI()
-    local FishList = {} for _, f in pairs(self.FishShopSellPageFrame.ScrollingFrame:GetChildren()) do
+    local FishList = {} for _, f in pairs(self.SellPage.ScrollingFrame:GetChildren()) do
         if f.Name ~= "TemplateItem" and f:IsA("TextButton") then
 			table.insert(FishList, {inst=f,rarity = c.RARITY_ORDER[f:GetAttribute("rarity")] or 0,id = tonumber(f:GetAttribute("id")) or 0})
         end
@@ -90,6 +78,10 @@ function CUI:SortFishShopUI()
     end)
     for i,f in ipairs(FishList) do f.inst.LayoutOrder = i end
 end
+-- == Mising Boat
+
+
+-- UI OPEN TOGGLE
 function CUI:_UpdatePlayerModalData(data)
     self.PMDisplayName.Text = Player.DisplayName
     local success, content, isReady = pcall(function()
@@ -103,7 +95,7 @@ function CUI:_UpdatePlayerModalData(data)
     self.PMAttractiveUI.Value.Text = data.attraction
 end
 function CUI:TogglePlayerModal(attrs:table)
-    if Player:GetAttribute("InMinigame") then return end
+    -- if Player:GetAttribute("InMinigame") then return end
     if Player:GetAttribute("ModalShown") and Player:GetAttribute("ModalShown") ~= "PlayerModal" then
         -- return -- could close other modal and then show this.
         self:ToggleInventory()
@@ -133,7 +125,7 @@ function CUI:TogglePlayerModal(attrs:table)
     end
 end
 function CUI:ToggleInventory()
-    if Player:GetAttribute("InMinigame") then return end
+    -- if Player:GetAttribute("InMinigame") then return end
     if Player:GetAttribute("ModalShown") and Player:GetAttribute("ModalShown") ~= "Inventory" then
         -- return -- could close other modal and then show this.
         self:TogglePlayerModal(self._tempAttrs)
@@ -148,7 +140,6 @@ function CUI:ToggleInventory()
         self.ShownPlayerInfoTween:Play()
         self.ClosedInventoryTween.Completed:Connect(function()
             self.MockTabContainer.Visible = not isShown
-            
         end)
         self.ShownHotbarTween.Completed:Connect(function()
             self.FishingUI.Enabled = true
@@ -168,6 +159,7 @@ function CUI:ToggleInventory()
     end
 end
 
+-- FISH INDEX
 function CUI:_UpdateFishIndex(template:Instance, FishIndex:table)
     local id = template:GetAttribute("id")
     local name = template:GetAttribute("name")
@@ -229,13 +221,10 @@ function CUI:PopulateFishIndex(FishIndex:table)
         template:SetAttribute("name", FD.name)
         template:SetAttribute("rarity", FD.rarity)
         template:SetAttribute("habitat", FD.habitat)
-        template.Parent = self.PMFishIndexFrame
-        template.Name = FD.name
+        template.Parent, template.Name = self.PMFishIndexFrame, FD.name
         template.Frame.Icon.Image = FD.icon
-        template.LayoutOrder = i
+        template.LayoutOrder, template.Visible = i, true
         self:_UpdateFishIndex(template, FishIndex)
-        
-        template.Visible = true
     end
     local Discovered = countKeys(FishIndex)
     local Total = #FishList
@@ -244,52 +233,18 @@ function CUI:PopulateFishIndex(FishIndex:table)
 end
 
 
-
--- SETUP
+-- ENTRY POINTS
 function CUI:_CreateTweens()
-    self.ShownHotbarTween = TS:Create(
-        self.HotBar,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.5, 0, 0.875, 0)}
-    )
-    self.ClosedHotbarTween = TS:Create(
-        self.HotBar,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.5, 0, 1.375, 0)}
-    )
-	self.ShownPlayerInfoTween = TS:Create(
-        self.PlayerInfoUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.025, 0, 0.775, 0)}
-    )
-    self.ClosedPlayerInfoTween = TS:Create(
-        self.PlayerInfoUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Position = UDim2.new(0.025, 0, 1.375, 0)}
-    )
-    self.ShownPlayerModalTween = TS:Create(
-        self.PlayerModalUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Size = UDim2.new(0.8, 0, 0.75, 0)}
-    )
-    self.ClosedPlayerModalTween = TS:Create(
-        self.PlayerModalUI,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
-        ),
-        {Size = UDim2.new(0, 0, 0, 0)}
-    )
+    local TWInfo = TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut)
+    self.ShownHotbarTween = TS:Create(self.HotBar,TWInfo,{Position = UDim2.new(0.5, 0, 0.875, 0)})
+    self.ClosedHotbarTween = TS:Create(self.HotBar,TWInfo,{Position = UDim2.new(0.5, 0, 1.375, 0)})
+	self.ShownPlayerInfoTween = TS:Create(self.PlayerInfoUI,TWInfo,{Position = UDim2.new(0.025, 0, 0.775, 0)})
+    self.ClosedPlayerInfoTween = TS:Create(self.PlayerInfoUI,TWInfo,{Position = UDim2.new(0.025, 0, 1.375, 0)})
 
-    self.ShownInventoryTween = TS:Create(
-        self.MockTabContainer,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut),
-        {Size = UDim2.new(0.8, 0, 0.75, 0)}
-    )
-    self.ClosedInventoryTween = TS:Create(
-        self.MockTabContainer,
-        TweenInfo.new(0.3,Enum.EasingStyle.Back,Enum.EasingDirection.InOut
-        ),
-        {Size = UDim2.new(0, 0, 0, 0)}
-    )
+    self.ShownPlayerModalTween = TS:Create(self.PlayerModalUI,TWInfo,{Size = UDim2.new(0.8, 0, 0.75, 0)}) -- stat
+    self.ClosedPlayerModalTween = TS:Create(self.PlayerModalUI,TWInfo,{Size = UDim2.new(0, 0, 0, 0)})
+    self.ShownInventoryTween = TS:Create(self.MockTabContainer,TWInfo,{Size = UDim2.new(0.8, 0, 0.75, 0)}) -- inv
+    self.ClosedInventoryTween = TS:Create(self.MockTabContainer,TWInfo,{Size = UDim2.new(0, 0, 0, 0)})
 end
 function CUI:_SetupEventListener()
     -- Page Layout
@@ -324,7 +279,7 @@ function CUI:_SetupEventListener()
     self.CloseInvButton.MouseButton1Click:Connect(function()
         ToolEvent:FireServer("ToggleInventory")
     end)
-    -- Missing shop
+    -- == Missing shop ==
 
     -- Backpack HotBar
     self.BackpackBtn.MouseEnter:Connect(function()
@@ -337,10 +292,6 @@ function CUI:_SetupEventListener()
         ToolEvent:FireServer("ToggleInventory")
 	end)
 end
-
-
-
--- ENTRY POINTS
 function CUI:_CreateUI()
     local PlayerGui = Player:WaitForChild("PlayerGui")
 

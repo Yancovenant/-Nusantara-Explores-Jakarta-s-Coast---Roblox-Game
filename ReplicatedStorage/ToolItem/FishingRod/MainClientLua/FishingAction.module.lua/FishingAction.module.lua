@@ -5,9 +5,8 @@ local FUI = require(script.Parent.FishingUI)
 local ROD = script.Parent.Parent
 
 
-local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RS, UIS = game:GetService("ReplicatedStorage"), game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
 local CollectionService = game:GetService("CollectionService")
 
 local Player:Player = game:GetService("Players").LocalPlayer
@@ -47,12 +46,9 @@ function FA:_setAttr(key, value)
     Player.Character:SetAttribute(key, value)
 end
 function FA:SetFishingWalkSpeed(bool:boolean)
-	if bool then
-		Humanoid.WalkSpeed = c.FISHING.WalkSpeed
-	else
-		Humanoid.WalkSpeed = c.PLAYER.HUMANOID_DEFAULT_ATTRS.WalkSpeed
-	end
+	if bool then Humanoid.WalkSpeed = c.FISHING.WalkSpeed else Humanoid.WalkSpeed = c.PLAYER.HUMANOID_DEFAULT_ATTRS.WalkSpeed end
 end
+
 
 -- MINIGAME
 function FA:_RunReelMinigame(str)
@@ -183,7 +179,7 @@ function FA:_OnBite(strengthAttribute:number)
 	FishBaitSound:Play()
 	FishBaitSound.Ended:Wait()
     GlobalEvent:FireServer("PlayFishingSound", "Reel", ROD, true, true)
-	
+
 	local success = self:_RunReelMinigame(strengthAttribute)
 
 	GlobalEvent:FireServer("CleanFishingSounds")
@@ -211,7 +207,7 @@ function FA:_OnCastApproved(success:boolean, result)
     end
 end
 
--- TOOLS EVENTS STATIC METHODS
+-- == Fishing Process, Start Release, Fish (Loop) ==
 function FA:Fishing(target)
     if self:IsFishing() or not self:CanFish() then return end
 	self:_setAttr("IsFishing", true)
@@ -250,8 +246,7 @@ function FA:Fishing(target)
 	idleFishingAnimation:Play()
 	idleFishingAnimation:AdjustSpeed(1)
 	StartCast:FireServer(isWater(), power)
-	
-	
+
 	self._ClickReady = true
 	self._IsMouseDown = false
 end
@@ -308,6 +303,7 @@ function FA:StartCast(AFKPOWER)
 	startCastTrack:AdjustSpeed(1)
 	FUI.PowerBar.Visible = false
 end
+-- == AFK Toggle ==
 function FA:StopAfk()
     self.IsAFK = false
     if self.AfkConnection then
@@ -341,7 +337,6 @@ function FA:StartAfk()
 	})
 	self.AfkConnection = task.spawn(afkLoop)
 end
--- === MOST Interaction Entry Points
 function FA:ToggleAfk()
     if self.IsAFK then
 		self:StopAfk()
@@ -356,6 +351,7 @@ function FA:ToggleAfk()
 		self:StartAfk()
 	end
 end
+-- == Fishing Rod Equip/Unequip ==
 function FA:OnUnequipped()
     self:CleanConnections()
     self:CleanUp()
@@ -417,67 +413,25 @@ function FA:CleanUp()
 	self:SetFishingWalkSpeed(false)
 	GlobalEvent:FireServer("ShowFishBiteUI", false)
 end
-function FA:CleanConnections()
-    -- === uis ===
-    if self.FishingIBConnection then
-        self.FishingIBConnection:Disconnect()
-        self.FishingIBConnection = nil
-    end
-    if self.FishingIEConnection then
-        self.FishingIEConnection:Disconnect()
-        self.FishingIEConnection = nil
-    end
-    if self.AFBConnection then
-        self.AFBConnection:Disconnect()
-        self.AFBConnection = nil
-    end
-    -- === remote ===
-    if self.CAConnection then
-        self.CAConnection:Disconnect()
-        self.CAConnection = nil
-    end
-    if self.BEConnection then
-        self.BEConnection:Disconnect()
-        self.BEConnection = nil
-    end
-    if self.CRConnection then
-        self.CRConnection:Disconnect()
-        self.CRConnection = nil
-    end
-    if self.CTFConnection then
-        self.CTFConnection:Disconnect()
-        self.CTFConnection = nil
-    end
-    if self.TEConnection then
-        self.TEConnection:Disconnect()
-        self.TEConnection = nil
-    end
-	FUI:CleanUp()
-end
+
 
 -- ENTRY POINTS
+function FA:CleanConnections()
+	for k,v in pairs(self) do print(k, v, typeof(v)) if typeof(v)=="RBXScriptConnection" then v:Disconnect() v=nil end end
+	FUI:CleanUp()
+end
 function FA:SetupEventListener()
     -- === fishing events ===
-    local CastApproved = FishingRemotes:WaitForChild("CastApproved")
-    local BiteEvent = FishingRemotes:WaitForChild("Bite")
-    local CatchResult = FishingRemotes:WaitForChild("CatchResult")
-    local CatchTweenFinish = FishingRemotes:WaitForChild("CatchTweenFinish")
-    self.CAConnection = CastApproved.OnClientEvent:Connect(function(success: boolean, result)
-        self:_OnCastApproved(success, result)
-    end)
-    self.BEConnection = BiteEvent.OnClientEvent:Connect(function(...)
-        self:_OnBite(...)
-    end)
-    self.CRConnection = CatchResult.OnClientEvent:Connect(function(fishInfo:table)
-        self:_OnCatchResult(fishInfo)
-    end)
-    self.CTFConnection = CatchTweenFinish.OnClientEvent:Connect(function()
-        self:_OnCatchTweenFinish()
-    end)
+    local CA = FishingRemotes:WaitForChild("CastApproved")
+    local BE = FishingRemotes:WaitForChild("Bite")
+    local CR = FishingRemotes:WaitForChild("CatchResult")
+    local CTF = FishingRemotes:WaitForChild("CatchTweenFinish")
+    self.CAConnection = CA.OnClientEvent:Connect(function(...) self:_OnCastApproved(...) end)
+    self.BEConnection = BE.OnClientEvent:Connect(function(...) self:_OnBite(...) end)
+    self.CRConnection = CR.OnClientEvent:Connect(function(...) self:_OnCatchResult(...) end)
+    self.CTFConnection = CTF.OnClientEvent:Connect(function(...) self:_OnCatchTweenFinish(...) end)
     -- === tools events ===
-    self.TEConnection = ToolEvent.OnClientEvent:Connect(function(method, params)
-        self[method](self, params)
-    end)
+    self.TEConnection = ToolEvent.OnClientEvent:Connect(function(method, ...) self[method](self, ...) end)
 end
 
 

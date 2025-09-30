@@ -6,8 +6,8 @@ LUIC.__index = LUIC
 local TS = game:GetService("TweenService")
 
 local Player = game:GetService("Players").LocalPlayer
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local c = require(ReplicatedStorage:WaitForChild("GlobalConfig"))
+local RS = game:GetService("ReplicatedStorage")
+local c = require(RS:WaitForChild("GlobalConfig"))
 
 local camera: Camera = workspace.CurrentCamera
 local DEFAULT_CAMFOV = camera.FieldOfView
@@ -204,7 +204,7 @@ end
 -- ENTRY POINTS
 function LUIC:CreateFishingUI()
 	local PlayerGui = Player:WaitForChild("PlayerGui")
-    local fishingUI = Player:WaitForChild("PlayerGui"):WaitForChild("FishingUI")
+    local fishingUI = PlayerGui:WaitForChild("FishingUI")
     self.AutoFishButton =  fishingUI:WaitForChild("AutoFishButton")
     self.PowerBar = fishingUI:WaitForChild("PowerBar")
 	self.PopupFrame = fishingUI:WaitForChild("PopupFrame")
