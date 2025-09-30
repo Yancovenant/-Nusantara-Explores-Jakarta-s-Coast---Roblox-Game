@@ -4,17 +4,15 @@ local CPM, RS, UIS, TS = {}, game:GetService("ReplicatedStorage"), game:GetServi
 local Player, Character = game:GetService("Players").LocalPlayer, game:GetService("Players").LocalPlayer.Character or game:GetService("Players").LocalPlayer.CharacterAdded:Wait()
 local Humanoid = Character:WaitForChild("Humanoid")
 
-local ToolEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("Inventory"):WaitForChild("Tool")
-local TimeEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("GlobalEvents"):WaitForChild("TimeEvent")
-local AnimationEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClientAnimation")
-local UIEvent = game:GetService("ReplicatedStorage"):WaitForChild("Remotes"):WaitForChild("ClientEvents"):WaitForChild("UIEvent")
-local holdingFishAnimation = game:GetService("ReplicatedStorage"):WaitForChild("Animations"):WaitForChild("HoldingFish")
+local RemoteFolder = RS:WaitForChild("Remotes")
+local ToolEvent, TimeEvent, AnimationEvent, UIEvent = RemoteFolder.Inventory.Tool, RemoteFolder.GlobalEvents.TimeEvent, RemoteFolder.ClientAnimation, RemoteFolder.ClientEvents.UIEvent
+local holdingFishAnimation = RS:WaitForChild("Animations"):WaitForChild("HoldingFish")
 
-local CAM = require(RS:WaitForChild("ClientModules"):WaitForChild("AnimationManager"))
-local CUI = require(RS:WaitForChild("ClientModules"):WaitForChild("UIManager"))
+local ClientModules = RS:WaitForChild("ClientModules")
+local CAM, CUI = require(ClientModules.AnimationManager), require(ClientModules.UIManager)
 local c = require(RS:WaitForChild("GlobalConfig"))
 
-local camera: Camera = workspace.CurrentCamera
+local camera = workspace.CurrentCamera
 local DEFAULT_CAMFOV = camera.FieldOfView
 
 -- KeyCode
@@ -29,6 +27,7 @@ function CPM:_SetUIS()
 	if UIS.TouchEnabled and not UIS.GyroscopeEnabled then
 		-- mobile
 	else
+		-- Desktop Keyboard
 		UIS.InputBegan:Connect(function(input: InputObject, gp: boolean)
 			local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 			if gp then return end
@@ -52,8 +51,7 @@ function CPM:_SetUIS()
 			if input.UserInputType == Enum.UserInputType.Keyboard then
 				local cantRun = Character:GetAttribute("IsFishing") or Character:GetAttribute("IsCasting")
 				if input.KeyCode == runKey then
-					if not self.isRunning then return end
-					if cantRun then return end
+					if not self.isRunning or cantRun then return end
 					self.isRunning = false
 					Humanoid.WalkSpeed = c.PLAYER.HUMANOID_DEFAULT_ATTRS.WalkSpeed
 					self.walkingTween:Play()
@@ -73,6 +71,7 @@ function CPM:_SetRemoteEventListener()
 		local animationTrack:AnimationTrack = CAM:LoadAnimation(animation)
 		animationTrack:Play()
 	end)
+	-- == CUI ==
 	TimeEvent.OnClientEvent:Connect(function(timeInfo)
 		CUI:UpdateTime(timeInfo)
 	end)
@@ -85,12 +84,8 @@ function CPM:_SetEventListener()
 	self:_SetRemoteEventListener()
 end
 function CPM:_SetPlayerConfig()
-	for k, v in pairs(c.PLAYER.DEFAULT_ATTRS) do
-		Player[k] = v
-	end
-	for k, v in pairs(c.PLAYER.HUMANOID_DEFAULT_ATTRS) do
-		Humanoid[k] = v
-	end
+	for k, v in pairs(c.PLAYER.DEFAULT_ATTRS) do Player[k] = v end
+	for k, v in pairs(c.PLAYER.HUMANOID_DEFAULT_ATTRS) do Humanoid[k] = v end
 end
 function CPM:main()
 	CUI:main()

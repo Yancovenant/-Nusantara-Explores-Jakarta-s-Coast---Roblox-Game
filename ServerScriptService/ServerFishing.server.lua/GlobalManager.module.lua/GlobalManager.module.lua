@@ -183,38 +183,16 @@ function GM:CreateBobber(player, params)
     end)
 end
 
--- PLAYER MANAGER (PM) CONNECTION
--- === zone ===
-function GM:_onUpdatePlayerZones(player:Player, zoneName:string)
-    while self.PlayerManagers[player] == nil do
-        task.wait(0.5)
-    end
-    self.PlayerManagers[player]:updatePlayerZone(zoneName)
-end
-
-
--- PLAYER SETUP FUNCTIONS
--- === zone ===
-function GM:_setupPlayerZones(player)
-    if self.PlayerZones[player] == nil then
-        self.PlayerZones[player] = {
-            currentZone = nil
-        }
+-- MAIN
+-- == Global Sound ==
+function GM:CleanSounds(player)
+    for i,sound in ipairs(self.PlayerData[player].CleanableSounds) do
+        sound:Stop()
+        table.remove(self.PlayerData[player].CleanableSounds, i)
     end
 end
--- === manager ===
-function GM:_setupPlayerManager(player)
-    if self.PlayerManagers[player] == nil then
-        self.PlayerManagers[player] = PM:new(player)
-    end
-end
-
-
--- STATIC METHOD
 function GM:PlaySound(player, sound:Sound, cleanable:boolean, looped:boolean)
-    if cleanable then
-        table.insert(self.PlayerData[player].CleanableSounds, sound)
-    end
+    if cleanable then table.insert(self.PlayerData[player].CleanableSounds, sound) end
     sound:Play()
     if cleanable then
         if not looped then
@@ -229,48 +207,7 @@ function GM:PlaySound(player, sound:Sound, cleanable:boolean, looped:boolean)
         end
     end
 end
-function GM:CleanSounds(player)
-    for i,sound in ipairs(self.PlayerData[player].CleanableSounds) do
-        sound:Stop()
-        table.remove(self.PlayerData[player].CleanableSounds, i)
-    end
-end
-
-
--- CLEANUP
-function GM:CleanUp(player:Player)
-    self:CleanBobber(player)
-    self:CleanSounds(player)
-end
-
-
--- ENTRY POINTS
--- === interaction ===
--- PROXOMITY
-function GM:ToggleFishShopUI(player, ...)
-    self.PlayerManagers[player]:ToggleFishShopUI(...)
-end
-function GM:OnBoatSpawnUI(player, ...)
-    self.PlayerManagers[player]:ToggleBoatShopUI(...)
-end
-function GM:OnBoatDrive(player, ...)
-    self.PlayerManagers[player]:OnBoatDrive(...)
-end
-
--- ToolEvent
-function GM:ToggleInventory(player)
-   self.PlayerManagers[player]:ToggleInventory()
-end
-function GM:ToggleRod(player)
-   self.PlayerManagers[player]:ToggleRod()
-end
-function GM:UnEquippedReady(player, bool)
-    self.PlayerManagers[player]:UnEquippedReady(bool)
-end
-function GM:TogglePlayerModal(player)
-    self.PlayerManagers[player]:TogglePlayerModal()
-end
--- FishingEvent
+-- == Fishing Sound ==
 function GM:PlayFishingSound(player, sound, tool, cleanable, looped)
     local strack = tool:WaitForChild("Sounds"):FindFirstChild(sound)
     self:PlaySound(player, strack, cleanable or true, looped or false)
@@ -317,31 +254,71 @@ function GM:CatchResultSuccess(player:Player, success, ROD, info)
         CatchTweenFinishEvent:FireClient(player)
     end)
 end
+
+-- PLAYER MANAGER
+-- == Fish Shop Page ==
+function GM:ToggleFishShopUI(player, ...)
+    self.PlayerManagers[player]:ToggleFishShopUI(...)
+end
+function GM:OnBoatSpawnUI(player, ...) -- Boat Shop
+    self.PlayerManagers[player]:ToggleBoatShopUI(...)
+end
+function GM:OnBoatDrive(player, ...)
+    self.PlayerManagers[player]:OnBoatDrive(...)
+end
+-- == Boat Shop And Drive ==
+-- == Fishing ==
 function GM:ShowFishBiteUI(player, visible)
     self.PlayerManagers[player]:ShowFishBiteUI(visible)
 end
 function GM:ShowPowerCategoryUI(player, power)
     self.PlayerManagers[player]:ShowPowerCategoryUI(power)
 end
--- === zone ===
-function GM:playerEnteredZone(player:Player, zone: Part)
-    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
-    local pz = self.PlayerZones[player]
-    if pz and pz.currentZone == zone.Name then return end
-    pz.currentZone = zone.Name
-    self.PlayerZones[player].currentZone = pz.currentZone
-    self:_onUpdatePlayerZones(player, pz.currentZone)
+-- == ToolEvent ==
+function GM:ToggleInventory(player)
+    self.PlayerManagers[player]:ToggleInventory()
 end
-function GM:playerExitedZone(player:Player, zone: Part)
-    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
-    local pz = self.PlayerZones[player]
-    if pz and pz.currentZone ~= zone.Name then return end
-    if self:_isStillInside(player, zone) then return end
-    pz.currentZone = "Ocean"
-    self.PlayerZones[player].currentZone = pz.currentZone
-    self:_onUpdatePlayerZones(player, pz.currentZone)
+function GM:ToggleRod(player)
+    self.PlayerManagers[player]:ToggleRod()
 end
--- === player ===
+function GM:UnEquippedReady(player, bool)
+    self.PlayerManagers[player]:UnEquippedReady(bool)
+end
+function GM:TogglePlayerModal(player)
+    self.PlayerManagers[player]:TogglePlayerModal()
+end
+
+
+
+-- GM SETUP
+function GM:_setupPlayerManager(player)
+    if self.PlayerManagers[player] == nil then self.PlayerManagers[player] = PM:new(player) end
+end
+function GM:_setupPlayerZones(player)
+    if self.PlayerZones[player] == nil then self.PlayerZones[player] = {currentZone = nil} end
+end
+GM.ALLOWED_METHOD = {
+    "ToggleRod",
+    "ToggleInventory",
+    "TogglePlayerModal",
+
+    "UnEquippedReady",
+
+    "PlayFishingSound",
+    "CatchResultSuccess",
+    "ShowFishBiteUI",
+    "CleanFishingSounds",
+    "CleanBobber",
+    "CreateBobber",
+    "ShowPowerCategoryUI"
+}
+GM.PlayerZones = {}
+GM.PlayerManagers = {}
+GM.PlayerData = {}
+function GM:SetupServer()
+    -- self.CleanableSounds = {} -- emtpy
+end
+-- == Player Added/Removed ==
 function GM:playerAdded(player:Player)
     if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
     if not self.PlayerManagers[player] then self:_setupPlayerManager(player) end
@@ -367,35 +344,39 @@ function GM:playerRemoved(player:Player)
         self.PlayerManagers[player] = nil
     end
 end
-
-
-GM.ALLOWED_METHOD = {
-    "ToggleRod",
-    "ToggleInventory",
-    "TogglePlayerModal",
-
-    "UnEquippedReady",
-
-    "PlayFishingSound",
-    "CatchResultSuccess",
-    "ShowFishBiteUI",
-    "CleanFishingSounds",
-    "CleanBobber",
-    "CreateBobber",
-    "ShowPowerCategoryUI"
-}
-GM.PlayerZones = {}
-GM.PlayerManagers = {}
-GM.PlayerData = {}
-function GM:SetupServer()
-    -- self.CleanableSounds = {}
+-- == Zone Enter/Exit ==
+function GM:_onUpdatePlayerZones(player:Player, zoneName:string)
+    while self.PlayerManagers[player] == nil do
+        task.wait(0.5)
+    end
+    self.PlayerManagers[player]:updatePlayerZone(zoneName)
+end
+function GM:playerEnteredZone(player:Player, zone: Part)
+    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
+    local pz = self.PlayerZones[player]
+    if pz and pz.currentZone == zone.Name then return end
+    pz.currentZone = zone.Name
+    self.PlayerZones[player].currentZone = pz.currentZone
+    self:_onUpdatePlayerZones(player, pz.currentZone)
+end
+function GM:playerExitedZone(player:Player, zone: Part)
+    if not self.PlayerZones[player] then self:_setupPlayerZones(player) end
+    local pz = self.PlayerZones[player]
+    if pz and pz.currentZone ~= zone.Name then return end
+    if self:_isStillInside(player, zone) then return end
+    pz.currentZone = "Ocean"
+    self.PlayerZones[player].currentZone = pz.currentZone
+    self:_onUpdatePlayerZones(player, pz.currentZone)
 end
 
 -- EXIT POINT
+function GM:CleanUp(player:Player)
+    self:CleanBobber(player)
+    self:CleanSounds(player)
+    for k,v in pairs(self) do if typeof(v)=="RBXScriptConnection" then v:Disconnect() end end
+end
 function GM:onShutdown(player)
-    if self.PlayerManagers[player] then
-        self.PlayerManagers[player]:saveData(false, true)
-    end
+    if self.PlayerManagers[player] then self.PlayerManagers[player]:saveData(false, true) end
 end
 
 

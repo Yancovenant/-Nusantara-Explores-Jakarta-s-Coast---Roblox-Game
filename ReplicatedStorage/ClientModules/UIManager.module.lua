@@ -20,7 +20,7 @@ end
 
 function CUI:UpdateXP(Level, CurrentXp, RequiredXp, GainedXp)
     local expText = math.floor(CurrentXp) .. " / " .. math.floor(RequiredXp)
-	self.ExpUI.Text.Text = expText
+	self.LevelText.Text.Text = expText ---
     self.ExpUITooltip.Text = expText
 	TS:Create(
 		self.ExpUI.Fill,
@@ -292,18 +292,41 @@ function CUI:_CreateTweens()
     )
 end
 function CUI:_SetupEventListener()
-    self.FishShopBuyBtn.MouseButton1Click:Connect(function()
-        self.FishShopPageLayout:JumpTo(self.FishShopBuyPageFrame)
-        self.FishPagePageTitle.Text = "Buy"
+    -- Page Layout
+    -- == Shop ==
+    self.BuyPageBtn.MouseButton1Click:Connect(function()
+        self.FishShopPageLayout:JumpTo(self.BuyPage)
+        self.FishShopTitle.Text = "Buy"
     end)
-    self.FishShopSellBtn.MouseButton1Click:Connect(function()
-        self.FishShopPageLayout:JumpTo(self.FishShopSellPageFrame)
-        self.FishPagePageTitle.Text = "Sell"
+    self.SellPageBtn.MouseButton1Click:Connect(function()
+        self.FishShopPageLayout:JumpTo(self.SellPage)
+        self.FishShopTitle.Text = "Sell"
     end)
+    -- == Inventory ==
+    self.FishTabBtn.MouseButton1Click:Connect(function()
+		self.InvPageLayout:JumpTo(self.FishInventoryTab)
+	end)
+	self.RodTabBtn.MouseButton1Click:Connect(function()
+		self.InvPageLayout:JumpTo(self.RodInventoryTab)
+	end)
+    -- == Player Modal ==
+    self.PMPageStatBtn.MouseButton1Click:Connect(function()
+        self.PMPageLayout:JumpTo(self.PMPageStat)
+    end)
+    self.PMPageFishIndexBtn.MouseButton1Click:Connect(function()
+        self.PMPageLayout:JumpTo(self.PMFishIndex)
+    end)
+
+    -- Close
     self.PMCloseButton.MouseButton1Click:Connect(function()
         ToolEvent:FireServer("TogglePlayerModal")
     end)
+    self.CloseInvButton.MouseButton1Click:Connect(function()
+        ToolEvent:FireServer("ToggleInventory")
+    end)
+    -- Missing shop
 
+    -- Backpack HotBar
     self.BackpackBtn.MouseEnter:Connect(function()
 		self.BackpackToolTip.Visible = true
 	end)
@@ -313,71 +336,40 @@ function CUI:_SetupEventListener()
 	self.BackpackBtn.MouseButton1Click:Connect(function()
         ToolEvent:FireServer("ToggleInventory")
 	end)
-
-    self.CloseInvButton.MouseButton1Click:Connect(function()
-        ToolEvent:FireServer("ToggleInventory")
-    end)
-
-    self.PMPageStatBtn.MouseButton1Click:Connect(function()
-        self.PMPageLayout:JumpTo(self.PMPageStat)
-    end)
-    self.PMPageFishIndexBtn.MouseButton1Click:Connect(function()
-        self.PMPageLayout:JumpTo(self.PMFishIndex)
-    end)
 end
+
+
+
+-- ENTRY POINTS
 function CUI:_CreateUI()
     local PlayerGui = Player:WaitForChild("PlayerGui")
+
 	self.InventoryUI = PlayerGui:WaitForChild("InventoryUI")
-	self.TabContainer = self.InventoryUI:WaitForChild("TabContainer")
-    self.MockTabContainer = self.InventoryUI:WaitForChild("MockTabContainer")
     self.FishingUI = PlayerGui:WaitForChild("FishingUI")
+    self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
+    self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
+    self.BoatUI = PlayerGui:WaitForChild("BoatUI")
+
+    -- Inventory
+	self.TabContainer = self.InventoryUI.TabContainer
+    self.MockTabContainer = self.InventoryUI.MockTabContainer
     self.ActionButton = self.InventoryUI.ActionButton
+    self.HotBar = self.InventoryUI.InventoryFrame
+    self.PlayerInfoUI = self.InventoryUI.PlayerInfo
+
+    self.BackpackBtn = self.HotBar.Backpack
+    self.BackpackToolTip = self.BackpackBtn.Tooltip
+
     self.CloseInvButton = self.TabContainer:WaitForChild("CloseButton")
 
-	local fishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
-	local rodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
-	local pageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
-	local fishPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Fish")
-	local rodPageFrame = self.TabContainer:WaitForChild("ContentArea"):WaitForChild("Rod")
-	fishTabBtn.MouseButton1Click:Connect(function()
-		pageLayout:JumpTo(fishPageFrame)
-	end)
-	rodTabBtn.MouseButton1Click:Connect(function()
-		pageLayout:JumpTo(rodPageFrame)
-	end)
-    self.HotBar = self.InventoryUI:WaitForChild("InventoryFrame")
-    self.TopBarUI = PlayerGui:WaitForChild("TopBarUI")
-	self.PlayerInfoUI = self.InventoryUI:WaitForChild("PlayerInfo")
-	self.LevelUI = self.PlayerInfoUI:WaitForChild("Level")
-	self.ExpUI = self.LevelUI:WaitForChild("LevelContainer"):WaitForChild("Exp")
-    self.ExpUITooltip = self.LevelUI:WaitForChild("LevelContainer").Tooltip
-    self.ExpUI.MouseEnter:Connect(function()
-        self.ExpUITooltip.Visible = true
-    end)
-    self.ExpUI.MouseLeave:Connect(function()
-        self.ExpUITooltip.Visible = false
-    end)
-	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
-    self.MoneyUI = self.PlayerInfoUI.Money
-
-	self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+    self.RodTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("RodTabButton")
+    self.FishTabBtn = self.TabContainer:WaitForChild("TabNavbar"):WaitForChild("FishTabButton")
+    self.InvPageLayout = self.TabContainer:WaitForChild("ContentArea"):FindFirstChildWhichIsA("UIPageLayout")
 	self.FishInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Fish')
+    self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
     self.RodInventoryTab = self.TabContainer:WaitForChild("ContentArea"):FindFirstChild('Rod')
-	self.FishGridLayout = self.FishInventoryTab:FindFirstChildWhichIsA("UIGridLayout")
 
-
-    self.FishShopUI = PlayerGui:WaitForChild("FishShopUI")
-    self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
-    self.FishShopNavbar = self.FishShopTab.RightPanel.Navbar
-    self.FishShopBuyBtn = self.FishShopNavbar.Buy
-    self.FishShopSellBtn = self.FishShopNavbar.Sell
-    self.FishPagePageTitle = self.FishShopNavbar.PageTitle
-    self.FishShopContentArea = self.FishShopTab.RightPanel.ContentArea
-    self.FishShopPageLayout = self.FishShopContentArea:FindFirstChildWhichIsA("UIPageLayout")
-    self.FishShopBuyPageFrame = self.FishShopContentArea.Buy
-    self.FishShopSellPageFrame = self.FishShopContentArea.Sell
-
-    -- PLAYER MODAL
+    -- == Player Stat Modal ==
     self.PlayerModalUI = self.InventoryUI.PlayerModal
     self.PMPage = self.PlayerModalUI.Page
     self.PMPageLayout = self.PMPage:FindFirstChildWhichIsA("UIPageLayout")
@@ -394,16 +386,38 @@ function CUI:_CreateUI()
 
     self.PMFishIndex = self.PMPage.PageFishIndex -- page fish index
     self.PMFishIndexFrame = self.PMFishIndex.FishIndexFrame
-    self.PMFishIndexTemplate = self.PMFishIndexFrame.TemplateItem
     self.PMFishIndexDiscoveredBar = self.PMFishIndex.StatBar
+    self.PMFishIndexTemplate = self.PMFishIndexFrame.TemplateItem
 
-    
-    self.BackpackBtn = self.HotBar:WaitForChild("Backpack")
-    self.BackpackToolTip = self.BackpackBtn:WaitForChild("Tooltip")
+
+    -- Player Info
+	self.LevelUI = self.PlayerInfoUI.Level
+    self.MoneyUI = self.PlayerInfoUI.Money
+
+	self.LevelText = self.LevelUI:WaitForChild("Label")
+	self.GainedXpText = self.LevelUI:WaitForChild("GainedXP")
+
+    -- Shop
+    self.FishShopTab = self.FishShopUI:WaitForChild("ShopTabContainer")
+
+    self.BuyPageBtn = self.FishShopTab.RightPanel.Navbar.Buy
+    self.SellPageBtn = self.FishShopTab.RightPanel.Navbar.Sell
+    self.FishShopTitle = self.FishShopTab.RightPanel.Navbar.PageTitle
+    self.FishShopPageLayout = self.FishShopTab.RightPanel.ContentArea:FindFirstChildWhichIsA("UIPageLayout")
+    self.BuyPage = self.FishShopTab.RightPanel.ContentArea.Buy -- BUY PAGE
+    self.SellPage = self.FishShopTab.RightPanel.ContentArea.Sell -- SELL PAGE
+
+
+
+    -- self.FishShopNavbar = self.FishShopTab.RightPanel.Navbar
+    -- self.FishShopBuyBtn = self.FishShopNavbar.Buy
+    -- self.FishShopSellBtn = self.FishShopNavbar.Sell
+    -- self.FishPagePageTitle = self.FishShopNavbar.PageTitle
+    -- self.FishShopContentArea = self.FishShopTab.RightPanel.ContentArea
+    -- self.FishShopPageLayout = self.FishShopContentArea:FindFirstChildWhichIsA("UIPageLayout")
+    -- self.FishShopBuyPageFrame = self.FishShopContentArea.Buy
+    -- self.FishShopSellPageFrame = self.FishShopContentArea.Sell
 end
-
-
--- ENTRY POINTS
 function CUI:main()
     self:_CreateUI()
 	self:_SetupEventListener()
