@@ -5,9 +5,8 @@ local GM = require(script.GlobalManager)
 local GAM = require(script.GlobalActionManager)
 
 local RunService = game:GetService("RunService")
-local TS:TweenService = game:GetService("TweenService")
+local TS, RS = game:GetService("TweenService"), game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
-local RS = game:GetService("ReplicatedStorage")
 local Lighting: Lighting = game:GetService("Lighting")
 
 
@@ -40,50 +39,54 @@ function SF:SetZonesListener()
 	end
 end
 function SF:SetServerTime()
-	local function getJakartaTime()
-		local utc = os.time(os.date("!*t"))
-		local jakartaTime = utc + (7 * 3600)
-		return os.date("!*t", jakartaTime)
-	end
 	local function applyLightningTween(preset)
 		TS:Create(Lighting, TweenInfo.new(2), preset):Play()
 	end
 	local function applyLightningByTime(t)
 		if t.hour >= 5 and t.hour < 7 then
-			applyLightningTween({
-				Brightness = 2,
-				ClockTime = t.hour + (t.min / 60),
-				Ambient = Color3.fromRGB(200, 150, 100)
-			})
+			applyLightningTween({Brightness=2,ClockTime=t.hour + (t.min / 60),Ambient=Color3.fromRGB(200, 150, 100)})
 		elseif t.hour >= 7 and t.hour < 17 then
-			applyLightningTween({
-				Brightness = 3,
-				ClockTime = t.hour + (t.min / 60),
-				Ambient = Color3.fromRGB(255,255,255)
-			})
+			applyLightningTween({Brightness=3,ClockTime=t.hour + (t.min / 60),Ambient=Color3.fromRGB(255,255,255)})
 		elseif t.hour >= 17 and t.hour < 19 then
-			applyLightningTween({
-				Brightness = 1.5,
-				ClockTime = t.hour + (t.min / 60),
-				Ambient = Color3.fromRGB(255,120,80)
-			})
+			applyLightningTween({Brightness = 1.5,ClockTime = t.hour + (t.min / 60),Ambient=Color3.fromRGB(255,120,80)})
 		else
-			applyLightningTween({
-				Brightness = 0.5,
-				ClockTime = t.hour + (t.min / 60),
-				Ambient = Color3.fromRGB(100,100,200)
-			})
+			applyLightningTween({Brightness=0.5,ClockTime=t.hour + (t.min / 60),Ambient=Color3.fromRGB(100,100,200)})
 		end
 	end
+	local SECONDS_PER_INGAME_MIN = 0.7
+	local function GetTimeFromMinutes(MinutesInDay)
+		local hour = math.floor(MinutesInDay / 60)
+		local min = MinutesInDay % 60
+		return { hour = hour, min = min}
+	end
+	local function getJakartaTime()
+		local utc = os.time(os.date("!*t"))
+		local jakartaSeconds = utc + (7 * 3600) -- in seconds
+		-- Stardew Valley Scaled: 0.7s real = 1 in-game minute
+		local timeElapsed = math.floor(jakartaSeconds/ SECONDS_PER_INGAME_MIN)
+		return timeElapsed % 1440
+	end
+	self._InGameMinutes = getJakartaTime()
 	task.spawn(function()
-		while not self.IsShutDown do
-			local t = getJakartaTime()
-			applyLightningByTime(t)
-			Lighting:SetAttribute("Hour", t.hour)
-			Lighting:SetAttribute("Minute", t.min)
-			TimeEvent:FireAllClients(t)
-			task.wait(60)
-		end
+		local acc = 0
+		local connection
+		connection = RunService.Heartbeat:Connect(function(dt)
+			if self.IsShutDown then connection:Disconnect() end
+			acc += dt
+			while acc >= SECONDS_PER_INGAME_MIN do
+				acc -= SECONDS_PER_INGAME_MIN
+				self._InGameMinutes = (self._InGameMinutes + 1) % 1440
+				local t = GetTimeFromMinutes(self._InGameMinutes)
+				applyLightningByTime(t)
+				Lighting:SetAttribute("Hour", t.hour)
+				Lighting:SetAttribute("Minute", t.min)
+				TimeEvent:FireAllClients(t)
+			end
+		end)
+		-- while not self.IsShutDown do
+		
+		-- 	task.wait(1)
+		-- end
 	end)
 end
 

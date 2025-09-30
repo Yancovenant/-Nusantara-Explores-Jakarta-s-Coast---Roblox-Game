@@ -18,3 +18,39 @@ be blunt, clear and use simple terms, act as if i am a five year old
 
 On every run, i want you to try and analyze my code structure for about 3-5 times. to make sure that you have fully grasp its structure, purposes, layout, goal, etc.
 
+
+IDEAS
+
+-- BADGE
+Welcome Aboard (first join) → Badge + 250 Coins
+First Catch → Badge + 250 Coins
+10 Fish Caught → 500 Coins
+100 Fish Caught → 2,500 Coins
+First Rare Caught → Badge + 1,000 Coins
+10 Rare Caught → 3,000 Coins
+Angler I (Play 30 min) → 500 Coins
+Angler II (Play 120 min) → 2,000 Coins
+Jakarta Dawn (online at 06:00 in-game) → Badge
+Collector (Own 3 rods) → 1,000 Coins
+Boater (Own 1 boat) → Badge
+Fashion Hook (Own 1 skin) → 1,000 Coins
+
+-- GAME PASS / PERMANENT EFFECT
+XP+20% (stacked into your XP calc)
+Luck+10% (applied in GRM multiplier)
+VIP (title, chat tag, +5% luck, +10% XP, VIP cosmetic skin)
+Extra Rod Slot (UI capacity only)
+Extra Boat Slot (own + equip more boats)
+Backpack+ (more fish inventory UI capacity if relevant)
+Instant Travel (cosmetic teleport to docks; avoid pay advantage in fishing odds)
+
+-- CONSUMABLE
+30-min XP Boost +50%
+30-min Luck Boost +20%
+Coin Packs (time-saver):
+Small: 2,000 Coins
+Medium: 10,000 Coins
+Large: 50,000 Coins
+Gem Packs (hard currency)
+Limited Boat Unlock (direct unlock of “Coastal Skiff” or cosmetics-only boats)
+Cosmetic Skin Bundles

@@ -186,6 +186,7 @@ end
 -- MAIN
 -- == Global Sound ==
 function GM:CleanSounds(player)
+    print("CLEANING SOUND", self.PlayerData[player].CleanableSounds)
     for i,sound in ipairs(self.PlayerData[player].CleanableSounds) do
         sound:Stop()
         table.remove(self.PlayerData[player].CleanableSounds, i)

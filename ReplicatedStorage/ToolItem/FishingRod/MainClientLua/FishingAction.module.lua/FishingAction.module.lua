@@ -271,6 +271,7 @@ end
 function FA:StartCast(AFKPOWER)
     if self:IsFishing() or self:IsCasting() or not self:CanFish() then return end
 	self:_setAttr("IsCasting", true)
+	GlobalEvent:FireServer("CleanFishingSounds")
 	self:SetFishingWalkSpeed(true)
 	power = AFKPOWER or 0
 	local direction = 1
