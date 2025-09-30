@@ -231,6 +231,67 @@ end
 
 
 -- ENTRY POINTS
+-- == Populate Boat Shop Page
+function PM:PopulateBoatShop()
+    for _, fr in pairs(self.PUI.BoatShopFrame:GetChildren()) do
+        if fr.Name ~= "TemplateItem" and fr:IsA("TextButton") then fr:Destroy() end
+    end
+    for _, fr in pairs(self.PUI.BoatStatTab:GetChildren()) do
+        if fr.Name ~= "StatsTemplate" and fr:IsA("Frame") then fr:Destroy() end
+    end
+    local OwnedBoats = self.Data.Equipment.OwnedBoats
+    local function fmtNum(v) return tostring(math.floor(v)) end
+    for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
+        local template = self.PUI.BoatTemplaeItem:Clone()
+        template.Name, template.Icon.Image = BoatName, BoatData.icon
+        local frame = template.Frame
+        frame.Label.Text, frame.Price.Text = BoatName, BoatData.price
+        frame.Description.Text, template.Parent = BoatData.description or "No Description yet", self.PUI.BoatShopFrame
+        template.Visible = true
+        template:SetAttribute("price", BoatData.price)
+        template:SetAttribute("id", BoatData.id)
+        -- ClientUIEvent:SortBoatShop()
+        local templateStat = self.PUI.BoatStatTemplateItem:Clone()
+        templateStat.Name, templateStat.Category.Text = BoatName, BoatData.category or "unknown"
+        templateStat.Label.Text, templateStat.Type.Text = BoatName, BoatData.boatType or "unknown"
+        local cfg = BoatData.physics
+        templateStat.Accel.Label.Text = "Acceleration: " .. fmtNum((100 / (cfg.acceleration * 3.6)) + 0.5) .. "s (0–100km/h)"
+        templateStat.TopSpeed.Label.Text = "TopSpeed: " .. fmtNum(cfg.maxSpeed * 3.6) .. "KmH"
+        templateStat.Handle.Label.Text = "Handle: " .. math.clamp(fmtNum(math.deg(cfg.turnRate) / 200), 1, 10) .. "°"
+        templateStat.Parent = self.PUI.BoatStatTab
+
+        template.MouseButton1Click:Connect(function()
+            for _, cd in pairs(self.PUI.BoatStatTab:GetChildren()) do
+                if cd.Name ~= "StatsTemplate" and cd:IsA("Frame") then cd.Visible = false end
+            end
+            templateStat.Visible = true
+            self.PUI.BoatStatTab.EmptyLabel.Visible = false
+        end)
+
+        -- if owned, if not owned.
+        local owned = table.find(OwnedBoats, BoatData.id)
+        if owned then
+            frame.Buy.Visible = false
+            templateStat.ActionButton.Visible = true
+        else
+            frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+            frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
+            frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
+            frame.Buy.Frame.Label.Text = "Buy"
+            templateStat.ActionButton.Visible = false
+            frame.Buy.MouseButton1Click:Connect(function()
+                if self._BuyProcessing or self.Data.Money < template:GetAttribute("price") then return end
+                self._BuyProcessing = true
+                self.Data.Equipment.OwnedBoats = self.Data.Equipment.OwnedBoats or {}
+                table.insert(self.Data.Equipment.OwnedBoats, template:GetAttribute("id"))
+                self:_UpdateMoney(-template:GetAttribute("price"))
+                self._BuyProcessing = false
+                self:PopulateBoatShop()
+            end)
+        end
+    end
+    -- ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
+end
 -- == Toggle Boat Shop Page
 function PM:ToggleBoatShopUI(...)
     local isShown = self.PUI.BoatShopTab.Visible
@@ -387,10 +448,10 @@ end
 function PM:_PopulateData()
     self.Leaderstats = self:_CreateLeaderstats()
     self.Data = DBM:LoadDataPlayer(self.player)
-    
+
     self.TotalCatch.Value = self.Data.TotalCatch
     self.RarestCatch.Value = self:_FormatChance(self.Data.RarestCatch)
-    
+
     -- LAZY LOAD FISH
     task.spawn(function()
         local fc=self.PINV.FishCounter for id,wList in pairs(self.Data.FishInventory) do
@@ -413,7 +474,7 @@ function PM:_PopulateData()
     self.PUI:SortRodInventoryUI()
 
     self.PUI:PopulateFishIndex(self.Data.FishIndex)
-    self.PUI:PopulateBoatShop(self.Data.Equipment.OwnedBoats)
+    self:PopulateBoatShop()
 
     self._AutoSaveRunning = true
     task.spawn(function()

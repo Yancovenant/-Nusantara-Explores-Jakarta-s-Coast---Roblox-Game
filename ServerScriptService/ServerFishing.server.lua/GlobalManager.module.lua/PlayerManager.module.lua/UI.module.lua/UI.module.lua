@@ -155,41 +155,7 @@ end
 
 -- SETUP
 -- == Populate Boat Shop Page
-function PUI:PopulateBoatShop(OwnedBoats:table)
-    for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
-        local template = self.BoatTemplaeItem:Clone()
-        template.Name = BoatName
-        template.Icon.Image = BoatData.icon
-        template.Parent = self.BoatShopFrame
-        local frame = template.Frame
-        frame.Label.Text = BoatName
-        frame.Price.Text = BoatData.price
-        frame.Description.Text = BoatData.description or "No Description yet"
-        -- if owned, if not owned.
-        local owned = OwnedBoats ~= nil and table.find(OwnedBoats, tostring(BoatData.id)) or false
-        if owned then
 
-        else
-            frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-            frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
-            frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
-            frame.Buy.Frame.Label.Text = "Buy"
-        end
-        template.Visible = true
-        -- ClientUIEvent:SortBoatShop()
-        local templateStat = self.BoatStatTemplateItem:Clone()
-        templateStat.Name = BoatName
-        templateStat.Category.Text = BoatData.category or "unknown"
-        templateStat.Label.Text = BoatName
-        templateStat.Type.Text = BoatData.boatType or "unknown"
-        local cfg = BoatData.physics
-        templateStat.Accel.Label.Text = "Acceleration: " .. tostring(math.floor((100 / (cfg.acceleration * 3.6)) + 0.5)) .. "s (0–100km/h)"
-        templateStat.TopSpeed.Label.Text = "TopSpeed: " .. tostring(math.floor((cfg.maxSpeed * 3.6))) .. "KmH"
-        templateStat.Handle.Label.Text = "Handle: " .. tostring(math.clamp(math.floor(math.deg(cfg.turnRate) / 200), 1, 10)) .. "°"
-        templateStat.Parent = self.BoatStatTab
-    end
-    -- ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
-end
 
 
 -- ENTRY POINTS
