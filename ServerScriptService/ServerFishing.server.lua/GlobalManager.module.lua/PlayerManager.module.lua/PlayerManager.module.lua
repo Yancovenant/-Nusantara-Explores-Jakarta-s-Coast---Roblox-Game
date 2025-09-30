@@ -52,98 +52,6 @@ end
 -- MAIN FUNCTIONS
 --- Proximity
 
-function PM:_CleanUpBoat()
-    if self.BoatHeartbeat then self.BoatHeartbeat:Disconnect() self.BoatHeartbeat = nil end
-end
-function PM:OnBoatDrive(Seat:Part)
-    local hum = self.player.Character.Humanoid
-    local isSitting = hum.Sit == true and hum.SeatPart == Seat
-    Seat:GetPropertyChangedSignal("Occupant"):Connect(function()
-        local SeatHum = Seat.Occupant
-        if not SeatHum then
-            self:_CleanUpBoat()
-        end
-    end)
-    if isSitting then
-        hum.Sit = false
-    else
-        Seat:Sit(hum)
-        -- do boat movement
-        Seat:FindFirstChildWhichIsA("ProximityPrompt").Enabled = false
-        self:_CleanUpBoat()
-        local BoatCFG = {}
-        if Seat:FindFirstChild("TAccel") then
-            BoatCFG.physics = {
-                maxSpeed = Seat.TMaxSpeed.Value,
-                reverseMaxSpeed = Seat.TReverseMaxSpeed.Value,
-                acceleration = Seat.TAccel.Value,
-                brakeDecel = Seat.TDecel.Value,
-                turnRate = math.rad(Seat.TTurnRate.Value),
-                linearDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.linearDamping,
-                angularDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.angularDamping,
-            }
-        else
-            BoatCFG = c.BOATS.BOAT_LIST[Seat.Parent.Name]
-        end
-        local Hull = Seat.Parent.Hull
-        local Thrust = Hull.VectorForce
-        local Rudder = Hull.Torque
-        local CurrentForce = 0
-        self.BoatHeartbeat = RunService.Heartbeat:Connect(function(dt)
-            if not Seat or not Hull then self.BoatHeartbeat:Disconnect() end
-            
-            local Forward = Hull.CFrame.LookVector
-            local V = Hull.AssemblyLinearVelocity
-            local Speed = V:Dot(Forward)
-
-            -- THRUST
-            local TargetForce = 0
-            local Steer
-            if Seat.Throttle > 0 then
-                TargetForce = BoatCFG.physics.maxSpeed
-            elseif Seat.Throttle < 0 then 
-                TargetForce = -BoatCFG.physics.reverseMaxSpeed
-            else 
-                TargetForce = 0
-            end
-            if TargetForce == 0 then
-                local s = math.abs(CurrentForce)
-                local Decel = BoatCFG.physics.brakeDecel * dt
-                s = math.max(0, s - Decel)
-                CurrentForce = (CurrentForce >= 0) and s or -s
-            else
-                local Towards = (TargetForce > CurrentForce) and BoatCFG.physics.acceleration or BoatCFG.physics.brakeDecel
-                CurrentForce = math.lerp(CurrentForce, TargetForce, math.clamp((Towards * dt) / math.max(1, math.abs(TargetForce - CurrentForce)), 0, 1))
-            end
-            Thrust.Force = Forward * CurrentForce * Hull:GetMass()
-            if Speed > 0 then
-                Steer = -Seat.Steer
-            elseif Speed < 0 then
-                Steer = Seat.Steer
-            else
-                Steer = -Seat.Steer
-            end
-            local SpeedFactor
-            if math.abs(TargetForce) > 0 then
-                SpeedFactor = math.clamp(math.abs(Speed) / math.abs(TargetForce), 0, 1)
-            else
-                SpeedFactor = 0
-            end
-            local RudderForce = Hull:GetMass() * BoatCFG.physics.turnRate * (math.min(Hull.Size.X, Hull.Size.Z) / 2)
-            local RudderPush = Steer * RudderForce * SpeedFactor
-            Rudder.Torque = Vector3.new(RudderPush, 0, 0)
-
-            Hull.AssemblyLinearVelocity *= (1 - BoatCFG.physics.linearDamping * 0.01)
-            Hull.AssemblyAngularVelocity *= (1 - BoatCFG.physics.angularDamping * 0.01)
-        end)
-    end
-end
-
-
-
-
-
-
 function PM:SaveData(locksession, force)
     DBM:SaveDataPlayer(self.player, self.Data, locksession, force)
 end
@@ -231,71 +139,241 @@ end
 
 
 -- ENTRY POINTS
--- == Populate Boat Shop Page
-function PM:PopulateBoatShop()
-    for _, fr in pairs(self.PUI.BoatShopFrame:GetChildren()) do
-        if fr.Name ~= "TemplateItem" and fr:IsA("TextButton") then fr:Destroy() end
-    end
-    for _, fr in pairs(self.PUI.BoatStatTab:GetChildren()) do
-        if fr.Name ~= "StatsTemplate" and fr:IsA("Frame") then fr:Destroy() end
-    end
-    local OwnedBoats = self.Data.Equipment.OwnedBoats
-    local function fmtNum(v) return tostring(math.floor(v)) end
-    for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
-        local template = self.PUI.BoatTemplaeItem:Clone()
-        template.Name, template.Icon.Image = BoatName, BoatData.icon
-        local frame = template.Frame
-        frame.Label.Text, frame.Price.Text = BoatName, BoatData.price
-        frame.Description.Text, template.Parent = BoatData.description or "No Description yet", self.PUI.BoatShopFrame
-        template.Visible = true
-        template:SetAttribute("price", BoatData.price)
-        template:SetAttribute("id", BoatData.id)
-        -- ClientUIEvent:SortBoatShop()
-        local templateStat = self.PUI.BoatStatTemplateItem:Clone()
-        templateStat.Name, templateStat.Category.Text = BoatName, BoatData.category or "unknown"
-        templateStat.Label.Text, templateStat.Type.Text = BoatName, BoatData.boatType or "unknown"
-        local cfg = BoatData.physics
-        templateStat.Accel.Label.Text = "Acceleration: " .. fmtNum((100 / (cfg.acceleration * 3.6)) + 0.5) .. "s (0–100km/h)"
-        templateStat.TopSpeed.Label.Text = "TopSpeed: " .. fmtNum(cfg.maxSpeed * 3.6) .. "KmH"
-        templateStat.Handle.Label.Text = "Handle: " .. math.clamp(fmtNum(math.deg(cfg.turnRate) / 200), 1, 10) .. "°"
-        templateStat.Parent = self.PUI.BoatStatTab
-
-        template.MouseButton1Click:Connect(function()
-            for _, cd in pairs(self.PUI.BoatStatTab:GetChildren()) do
-                if cd.Name ~= "StatsTemplate" and cd:IsA("Frame") then cd.Visible = false end
-            end
-            templateStat.Visible = true
-            self.PUI.BoatStatTab.EmptyLabel.Visible = false
-        end)
-
-        -- if owned, if not owned.
-        local owned = table.find(OwnedBoats, BoatData.id)
-        if owned then
-            frame.Buy.Visible = false
-            templateStat.ActionButton.Visible = true
-        else
-            frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
-            frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
-            frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
-            frame.Buy.Frame.Label.Text = "Buy"
-            templateStat.ActionButton.Visible = false
-            frame.Buy.MouseButton1Click:Connect(function()
-                if self._BuyProcessing or self.Data.Money < template:GetAttribute("price") then return end
-                self._BuyProcessing = true
-                self.Data.Equipment.OwnedBoats = self.Data.Equipment.OwnedBoats or {}
-                table.insert(self.Data.Equipment.OwnedBoats, template:GetAttribute("id"))
-                self:_UpdateMoney(-template:GetAttribute("price"))
-                self._BuyProcessing = false
-                self:PopulateBoatShop()
-            end)
-        end
-    end
-    -- ClientUIEvent:FireClient(self.player, "UpdateBoatShopUI", OwnedBoats)
+-- == Boat Driving ==
+function PM:_CleanUpBoat()
+    if self.BoatHeartbeat then self.BoatHeartbeat:Disconnect() self.BoatHeartbeat = nil end
 end
--- == Toggle Boat Shop Page
+function PM:OnBoatDrive(Seat:Part)
+    local hum = self.player.Character.Humanoid
+    local isSitting = hum.Sit == true and hum.SeatPart == Seat
+    Seat:GetPropertyChangedSignal("Occupant"):Connect(function()
+        local SeatHum = Seat.Occupant
+        if not SeatHum then
+            self:_CleanUpBoat()
+            Seat:FindFirstChildWhichIsA("ProximityPrompt").Enabled = true
+        end
+    end)
+    if isSitting then
+        hum.Sit = false
+    else
+        Seat:Sit(hum)
+        -- do boat movement
+        Seat:FindFirstChildWhichIsA("ProximityPrompt").Enabled = false
+        self:_CleanUpBoat()
+        local BoatCFG = {}
+        if Seat:FindFirstChild("TAccel") then
+            BoatCFG.physics = {
+                maxSpeed = Seat.TMaxSpeed.Value,
+                reverseMaxSpeed = Seat.TReverseMaxSpeed.Value,
+                acceleration = Seat.TAccel.Value,
+                brakeDecel = Seat.TDecel.Value,
+                turnRate = math.rad(Seat.TTurnRate.Value),
+                linearDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.linearDamping,
+                angularDamping = c.BOATS.BOAT_LIST[Seat.Parent.Name].physics.angularDamping,
+            }
+        else
+            BoatCFG = c.BOATS.BOAT_LIST[Seat.Parent.Name]
+        end
+        local Hull = Seat.Parent.Hull
+        local Thrust = Hull.VectorForce
+        local Rudder = Hull.Torque
+        local CurrentForce = 0
+        self.BoatHeartbeat = RunService.Heartbeat:Connect(function(dt)
+            if not Seat or not Hull then self.BoatHeartbeat:Disconnect() end
+
+            local Forward = Hull.CFrame.LookVector
+            local V = Hull.AssemblyLinearVelocity
+            local Speed = V:Dot(Forward)
+
+            -- THRUST
+            local TargetForce = 0
+            local Steer
+            if Seat.Throttle > 0 then
+                TargetForce = BoatCFG.physics.maxSpeed
+            elseif Seat.Throttle < 0 then
+                TargetForce = -BoatCFG.physics.reverseMaxSpeed
+            else 
+                TargetForce = 0
+            end
+            if TargetForce == 0 then
+                local s = math.abs(CurrentForce)
+                local Decel = BoatCFG.physics.brakeDecel * dt
+                s = math.max(0, s - Decel)
+                CurrentForce = (CurrentForce >= 0) and s or -s
+            else
+                local Towards = (TargetForce > CurrentForce) and BoatCFG.physics.acceleration or BoatCFG.physics.brakeDecel
+                CurrentForce = math.lerp(CurrentForce, TargetForce, math.clamp((Towards * dt) / math.max(1, math.abs(TargetForce - CurrentForce)), 0, 1))
+            end
+            Thrust.Force = Forward * CurrentForce * Hull:GetMass()
+            if Speed > 0 then
+                Steer = -Seat.Steer
+            elseif Speed < 0 then
+                Steer = Seat.Steer
+            else
+                Steer = -Seat.Steer
+            end
+            local SpeedFactor
+            if math.abs(TargetForce) > 0 then
+                SpeedFactor = math.clamp(math.abs(Speed) / math.abs(TargetForce), 0, 1)
+            else
+                SpeedFactor = 0
+            end
+            local RudderForce = Hull:GetMass() * BoatCFG.physics.turnRate * (math.min(Hull.Size.X, Hull.Size.Z) / 2)
+            local RudderPush = Steer * RudderForce * SpeedFactor
+            Rudder.Torque = Vector3.new(RudderPush, 0, 0)
+
+            Hull.AssemblyLinearVelocity *= (1 - BoatCFG.physics.linearDamping * 0.01)
+            Hull.AssemblyAngularVelocity *= (1 - BoatCFG.physics.angularDamping * 0.01)
+        end)
+    end
+end
+-- == Populate Boat Shop Page ==
+function PM:PopulateBoatShop()
+	-- Clear existing entries
+	for _, fr in pairs(self.PUI.BoatShopFrame:GetChildren()) do
+		if fr.Name ~= "TemplateItem" and fr:IsA("TextButton") then fr:Destroy() end
+	end
+	for _, fr in pairs(self.PUI.BoatStatTab:GetChildren()) do
+		if fr.Name ~= "StatsTemplate" and fr:IsA("Frame") then fr:Destroy() end
+	end
+
+	-- Fast owned lookup
+	local OwnedBoats = self.Data.Equipment.OwnedBoats or {}
+	local ownedSet = {}
+	for _, id in ipairs(OwnedBoats) do ownedSet[id] = true end
+
+	-- Cache UI refs
+	local boatShopFrame = self.PUI.BoatShopFrame
+	local boatStatTab = self.PUI.BoatStatTab
+
+	for BoatName, BoatData in pairs(c.BOATS.BOAT_LIST) do
+		local template = self.PUI.BoatTemplaeItem:Clone()
+		template.Name, template.Icon.Image = BoatName, BoatData.icon
+		local frame = template.Frame
+		frame.Label.Text, frame.Price.Text = BoatName, tostring(math.floor(BoatData.price))
+		frame.Description.Text, template.Parent = BoatData.description or "No Description yet", boatShopFrame
+		template.Visible = true
+		template:SetAttribute("price", BoatData.price)
+		template:SetAttribute("id", BoatData.id)
+
+		local templateStat = self.PUI.BoatStatTemplateItem:Clone()
+		templateStat.Name, templateStat.Category.Text = BoatName, (BoatData.category or "unknown")
+		templateStat.Label.Text, templateStat.Type.Text = BoatName, (BoatData.boatType or "unknown")
+		local cfg = BoatData.physics
+		local accelTime = math.floor((100 / (cfg.acceleration * 3.6)) + 0.5)
+		local topSpeedKmh = math.floor(cfg.maxSpeed * 3.6)
+		local handleScore = math.clamp(math.floor(math.deg(cfg.turnRate) / 200), 1, 10)
+		templateStat.Accel.Label.Text = "Acceleration: " .. tostring(accelTime) .. "s (0–100km/h)"
+		templateStat.TopSpeed.Label.Text = "TopSpeed: " .. tostring(topSpeedKmh) .. "KmH"
+		templateStat.Handle.Label.Text = "Handle: " .. tostring(handleScore) .. "°"
+		templateStat.Parent = boatStatTab
+		templateStat.Visible = false
+
+		-- Show stats without hiding all frames each time
+		template.MouseButton1Click:Connect(function()
+			if self._CurrentBoatStatFrame and self._CurrentBoatStatFrame ~= templateStat then
+				self._CurrentBoatStatFrame.Visible = false
+			end
+			templateStat.Visible = true
+			self._CurrentBoatStatFrame = templateStat
+			boatStatTab.EmptyLabel.Visible = false
+		end)
+
+		-- Spawn/despawn with debounce
+		templateStat.ActionButton.MouseButton1Click:Connect(function()
+			if self._BoatSpawnProcessing then return end
+			self._BoatSpawnProcessing = true
+			-- spawn/despawn click.
+			if not self.NearestBoatSpawn then self._BoatSpawnProcessing = false return end
+			local modelRoot = RS:WaitForChild("Template"):FindFirstChild("Boats")
+			local BoatModel = modelRoot and modelRoot:FindFirstChild(template.Name)
+			if not BoatModel then warn("boat not found", template.Name) self._BoatSpawnProcessing = false return end
+			if self.playerBoat then self.playerBoat:Destroy() self.playerBoat = nil end
+
+			BoatModel = BoatModel:Clone()
+
+			local spawn = self.NearestBoatSpawn
+			local targetCF = spawn.CFrame * CFrame.new(-spawn.CFrame.LookVector * (spawn.Size.Z / 2))
+			local boatCF, boatSize = BoatModel:GetBoundingBox()
+			local boatBackDir = -boatCF.LookVector
+			local boatHalfLength = boatSize.Z / 2
+			local boatRearOffset = boatBackDir * boatHalfLength
+			targetCF = targetCF * CFrame.new(-boatRearOffset)
+			BoatModel:PivotTo(targetCF)
+			BoatModel.Parent = workspace
+			self.playerBoat = BoatModel
+
+			local prompt = spawn:FindFirstChildWhichIsA("ProximityPrompt")
+			local labelHolder = spawn:FindFirstChild("FloatingLabel", true)
+			local label = labelHolder and labelHolder:FindFirstChild("Face") and labelHolder.Face:FindFirstChild("Contents") or nil
+
+			if prompt then
+				if prompt:GetAttribute("IsRunning") then prompt:SetAttribute("IsRunning", false) end
+				task.spawn(function()
+					prompt.Enabled = false
+					local cooldown = 30
+					prompt:SetAttribute("IsRunning", true)
+					while cooldown > 0 and prompt:GetAttribute('IsRunning') do
+						if label then
+							label.Text = string.format("00:%02d", cooldown)
+							label.TextColor3 = Color3.fromRGB(255, 0, 0)
+						end
+						task.wait(1)
+						cooldown -= 1
+						if not prompt.Parent or prompt.Enabled == true or not prompt:GetAttribute("IsRunning") then break end
+					end
+					-- reset after countdown
+					if label then
+						label.Text = "Spawn Boat"
+						label.TextColor3 = Color3.fromRGB(255, 255, 255)
+					end
+					prompt.Enabled = true
+				end)
+			end
+			self._BoatSpawnProcessing = false
+		end)
+
+		-- if owned, if not owned.
+		if ownedSet[BoatData.id] then
+			frame.Buy.Visible = false
+			templateStat.ActionButton.Visible = true
+		else
+			frame.Buy.BackgroundColor3 = Color3.fromRGB(30, 120, 60)
+			frame.Buy.Frame.BackgroundColor3 = Color3.fromRGB(60, 180, 90)
+			frame.Buy.Frame.Frame.BackgroundColor3 = Color3.fromRGB(67, 202, 99)
+			frame.Buy.Frame.Label.Text = "Buy"
+			templateStat.ActionButton.Visible = false
+			frame.Buy.MouseButton1Click:Connect(function()
+				if self._BuyProcessing or self.Data.Money < template:GetAttribute("price") then return end
+				self._BuyProcessing = true
+				self.Data.Equipment.OwnedBoats = self.Data.Equipment.OwnedBoats or {}
+				table.insert(self.Data.Equipment.OwnedBoats, template:GetAttribute("id"))
+				self:_UpdateMoney(-template:GetAttribute("price"))
+				self._BuyProcessing = false
+				self:PopulateBoatShop()
+			end)
+		end
+	end
+	-- ClientUIEvent:FireClient(self.player, "SortBoatShop")
+end
+-- == Toggle Boat Shop Page ==
 function PM:ToggleBoatShopUI(...)
     local isShown = self.PUI.BoatShopTab.Visible
     self.PUI:ToggleBoatShopUI(not isShown, ...)
+    if not isShown then
+        -- now visible
+        local defaultSpawn = function()
+            for _, p in pairs(workspace.BoatSpawns:GetChildren()) do
+                if p.BoatSpawn:FindFirstChildWhichIsA("ProximityPrompt").Enabled == true then
+                    return p.BoatSpawn
+                end
+            end
+        end
+        local p = ...
+        self.NearestBoatSpawn = p.Name ~= "BoatShop" and p or defaultSpawn()
+    else
+        self.NearestBoatSpawn = nil
+    end
 end
 -- == Clean Tween Shop Page ==
 function PM:_CleanUpFishingShopBuyPage()
@@ -615,6 +693,7 @@ function PM:new(player)
 end
 function PM:CleanUp()
 	self._AutoSaveRunning=nil self:SaveData(false,true)
+    if self.BoatSpawnCooldown then task.cancel(self.BoatSpawnCooldown) self.BoatSpawnCooldown = nil end
 	for k,v in pairs(self) do if typeof(v)=="RBXScriptConnection" then v:Disconnect() elseif type(v)=="table"then if v.CleanUp then v:CleanUp()end end end
 	self:_CleanUpBoat() self.PINV=nil self.PUI=nil self.player=nil
 end
