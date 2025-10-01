@@ -418,7 +418,7 @@ end
 
 -- ENTRY POINTS
 function FA:CleanConnections()
-	for k,v in pairs(self) do print(k, v, typeof(v)) if typeof(v)=="RBXScriptConnection" then v:Disconnect() v=nil end end
+	for k,v in pairs(self) do if typeof(v)=="RBXScriptConnection" then v:Disconnect() v=nil end end
 	FUI:CleanUp()
 end
 function FA:SetupEventListener()

@@ -1,8 +1,6 @@
 -- GlobalManager.module.lua
 
-local GM = {}
-local GSM = require(script.Parent.GlobalStorage)
-local PM = require(script.PlayerManager)
+local GM, GSM, PM = {}, require(script.Parent.GlobalStorage), require(script.PlayerManager)
 local PlayerManagers = {}
 
 local TS:TweenService = game:GetService("TweenService")
@@ -186,7 +184,6 @@ end
 -- MAIN
 -- == Global Sound ==
 function GM:CleanSounds(player)
-    print("CLEANING SOUND", self.PlayerData[player].CleanableSounds)
     for i,sound in ipairs(self.PlayerData[player].CleanableSounds) do
         sound:Stop()
         table.remove(self.PlayerData[player].CleanableSounds, i)
@@ -249,6 +246,9 @@ function GM:CatchResultSuccess(player:Player, success, ROD, info)
         if success then
             self:_CreateFishSlungTween(player, fish)
             self.PlayerManagers[player]:CatchResultSuccess(info)
+            local GAM = require(script.Parent.GlobalActionManager)
+            GAM:AwardBadge(player, "CATCH_10")
+            GAM:AwardBadge(player, "CATCH_RARE")
         end
         
         self:CleanBobber(player)
@@ -290,6 +290,27 @@ function GM:TogglePlayerModal(player)
 end
 
 
+-- BADGES/EXPERIENCE
+function GM:FirstJoin() print("fist join") return true end
+function GM:TotalCaught(player, condition)
+    local count, rarity = table.unpack(condition)
+    local FishCaughts = self.PlayerManagers[player].Data.FishCaughts
+    local sum = 0
+    for k,v in pairs(FishCaughts) do
+        if rarity and k == rarity then
+            sum += v
+        elseif rarity then
+            -- pass
+        else
+            sum += v
+        end
+    end
+    if sum >= count then return true else return false end
+end
+-- == Rewarding Player ==
+function GM:RewardPlayer(reward)
+    print(reward, "rewarding")
+end
 
 -- GM SETUP
 function GM:_setupPlayerManager(player)

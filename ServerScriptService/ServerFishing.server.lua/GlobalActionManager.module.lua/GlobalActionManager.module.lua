@@ -61,11 +61,18 @@ end
 
 -- EXPERIENCE
 function GAM:AwardBadge(player, badgeKeyOrId)
-   local badgeId = tonumber(badgeKeyOrId) or (c.EXPERIENCE.Badges[badgeKeyOrId] and c.EXPERIENCE.Badges[badgeKeyOrId].id)
-   if not (player and badgeId) then return end
-   local ok, has = pcall(BS.UserHasBadgeAsync, BS, player.UserId, badgeId)
-   if not ok or has then return end
-   pcall(BS.AwardBadge, BS, player.UserId, badgeId)
+    task.spawn(function()
+        local badgeIdOrInfo = tonumber(badgeKeyOrId) or (c.EXPERIENCE.Badges[badgeKeyOrId] and c.EXPERIENCE.Badges[badgeKeyOrId])
+        local badgeId = tonumber(badgeIdOrInfo) or badgeIdOrInfo.id
+        if not (player and badgeId) then return end
+        local ok, has = pcall(BS.UserHasBadgeAsync, BS, player.UserId, badgeId)
+        if not ok or has then return end
+        if typeof(badgeIdOrInfo) == "table" then
+            if not GM[badgeIdOrInfo.callback](GM, player, badgeIdOrInfo.params) then return end
+            GM:RewardPlayer(badgeIdOrInfo.reward)
+        end
+        pcall(BS.AwardBadge, BS, player.UserId, badgeId)
+    end)
 end
 
 

@@ -8,6 +8,15 @@ GSM.DEFAULT_PLAYER_DATA = {
 	RarestCatch = 0,
     FishIndex = {},
 	FishInventory = {},
+    FishCaughts = {
+        Common = 0,
+        Uncommon = 0,
+        Rare = 0,
+        Epic = 0,
+        Legendary = 0,
+        Mythical = 0,
+        Classified = 0
+    },
 	PlayerLevel = 1,
 	PlayerXP = 0,
     PlayerStrength = 0,

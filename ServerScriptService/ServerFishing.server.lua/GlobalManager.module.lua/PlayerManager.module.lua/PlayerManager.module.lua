@@ -469,6 +469,8 @@ function PM:CatchResultSuccess(info)
     self.TotalCatch.Value += 1
     self.Data.TotalCatch = self.TotalCatch.Value
 
+    self.Data.FishCaughts[info.fishData.rarity] += 1
+
     if self.Data.RarestCatch > info.fishData.baseChance or self.Data.RarestCatch == 0 then
         self.RarestCatch.Value = self:_FormatChance(info.fishData.baseChance)
         self.Data.RarestCatch = info.fishData.baseChance
