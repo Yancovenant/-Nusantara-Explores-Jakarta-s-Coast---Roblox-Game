@@ -564,6 +564,26 @@ function PM:_PopulateData()
             self:SaveData(true)
         end
     end)
+    if self.Data.FirstTimePlayed == 0 then self.Data.FirstTimePlayed = os.time() end
+    self._AutoUpdateTimePlayed = true
+    task.spawn(function()
+        local GAM = require(script.Parent.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
+        local acc = 0
+        local connection
+        connection = RunService.Heartbeat:Connect(function(dt)
+            if not self._AutoUpdateTimePlayed then
+                self.Data.TimePlayed += math.floor(acc)
+                connection:Disconnect()
+            end
+            acc += dt
+            while acc >= 60 do -- update per 60seconds/1minute
+                acc -= 60
+                self.Data.TimePlayed += 60
+                GAM:AwardBadge(self.player, "PLAY_30")
+                GAM:AwardBadge(self.player, "PLAY_120")
+            end
+        end)
+    end)
 end
 function PM:_SetupEventListener()
     self.SellAllButtonClickConnection = self.PUI.SellAllBtn.MouseButton1Click:Connect(function()
@@ -694,6 +714,7 @@ function PM:new(player)
     return self
 end
 function PM:CleanUp()
+    self._AutoUpdateTimePlayed = nil
 	self._AutoSaveRunning=nil self:SaveData(false,true)
     if self.BoatSpawnCooldown then task.cancel(self.BoatSpawnCooldown) self.BoatSpawnCooldown = nil end
 	for k,v in pairs(self) do if typeof(v)=="RBXScriptConnection" then v:Disconnect() elseif type(v)=="table"then if v.CleanUp then v:CleanUp()end end end

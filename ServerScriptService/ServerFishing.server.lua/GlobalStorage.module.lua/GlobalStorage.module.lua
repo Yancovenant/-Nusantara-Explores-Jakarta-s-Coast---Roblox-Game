@@ -3,6 +3,8 @@
 local GSM = {}
 GSM.DEFAULT_PLAYER_DATA = {
     SessionLock = false, -- important for handling locksession
+    FirstTimePlayed = 0,
+    TimePlayed = 0,
     Money = 0,
 	TotalCatch = 0,
 	RarestCatch = 0,

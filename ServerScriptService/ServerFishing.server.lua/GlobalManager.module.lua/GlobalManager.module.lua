@@ -246,7 +246,7 @@ function GM:CatchResultSuccess(player:Player, success, ROD, info)
         if success then
             self:_CreateFishSlungTween(player, fish)
             self.PlayerManagers[player]:CatchResultSuccess(info)
-            local GAM = require(script.Parent.GlobalActionManager)
+            local GAM = require(script.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
             GAM:AwardBadge(player, "CATCH_10")
             GAM:AwardBadge(player, "CATCH_RARE")
         end
@@ -305,7 +305,11 @@ function GM:TotalCaught(player, condition)
             sum += v
         end
     end
-    if sum >= count then return true else return false end
+    return sum >= count
+end
+function GM:PlayMinutes(player, condition)
+    local count = table.unpack(condition)
+    return (self.PlayerManagers[player].Data.TimePlayed / 60) >= count
 end
 -- == Rewarding Player ==
 function GM:RewardPlayer(reward)

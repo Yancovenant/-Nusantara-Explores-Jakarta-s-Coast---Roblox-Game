@@ -83,10 +83,6 @@ function SF:SetServerTime()
 				TimeEvent:FireAllClients(t)
 			end
 		end)
-		-- while not self.IsShutDown do
-		
-		-- 	task.wait(1)
-		-- end
 	end)
 end
 
@@ -125,7 +121,7 @@ end)
 game:BindToClose(function()
 	SF.IsShutDown = true
 	if RunService:IsStudio() then
-		task.wait(2)
+		task.wait(5)
 	else
 		local finished = Instance.new("BindableEvent")
 		local allPlayers = Players:GetPlayers()
