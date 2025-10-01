@@ -63,16 +63,23 @@ end
 function GAM:AwardBadge(player, badgeKeyOrId)
     task.spawn(function()
         local badgeIdOrInfo = tonumber(badgeKeyOrId) or (c.EXPERIENCE.Badges[badgeKeyOrId] and c.EXPERIENCE.Badges[badgeKeyOrId])
-        local badgeId = tonumber(badgeIdOrInfo) or badgeIdOrInfo.id
+        local badgeId = tonumber(badgeIdOrInfo) or (badgeIdOrInfo and badgeIdOrInfo.id)
         if not (player and badgeId) then return end
         local ok, has = pcall(BS.UserHasBadgeAsync, BS, player.UserId, badgeId)
         if not ok or has then return end
         if typeof(badgeIdOrInfo) == "table" then
             if not GM[badgeIdOrInfo.callback](GM, player, badgeIdOrInfo.params) then return end
-            GM:RewardPlayer(badgeIdOrInfo.reward)
+            GM:RewardPlayer(player, badgeIdOrInfo.reward)
         end
         pcall(BS.AwardBadge, BS, player.UserId, badgeId)
     end)
+end
+function GAM:TryAwardByCallback(player, callbackName)
+    local keys = self.BadgesByCallback and self.BadgesByCallback[callbackName]
+    if not keys or #keys == 0 then return end
+    for _, key in ipairs(keys) do
+        self:AwardBadge(player, key)
+    end
 end
 
 
@@ -132,8 +139,20 @@ function GAM:SetupRemoteListener()
 end
 function GAM:SetupServer()
     self.state = {}
+    self:_BuildBadgeIndex()
     self:SetupRemoteListener()
     self:SetupProximityListener()
+end
+
+-- BADGE INDEXING / GROUPED AWARDING
+function GAM:_BuildBadgeIndex()
+    self.BadgesByCallback = {}
+    for key, info in pairs(c.EXPERIENCE.Badges or {}) do
+        if info and info.callback then
+            self.BadgesByCallback[info.callback] = self.BadgesByCallback[info.callback] or {}
+            table.insert(self.BadgesByCallback[info.callback], key)
+        end
+    end
 end
 
 

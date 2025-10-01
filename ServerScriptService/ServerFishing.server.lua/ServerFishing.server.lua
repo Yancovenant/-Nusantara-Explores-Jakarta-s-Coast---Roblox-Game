@@ -103,8 +103,11 @@ LOGGER:WrapModule(SF, "ServerFishing")
 
 
 Players.PlayerAdded:Connect(function(player)
-	GAM:AwardBadge(player, "WELCOME")
     GM:playerAdded(player)
+    task.defer(function()
+        -- run join-related badges after data populated
+        GAM:TryAwardByCallback(player, "FirstJoin")
+    end)
 	player.CharacterAdded:Connect(function(char)
 		local manager = GM.PlayerManagers[player]
 		if not manager then return end

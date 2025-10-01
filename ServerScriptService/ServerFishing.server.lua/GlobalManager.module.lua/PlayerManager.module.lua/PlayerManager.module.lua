@@ -241,7 +241,7 @@ function PM:PopulateBoatShop()
 	local OwnedBoats = self.Data.Equipment.OwnedBoats or {}
 	local ownedSet = {}
 	for _, id in ipairs(OwnedBoats) do ownedSet[id] = true end
-    self.GAM:AwardBadge(self.player, "OWN_BOAT")
+    self.GAM:TryAwardByCallback(self.player, "TotalBoat")
 
 	-- Cache UI refs
 	local boatShopFrame = self.PUI.BoatShopFrame
@@ -400,7 +400,7 @@ function PM:_RefreshBuyShop()
         end
     end
     local ownedRods = self.Data.Equipment.OwnedRods
-    self.GAM:AwardBadge(self.player, "OWN_3_RODS")
+    self.GAM:TryAwardByCallback(self.player, "TotalRod")
     for rodName, rodData in pairs(c.EQUIPMENT.GED.RODS) do
          if not table.find(ownedRods, rodData.id) then
             local template = self.PUI.BuyTemplateItem:Clone()
@@ -578,8 +578,7 @@ function PM:_PopulateData()
             while acc >= 60 do -- update per 60seconds/1minute
                 acc -= 60
                 self.Data.TimePlayed += 60
-                self.GAM:AwardBadge(self.player, "PLAY_30")
-                self.GAM:AwardBadge(self.player, "PLAY_120")
+                self.GAM:TryAwardByCallback(self.player, "PlayMinutes")
             end
         end)
     end)

@@ -247,11 +247,7 @@ function GM:CatchResultSuccess(player:Player, success, ROD, info)
             self:_CreateFishSlungTween(player, fish)
             self.PlayerManagers[player]:CatchResultSuccess(info)
             local GAM = require(script.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
-            GAM:AwardBadge(player, "CATCH_10")
-            GAM:AwardBadge(player, "CATCH_100")
-            GAM:AwardBadge(player, "CATCH_1000")
-            GAM:AwardBadge(player, "CATCH_RARE")
-            GAM:AwardBadge(player, "CATCH_10_RARE")
+            GAM:TryAwardByCallback(player, "TotalCaught")
         end
         
         self:CleanBobber(player)
