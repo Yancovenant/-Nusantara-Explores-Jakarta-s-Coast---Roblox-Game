@@ -241,6 +241,7 @@ function PM:PopulateBoatShop()
 	local OwnedBoats = self.Data.Equipment.OwnedBoats or {}
 	local ownedSet = {}
 	for _, id in ipairs(OwnedBoats) do ownedSet[id] = true end
+    self.GAM:AwardBadge(self.player, "OWN_BOAT")
 
 	-- Cache UI refs
 	local boatShopFrame = self.PUI.BoatShopFrame
@@ -399,6 +400,7 @@ function PM:_RefreshBuyShop()
         end
     end
     local ownedRods = self.Data.Equipment.OwnedRods
+    self.GAM:AwardBadge(self.player, "OWN_3_RODS")
     for rodName, rodData in pairs(c.EQUIPMENT.GED.RODS) do
          if not table.find(ownedRods, rodData.id) then
             local template = self.PUI.BuyTemplateItem:Clone()
@@ -437,9 +439,7 @@ function PM:ToggleFishShopUI(GRM, ...)
                 if invList then
                     local uniqueId = fish:GetAttribute("uniqueId")
                     for _, weight in ipairs(invList) do
-                        print(weight)
                         if type(weight) == "table" and weight.uniqueId == uniqueId then
-                            print("uniqueId", uniqueId)
                             fish:SetAttribute("locked", weight.locked == true)
                             fish.Locked.Visible = weight.locked == true
                             break
@@ -567,7 +567,6 @@ function PM:_PopulateData()
     if self.Data.FirstTimePlayed == 0 then self.Data.FirstTimePlayed = os.time() end
     self._AutoUpdateTimePlayed = true
     task.spawn(function()
-        local GAM = require(script.Parent.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
         local acc = 0
         local connection
         connection = RunService.Heartbeat:Connect(function(dt)
@@ -579,8 +578,8 @@ function PM:_PopulateData()
             while acc >= 60 do -- update per 60seconds/1minute
                 acc -= 60
                 self.Data.TimePlayed += 60
-                GAM:AwardBadge(self.player, "PLAY_30")
-                GAM:AwardBadge(self.player, "PLAY_120")
+                self.GAM:AwardBadge(self.player, "PLAY_30")
+                self.GAM:AwardBadge(self.player, "PLAY_120")
             end
         end)
     end)
@@ -702,6 +701,7 @@ function PM:new(player)
     local self = setmetatable({}, PM)
     self.player = player
     self.currentZone = nil
+    self.GAM = require(script.Parent.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
     self.PUI = PUI:new(player)
     self.PINV = PINV:new(player, self.PUI)
     self:_SetupEventListener()

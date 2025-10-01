@@ -248,7 +248,10 @@ function GM:CatchResultSuccess(player:Player, success, ROD, info)
             self.PlayerManagers[player]:CatchResultSuccess(info)
             local GAM = require(script.Parent.GlobalActionManager) -- AVOID RECURSIVE IMPORT
             GAM:AwardBadge(player, "CATCH_10")
+            GAM:AwardBadge(player, "CATCH_100")
+            GAM:AwardBadge(player, "CATCH_1000")
             GAM:AwardBadge(player, "CATCH_RARE")
+            GAM:AwardBadge(player, "CATCH_10_RARE")
         end
         
         self:CleanBobber(player)
@@ -310,6 +313,14 @@ end
 function GM:PlayMinutes(player, condition)
     local count = table.unpack(condition)
     return (self.PlayerManagers[player].Data.TimePlayed / 60) >= count
+end
+function GM:TotalBoat(player, condition)
+    local count = table.unpack(condition)
+    return #self.PlayerManagers[player].Data.Equipment.OwnedBoats >= count
+end
+function GM:TotalRod(player, condition)
+    local count = table.unpack(condition)
+    return #self.PlayerManagers[player].Data.Equipment.OwnedRods >= count
 end
 -- == Rewarding Player ==
 function GM:RewardPlayer(reward)
