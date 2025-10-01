@@ -4,6 +4,7 @@ local GAM = {}
 
 local RS:ReplicatedStorage = game:GetService("ReplicatedStorage")
 local PSS:ProximityPromptService = game:GetService("ProximityPromptService")
+local BS = game:GetService("BadgeService")
 
 local Remotes = RS:WaitForChild("Remotes")
 
@@ -55,6 +56,16 @@ function GAM:OnReelingCompleteEvent()
         player:SetAttribute("IsFishingServer", false)
         player:SetAttribute("PowerServer", 0)
     end)
+end
+
+
+-- EXPERIENCE
+function GAM:AwardBadge(player, badgeKeyOrId)
+   local badgeId = tonumber(badgeKeyOrId) or (c.EXPERIENCE.Badges[badgeKeyOrId] and c.EXPERIENCE.Badges[badgeKeyOrId].id)
+   if not (player and badgeId) then return end
+   local ok, has = pcall(BS.UserHasBadgeAsync, BS, player.UserId, badgeId)
+   if not ok or has then return end
+   pcall(BS.AwardBadge, BS, player.UserId, badgeId)
 end
 
 

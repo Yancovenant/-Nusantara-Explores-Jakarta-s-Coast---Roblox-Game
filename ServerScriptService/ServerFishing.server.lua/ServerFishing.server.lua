@@ -107,6 +107,7 @@ LOGGER:WrapModule(SF, "ServerFishing")
 
 
 Players.PlayerAdded:Connect(function(player)
+	GAM:AwardBadge(player, "WELCOME")
     GM:playerAdded(player)
 	player.CharacterAdded:Connect(function(char)
 		local manager = GM.PlayerManagers[player]

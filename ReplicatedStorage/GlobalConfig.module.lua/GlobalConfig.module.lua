@@ -52,6 +52,8 @@ GC.PLAYER = {
     }
 }
 
+GC.EXPERIENCE = require(script.ExperienceDB)
+
 -- RARITY --
 GC.RARITY_COLORS = {
     Common = Color3.fromRGB(180, 180, 180),        -- Light Gray - Clean, neutral
